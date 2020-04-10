@@ -102,6 +102,7 @@ with open("./output/" + "/seq_pos_idx.pkl", 'wb') as file_handle:
 seq_msa = seq_msa[:, np.array(pos_idx)]
 
 ## Fasta file names and sequencies in inner representation
+keys_list = np.array(keys_list)
 fasta_keys = keys_list[np.array(pos_idx)]
 fasta_seq_num = seq_msa
 
