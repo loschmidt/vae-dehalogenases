@@ -6,6 +6,8 @@ import sys
 import numpy as np
 from sys import exit
 import argparse
+import random
+from ete3 import Tree
 
 PRAGMA_REFERENCE = False
 
@@ -14,11 +16,12 @@ parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
 
 if PRAGMA_REFERENCE:
     parser.add_argument("--Ref_seq", help = "the reference sequence; e.g. TENA_HUMAN/804-884")
-    ref_seq = args.Ref_seq
 
 args = parser.parse_args()
 pfam_id = args.Pfam_id
 
+if PRAGMA_REFERENCE:
+    ref_seq = args.Ref_seq
 
 file_name = "./MSA/{0}_full.txt".format(pfam_id)
 
@@ -138,3 +141,60 @@ for i in range(num_seq):
 
 with open("./output/" + "/seq_msa_binary.pkl", 'wb') as file_handle:
     pickle.dump(seq_msa_binary, file_handle)
+
+## Prepare Tree structure for clustering
+
+## setup it for tree to have correct parameters
+len_protein = seq_msa.shape[0]
+num_seq = len(msa.keys())
+
+## generate a random phylogenetic tree with 10000 leaf nodes
+t = Tree()
+random.seed(0)
+num_leaf_nodes = 10000
+t.populate(num_leaf_nodes,
+           names_library = range(num_leaf_nodes),
+           random_branches = True,
+           branch_range = (0, 0.3))
+
+## leaf nodes are named as indices from 0 to 9999.
+## non-leaf nodes are named incrementally from 10000
+idx_nodes = num_leaf_nodes
+for node in t.traverse('preorder'):
+    if node.name == "":
+        node.name = str(idx_nodes)
+        idx_nodes += 1
+
+## the random phylogenetic tree is saved in newick format
+## see https://en.wikipedia.org/wiki/Newick_format
+t.write(outfile = "./output/random_tree.newick", format = 1)
+
+#### the simulated sequences are splitted into two classes:
+#### leaf node sequences and non-leaf node sequences.
+#### only leaf node sequences are used for training latent
+#### space models.
+
+## save leaf node sequences
+t = Tree("./output/random_tree.newick", format = 1)
+t.name = str(len(t))
+num_leaf = len(t)
+msa_leaf_keys = [str(i) for i in range(num_leaf)]
+msa_leaf_keys.sort()
+
+msa_leaf_nume = np.zeros((num_leaf, len_protein), dtype = np.int)
+for i in range(num_leaf):
+    msa_leaf_nume[i,:] = [aa2idx[s] for s in msa[msa_leaf_keys[i]]]
+
+msa_leaf_binary = np.zeros((num_leaf, len_protein, 20))
+D = np.identity(20)
+for i in range(num_leaf):
+    msa_leaf_binary[i,:,:] = D[msa_leaf_nume[i]]
+
+with open("./output/msa_leaf_nume.pkl", 'wb') as file_handle:
+    pickle.dump(msa_leaf_nume, file = file_handle)
+
+with open("./output/msa_leaf_binary.pkl", 'wb') as file_handle:
+    pickle.dump(msa_leaf_binary, file = file_handle)
+
+with open("./output/msa_leaf_keys.pkl", 'wb') as file_handle:
+    pickle.dump(msa_leaf_keys, file = file_handle)
