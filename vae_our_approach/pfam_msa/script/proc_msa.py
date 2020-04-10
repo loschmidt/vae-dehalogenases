@@ -149,6 +149,6 @@ with open("./output/" + "/seq_msa_binary.pkl", 'wb') as file_handle:
 ## Prepare fasta structure fo FastTree phylogenetic tree generation
 
 ## Now transform sequences back to fasta
-with open("./FastTree/{0}_for_tree_gen.fasta".format(pfam_id), 'wb') as file_handle:
+with open("./FastTree/{0}_for_tree_gen.fasta".format(pfam_id), 'w') as file_handle:
     for seq_name, seq in fasta_dict.items():
         file_handle.write(">" + seq_name + "\n" + seq + "\n")
