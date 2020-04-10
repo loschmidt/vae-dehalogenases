@@ -165,7 +165,7 @@ for a in aa:
 for i in range(len(fasta_keys)):
     to_amino = fasta_seq_num[i]
     amino_seq = [reverse_index[s] for s in to_amino]
-    fasta_dict[fasta_keys[i]] = ' '.join([str(elem) for elem in amino_seq])
+    fasta_dict[fasta_keys[i]] = ''.join([str(elem) for elem in amino_seq])
 
 ## Now transform sequences back to fasta
 with open("./FastTree/{0}_for_tree_gen.fasta".format(pfam_id), 'w') as file_handle:
