@@ -79,13 +79,16 @@ with open("./output/" + "/aa_index.pkl", 'wb') as file_handle:
     pickle.dump(aa_index, file_handle)
 
 ## Remove everything with unexplored residues from dictionary
+## Prepare dictionary for fasta file for future FAstTree processing
 seq_msa = []
 keys_list = []
+fasta_dict = {}
 for k in seq_dict.keys():
     if seq_dict[k].count('X') > 0 or seq_dict[k].count('Z') > 0:
         continue    
     seq_msa.append([aa_index[s] for s in seq_dict[k]])
-    keys_list.append(k)    
+    keys_list.append(k)
+    fasta_dict[k] = seq_dict[k]
 seq_msa = np.array(seq_msa)
 
 with open("./output/keys_list.pkl", 'wb') as file_handle:
@@ -142,59 +145,10 @@ for i in range(num_seq):
 with open("./output/" + "/seq_msa_binary.pkl", 'wb') as file_handle:
     pickle.dump(seq_msa_binary, file_handle)
 
-## Prepare Tree structure for clustering
+###################################################################
+## Prepare fasta structure fo FastTree phylogenetic tree generation
 
-## setup it for tree to have correct parameters
-len_protein = seq_msa.shape[0]
-num_seq = len(msa.keys())
-
-## generate a random phylogenetic tree with 10000 leaf nodes
-t = Tree()
-random.seed(0)
-num_leaf_nodes = 10000
-t.populate(num_leaf_nodes,
-           names_library = range(num_leaf_nodes),
-           random_branches = True,
-           branch_range = (0, 0.3))
-
-## leaf nodes are named as indices from 0 to 9999.
-## non-leaf nodes are named incrementally from 10000
-idx_nodes = num_leaf_nodes
-for node in t.traverse('preorder'):
-    if node.name == "":
-        node.name = str(idx_nodes)
-        idx_nodes += 1
-
-## the random phylogenetic tree is saved in newick format
-## see https://en.wikipedia.org/wiki/Newick_format
-t.write(outfile = "./output/random_tree.newick", format = 1)
-
-#### the simulated sequences are splitted into two classes:
-#### leaf node sequences and non-leaf node sequences.
-#### only leaf node sequences are used for training latent
-#### space models.
-
-## save leaf node sequences
-t = Tree("./output/random_tree.newick", format = 1)
-t.name = str(len(t))
-num_leaf = len(t)
-msa_leaf_keys = [str(i) for i in range(num_leaf)]
-msa_leaf_keys.sort()
-
-msa_leaf_nume = np.zeros((num_leaf, len_protein), dtype = np.int)
-for i in range(num_leaf):
-    msa_leaf_nume[i,:] = [aa2idx[s] for s in msa[msa_leaf_keys[i]]]
-
-msa_leaf_binary = np.zeros((num_leaf, len_protein, 20))
-D = np.identity(20)
-for i in range(num_leaf):
-    msa_leaf_binary[i,:,:] = D[msa_leaf_nume[i]]
-
-with open("./output/msa_leaf_nume.pkl", 'wb') as file_handle:
-    pickle.dump(msa_leaf_nume, file = file_handle)
-
-with open("./output/msa_leaf_binary.pkl", 'wb') as file_handle:
-    pickle.dump(msa_leaf_binary, file = file_handle)
-
-with open("./output/msa_leaf_keys.pkl", 'wb') as file_handle:
-    pickle.dump(msa_leaf_keys, file = file_handle)
+## Now transform sequences back to fasta
+with open("./FastTree/{0}_for_tree_gen.fasta".format(pfam_id), 'wb') as file_handle:
+    for seq_name, seq in fasta_dict.items():
+        file_handle.write(">" + seq_name + "\n" + seq + "\n")
