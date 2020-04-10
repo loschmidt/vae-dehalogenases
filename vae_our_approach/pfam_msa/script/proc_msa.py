@@ -79,16 +79,13 @@ with open("./output/" + "/aa_index.pkl", 'wb') as file_handle:
     pickle.dump(aa_index, file_handle)
 
 ## Remove everything with unexplored residues from dictionary
-## Prepare dictionary for fasta file for future FAstTree processing
 seq_msa = []
 keys_list = []
-fasta_dict = {}
 for k in seq_dict.keys():
     if seq_dict[k].count('X') > 0 or seq_dict[k].count('Z') > 0:
         continue    
     seq_msa.append([aa_index[s] for s in seq_dict[k]])
     keys_list.append(k)
-    fasta_dict[k] = seq_dict[k]
 seq_msa = np.array(seq_msa)
 
 with open("./output/keys_list.pkl", 'wb') as file_handle:
@@ -101,8 +98,13 @@ for i in range(seq_msa.shape[1]):
         pos_idx.append(i)
 with open("./output/" + "/seq_pos_idx.pkl", 'wb') as file_handle:
     pickle.dump(pos_idx, file_handle)
-    
+
 seq_msa = seq_msa[:, np.array(pos_idx)]
+
+## Fasta file names and sequencies in inner representation
+fasta_keys = keys_list[np.array(pos_idx)]
+fasta_seq_num = seq_msa
+
 with open("./output/" + "/seq_msa.pkl", 'wb') as file_handle:
     pickle.dump(seq_msa, file_handle)
 
@@ -147,6 +149,22 @@ with open("./output/" + "/seq_msa_binary.pkl", 'wb') as file_handle:
 
 ###################################################################
 ## Prepare fasta structure fo FastTree phylogenetic tree generation
+fasta_dict = {}
+
+## Reverse transformation
+reverse_index = {}
+reverse_index[0] = '-'
+
+i = 1
+for a in aa:
+    reverse_index[i] = a
+    i += 1
+
+## Sequencies back to aminoacid representation
+for i in range(len(fasta_keys)):
+    to_amino = fasta_seq_num[i]
+    amino_seq = [reverse_index[s] for s in to_amino]
+    fasta_dict[fasta_keys[i]] = amino_seq
 
 ## Now transform sequences back to fasta
 with open("./FastTree/{0}_for_tree_gen.fasta".format(pfam_id), 'w') as file_handle:
