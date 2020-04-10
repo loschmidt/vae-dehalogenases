@@ -60,8 +60,6 @@ for i in range(20):
     for j in range(20):
         Q_dict[(amino_acids[i], amino_acids[j])] = Q[i,j]
 
-print (Q)
-
 ## save the LG replacement matrix        
 with open("./output/LG_matrix.pkl", 'wb') as file_handle:
     pickle.dump({'R': R, 'Q': Q, 'PI': PI,
