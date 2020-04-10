@@ -19,7 +19,7 @@ echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATC
 # move into data directory
 cd $DATADIR_BASE
 source $DATADIR_BASE/.bashrc
-conda activate vae-env
+conda activate #vae-env
 echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 
 cd $DATADIR
