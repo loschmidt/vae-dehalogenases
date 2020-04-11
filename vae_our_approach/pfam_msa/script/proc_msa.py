@@ -81,13 +81,11 @@ with open("./output/" + "/aa_index.pkl", 'wb') as file_handle:
 ## Remove everything with unexplored residues from dictionary
 seq_msa = []
 keys_list = []
-tmp_fasta_key = []
 for k in seq_dict.keys():
     if seq_dict[k].count('X') > 0 or seq_dict[k].count('Z') > 0:
         continue    
     seq_msa.append([aa_index[s] for s in seq_dict[k]])
     keys_list.append(k)
-    tmp_fasta_key.append(keys_list[i])
 seq_msa = np.array(seq_msa)
 
 with open("./output/keys_list.pkl", 'wb') as file_handle:
@@ -104,7 +102,7 @@ with open("./output/" + "/seq_pos_idx.pkl", 'wb') as file_handle:
 seq_msa = seq_msa[:, np.array(pos_idx)]
 
 ## Fasta file names and sequencies in inner representation
-fasta_keys = tmp_fasta_key
+fasta_keys = keys_list
 fasta_seq_num = seq_msa
 
 with open("./output/" + "/seq_msa.pkl", 'wb') as file_handle:
