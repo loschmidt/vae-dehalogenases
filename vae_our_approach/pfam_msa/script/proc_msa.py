@@ -81,11 +81,13 @@ with open("./output/" + "/aa_index.pkl", 'wb') as file_handle:
 ## Remove everything with unexplored residues from dictionary
 seq_msa = []
 keys_list = []
+tmp_fasta_key = []
 for k in seq_dict.keys():
     if seq_dict[k].count('X') > 0 or seq_dict[k].count('Z') > 0:
         continue    
     seq_msa.append([aa_index[s] for s in seq_dict[k]])
     keys_list.append(k)
+    tmp_fasta_key.append(keys_list[i])
 seq_msa = np.array(seq_msa)
 
 with open("./output/keys_list.pkl", 'wb') as file_handle:
@@ -93,11 +95,9 @@ with open("./output/keys_list.pkl", 'wb') as file_handle:
 
 ## remove positions where too many sequences have gaps
 pos_idx = []
-tmp_fasta_key = []
 for i in range(seq_msa.shape[1]):
     if np.sum(seq_msa[:,i] == 0) <= seq_msa.shape[0]*0.2:
         pos_idx.append(i)
-        tmp_fasta_key.append(keys_list[i])
 with open("./output/" + "/seq_pos_idx.pkl", 'wb') as file_handle:
     pickle.dump(pos_idx, file_handle)
 
