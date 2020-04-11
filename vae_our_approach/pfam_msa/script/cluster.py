@@ -27,7 +27,7 @@ for i in range(len(key)):
     key2idx[key[i]] = i
 
 ## read tree
-t = Tree("./output/random_tree.newick", format = 1)
+t = Tree("./FastTree/tree_fasttree.newick", format = 1)
 num_leaf = len(t)
 t.name = str(num_leaf)
 leaf_idx = []
