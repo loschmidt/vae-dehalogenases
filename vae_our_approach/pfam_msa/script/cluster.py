@@ -22,21 +22,28 @@ key = data['key']
 mu = data['mu']
 sigma = data['sigma']
 
+print("Key printing:")
+print (key[0:20])
+
+print("mu printing:")
+print (mu[0:5,0])
+print(mu[0:5,1])
+
 key2idx = {}
 for i in range(len(key)):
     key2idx[key[i]] = i
 
 ## read tree
-t = Tree("./FastTree/tree_fasttree.newick", format = 1)
+t = Tree("./FastTree/fast_tree.newick", format = 1)
 num_leaf = len(t)
 t.name = str(num_leaf)
-leaf_idx = []
-ancestral_idx = []
-for i in range(len(key)):
-    if int(key[i]) < num_leaf:
-        leaf_idx.append(i)
-    else:
-        ancestral_idx.append(i)
+##leaf_idx = []
+##ancestral_idx = []
+##for i in range(len(key)):
+  ##  if int(key[i]) < num_leaf:
+    ##    leaf_idx.append(i)
+    ##else:
+    ##    ancestral_idx.append(i)
         
 for node in t.traverse('preorder'):
     if node.is_root():
@@ -61,11 +68,48 @@ for name in head_node_names:
     for node in (t&name).traverse('preorder'):
         cluster_node_names[name].append(node.name)
 
+print()
+print("Head printing:")
+print (head_node_names[0:20])
+
+print()
+print()
+print("Cluster printing:")
+ip = 0
+for k, n in cluster_node_names.items():
+    if ip < 1:
+        print(k, " : ", n)
+    ip += 1
+print()
+print()
+
+print("Key2idx printing:")
+ip = 0
+for k, n in key2idx.items():
+    if ip < 1:
+        print(k, " : ", n)
+    ip += 1
+print()
+print()
+print("Taht one")
+print(key2idx['A0A2A5NU41_9MICO/6-128'])
+
 fig = plt.figure(0)
 fig.clf()
+
+fail = 0
 for i in range(len(head_node_names)):
     names = cluster_node_names[head_node_names[i]]
-    idx = [ key2idx[n] for n in names]
+    ##idx =  [ key2idx[n] for n in names[1::2]] ##[ key2idx[n] for n in names]
+    idx = []
+    for n in names[1::2]:
+        try:
+            idx.append(key2idx[n])
+            print ("Success")
+        except KeyError as e:
+            fail += 1
+    print("Ploting ; ", mu[idx,0])  
+    print("Ploting ; ", mu[idx,1]) 
     plt.plot(mu[idx,0], mu[idx,1], '.', markersize = 2, label = head_node_names[i])
 # plt.xlim((-6.5,10))
 # plt.ylim((-8,8))    
@@ -75,6 +119,8 @@ plt.xlabel(r'$Z_1$')
 plt.ylabel(r'$Z_2$')
 plt.tight_layout()
 fig.savefig("./output/cluster.eps")
+
+quit()
 
 ## zoom in branches
 for branch in ['10854', '16528']:
