@@ -93,17 +93,18 @@ with open("./output/keys_list.pkl", 'wb') as file_handle:
 
 ## remove positions where too many sequences have gaps
 pos_idx = []
+tmp_fasta_key = []
 for i in range(seq_msa.shape[1]):
     if np.sum(seq_msa[:,i] == 0) <= seq_msa.shape[0]*0.2:
         pos_idx.append(i)
+        tmp_fasta_key.append(keys_list[i])
 with open("./output/" + "/seq_pos_idx.pkl", 'wb') as file_handle:
     pickle.dump(pos_idx, file_handle)
 
 seq_msa = seq_msa[:, np.array(pos_idx)]
 
 ## Fasta file names and sequencies in inner representation
-keys_list = np.array(keys_list)
-fasta_keys = keys_list[np.array(pos_idx)]
+fasta_keys = tmp_fasta_key
 fasta_seq_num = seq_msa
 
 with open("./output/" + "/seq_msa.pkl", 'wb') as file_handle:
@@ -160,6 +161,8 @@ i = 1
 for a in aa:
     reverse_index[i] = a
     i += 1
+
+print ("Count of keys is : {0}".format(len(fasta_keys)))
 
 ## Sequencies back to aminoacid representation
 for i in range(len(fasta_keys)):
