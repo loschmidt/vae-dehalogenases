@@ -150,7 +150,14 @@ for branch in main_nodes[4:11]:
     fig.clf()
     for i in range(len(head_node_names)):
         names = cluster_node_names[head_node_names[i]]
-        idx = [ key2idx[n] for n in names]
+        ##idx = [ key2idx[n] for n in names]
+        idx = []
+        for n in names[1::2]:
+            try:
+                idx.append(key2idx[n])
+            ##   print ("Success")
+            except KeyError as e:
+                fail += 1
         plt.plot(mu[idx,0], mu[idx,1], '.', markersize = 2, label = head_node_names[i])
     # plt.xlim((-6.5,10))
     # plt.ylim((-8,8))    
