@@ -122,6 +122,7 @@ for node in t.traverse('preorder'):
     if proc_nodes > num_of_nodes:
         break
     main_nodes.append(node.name)
+    proc_nodes += 1
 
 print("="*40)
 print("Choose your branches")
