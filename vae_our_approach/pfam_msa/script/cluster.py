@@ -120,6 +120,20 @@ plt.ylabel(r'$Z_2$')
 plt.tight_layout()
 fig.savefig("./output/cluster.eps")
 
+main_nodes = []
+
+num_of_nodes = 12
+proc_nodes = 0
+
+for node in t.traverse('preorder'):
+    if proc_nodes > num_of_nodes:
+        break
+    main_nodes.append(node.name)
+
+print("="*40)
+print("Choose your branches")
+print(main_nodes)
+
 quit()
 
 ## zoom in branches
