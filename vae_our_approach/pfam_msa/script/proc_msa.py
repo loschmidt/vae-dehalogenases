@@ -9,21 +9,24 @@ import argparse
 import random
 from ete3 import Tree
 
-PRAGMA_REFERENCE = False
+PRAGMA_REFERENCE = True
 
 parser = argparse.ArgumentParser(description = "Process given MSA")
-parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
+parser.add_argument("--Pfam_file", help = "the ID of Pfam; e.g. PF00041")
+parser.add_argument("--Length", help = "the length of final sequences (to fit width fit trained model); e.g. 97")
 
 if PRAGMA_REFERENCE:
     parser.add_argument("--Ref_seq", help = "the reference sequence; e.g. TENA_HUMAN/804-884")
 
 args = parser.parse_args()
-pfam_id = args.Pfam_id
+pfam_id = args.Pfam_file
+
+target_length = args.Length
 
 if PRAGMA_REFERENCE:
     ref_seq = args.Ref_seq
 
-file_name = "./MSA/{0}_full.txt".format(pfam_id)
+file_name = "./MSA/{0}.txt".format(pfam_id)
 
 if PRAGMA_REFERENCE:
     query_seq_id =  ref_seq #"TENA_HUMAN/804-884"
@@ -96,6 +99,22 @@ pos_idx = []
 for i in range(seq_msa.shape[1]):
     if np.sum(seq_msa[:,i] == 0) <= seq_msa.shape[0]*0.2:
         pos_idx.append(i)
+
+if args.Length is not None:
+    ## Length is set this have to have same length as target length
+    if len(pos_idx) > target_length:
+        ## Length is bigger, remove colums with most gaps
+        seq_msa = seq_msa[:, np.array(pos_idx)]
+        gaps_idx = {} ## count of gaps, index
+        for i in range(len(pos_idx)):
+            gaps_idx[i] = np.sum(seq_msa[:,i] == 0)
+        ## Sort by length
+        gaps_idx = {k: v for k, v in sorted(gaps_idx.items(), key=lambda item: item[1])}
+        while seq_msa.shape[1] > target_length:
+            ## Remove with most gaps
+            k, v = gaps_idx.popitem()
+            pos_idx.remove(k)
+
 with open("./output/" + "/seq_pos_idx.pkl", 'wb') as file_handle:
     pickle.dump(pos_idx, file_handle)
 
