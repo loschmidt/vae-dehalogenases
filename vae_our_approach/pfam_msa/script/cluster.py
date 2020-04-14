@@ -22,13 +22,6 @@ key = data['key']
 mu = data['mu']
 sigma = data['sigma']
 
-print("Key printing:")
-print (key[0:20])
-
-print("mu printing:")
-print (mu[0:5,0])
-print(mu[0:5,1])
-
 key2idx = {}
 for i in range(len(key)):
     key2idx[key[i]] = i
@@ -68,31 +61,31 @@ for name in head_node_names:
     for node in (t&name).traverse('preorder'):
         cluster_node_names[name].append(node.name)
 
-print()
-print("Head printing:")
-print (head_node_names[0:20])
-
-print()
-print()
-print("Cluster printing:")
-ip = 0
-for k, n in cluster_node_names.items():
-    if ip < 1:
-        print(k, " : ", n)
-    ip += 1
-print()
-print()
-
-print("Key2idx printing:")
-ip = 0
-for k, n in key2idx.items():
-    if ip < 1:
-        print(k, " : ", n)
-    ip += 1
-print()
-print()
-print("Taht one")
-print(key2idx['A0A2A5NU41_9MICO/6-128'])
+##print()
+##print("Head printing:")
+##print (head_node_names[0:20])
+##
+##print()
+##print()
+##print("Cluster printing:")
+##ip = 0
+##for k, n in cluster_node_names.items():
+##    if ip < 1:
+##        print(k, " : ", n)
+##    ip += 1
+##print()
+##print()
+##
+##print("Key2idx printing:")
+##ip = 0
+##for k, n in key2idx.items():
+##    if ip < 1:
+##        print(k, " : ", n)
+##    ip += 1
+##print()
+##print()
+##print("Taht one")
+##print(key2idx['A0A2A5NU41_9MICO/6-128'])
 
 fig = plt.figure(0)
 fig.clf()
@@ -105,11 +98,11 @@ for i in range(len(head_node_names)):
     for n in names[1::2]:
         try:
             idx.append(key2idx[n])
-            print ("Success")
+         ##   print ("Success")
         except KeyError as e:
             fail += 1
-    print("Ploting ; ", mu[idx,0])  
-    print("Ploting ; ", mu[idx,1]) 
+    ##print("Ploting ; ", mu[idx,0])  
+    ##print("Ploting ; ", mu[idx,1]) 
     plt.plot(mu[idx,0], mu[idx,1], '.', markersize = 2, label = head_node_names[i])
 # plt.xlim((-6.5,10))
 # plt.ylim((-8,8))    
