@@ -115,7 +115,7 @@ fig.savefig("./output/cluster.eps")
 
 main_nodes = []
 
-num_of_nodes = 12
+num_of_nodes = 11
 proc_nodes = 0
 
 for node in t.traverse('preorder'):
@@ -128,10 +128,9 @@ print("="*40)
 print("Choose your branches")
 print(main_nodes)
 
-quit()
-
 ## zoom in branches
-for branch in ['10854', '16528']:
+for branch in main_nodes[4:11]:
+    print("Generating zoom branch : {0}".format(branch))
     sub_t = t&branch
     dist_cutoff = sub_t.sumdist + 0.3
     head_node_names = []
