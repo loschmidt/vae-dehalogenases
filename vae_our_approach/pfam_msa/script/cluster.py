@@ -166,7 +166,7 @@ for branch in main_nodes[4:11]:
     plt.xlabel(r'$Z_1$')
     plt.ylabel(r'$Z_2$')
     plt.tight_layout()
-    fig.savefig("./output/branch_{}_cluster.eps".format(branch))
+    fig.savefig("./output/branch_{}_cluster.eps".format(branch.replace("/","_")))
 
 
 #plt.show()
