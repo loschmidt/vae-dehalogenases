@@ -11,7 +11,7 @@ import sys
 import argparse
 from Bio import SeqIO
 
-FASTA_GENERATE = False
+FASTA_GENERATE = True
 
 parser = argparse.ArgumentParser(description = "Download the full multiple sequence alignment (MSA) in Stockholm format for a Pfam_id.")
 parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
