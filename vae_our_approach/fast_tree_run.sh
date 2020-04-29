@@ -8,10 +8,11 @@ ROOT_SCR=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach
 FAST_SRC=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/pfam_msa/FastTree
 
 cd ${MSAs}
-
+pwd
 for filename in *.fasta
 do
-    qsub -v file=${filename} fast_tree_batch.sh &
+    echo "Running fastTree for ${filename}"
+    qsub -v file=${filename} ../../fast_tree_batch.sh &
 done
 
 cd ${ROOT_SCR}
