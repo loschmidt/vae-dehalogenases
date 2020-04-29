@@ -30,11 +30,12 @@ for dow in down_seq:
         print(data, file = file_handle)
 
 if FASTA_GENERATE:
-    stockholm_file_name = "./MSA/{0}_full.txt".format(pfam_id)
-    fasta_file_name = "./MSA/{0}_full.fasta".format(pfam_id)
+    for dow in down_seq:
+        stockholm_file_name = "./MSA/{0}_{1}.txt".format(pfam_id, dow)
+        fasta_file_name = "./MSA/{0}_{1}.fasta".format(pfam_id, dow)
 
-    records = SeqIO.parse(stockholm_file_name, "stockholm")
-    count = SeqIO.write(records, fasta_file_name, "fasta")
-    print("Converted %i records" % count)
+        records = SeqIO.parse(stockholm_file_name, "stockholm")
+        count = SeqIO.write(records, fasta_file_name, "fasta")
+        print("Converted %i records" % count)
 
     print("Convertion done")
