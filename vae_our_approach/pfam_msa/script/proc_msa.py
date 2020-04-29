@@ -5,24 +5,43 @@ import pickle
 import numpy as np
 import argparse
 
+import subprocess as sp   ## command line hangling
+
 PRAGMA_REFERENCE = False
 
 parser = argparse.ArgumentParser(description = "Process given MSA")
-parser.add_argument("--Pfam_file", help = "the ID of Pfam; e.g. PF00041")
+parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
 parser.add_argument("--Length", help = "the length of final sequences (to fit width fit trained model); e.g. 97")
+
+## To get different input from MSA directory and to save result to seperate directory
+## for parallel run on multiple computation nodes
+parser.add_argument("--RPgroup", help = "RP specifier of given Pfam_id family, e.g. RP15")
 
 if PRAGMA_REFERENCE:
     parser.add_argument("--Ref_seq", help = "the reference sequence; e.g. TENA_HUMAN/804-884")
 
 args = parser.parse_args()
-pfam_id = args.Pfam_file
+pfam_id = args.Pfam_id
 
 target_length = args.Length
 
 if PRAGMA_REFERENCE:
     ref_seq = args.Ref_seq
+## get RP subgroup if it is specified
+rp_id = ""
+if args.RPgroup is not None:
+    rp_id = args.RPgroup
+else:
+    ## using full sequence
+    rp_id = "full"
 
-file_name = "./MSA/{0}.txt".format(pfam_id)
+## Prepare input name and create directory name
+gen_dir_id = "{0}_{1}".format(pfam_id, rp_id)
+out_dir = "./output/{0}".format(gen_dir_id)
+file_name = "./MSA/{0}_{1}.txt".format(pfam_id, rp_id)
+
+## Create output directory in ../output/out_dir/
+sp.run("mkdir -p {0}".format(out_dir), shell=True)
 
 if PRAGMA_REFERENCE:
     query_seq_id =  ref_seq #"TENA_HUMAN/804-884"
@@ -57,7 +76,7 @@ if PRAGMA_REFERENCE:
         if seq_dict[k].count("-") + seq_dict[k].count(".") > 10:
             seq_dict.pop(k)
 
-    with open("./output/seq_dict.pkl", 'wb') as file_handle:
+    with open(out_dir + "/seq_dict.pkl", 'wb') as file_handle:
         pickle.dump(seq_dict, file_handle)
         
 ## convert aa type into num 0-20
@@ -74,7 +93,7 @@ i = 1
 for a in aa:
     aa_index[a] = i
     i += 1
-with open("./output/" + "/aa_index.pkl", 'wb') as file_handle:
+with open(out_dir + "/aa_index.pkl", 'wb') as file_handle:
     pickle.dump(aa_index, file_handle)
 
 ## Remove everything with unexplored residues from dictionary
@@ -87,7 +106,7 @@ for k in seq_dict.keys():
     keys_list.append(k)
 seq_msa = np.array(seq_msa)
 
-with open("./output/keys_list.pkl", 'wb') as file_handle:
+with open(out_dir + "/keys_list.pkl", 'wb') as file_handle:
     pickle.dump(keys_list, file_handle)
 
 ## remove positions where too many sequences have gaps
@@ -111,7 +130,7 @@ if args.Length is not None:
             k, v = gaps_idx.popitem()
             pos_idx.remove(k)
 
-with open("./output/" + "/seq_pos_idx.pkl", 'wb') as file_handle:
+with open(out_dir + "/seq_pos_idx.pkl", 'wb') as file_handle:
     pickle.dump(pos_idx, file_handle)
 
 seq_msa = seq_msa[:, np.array(pos_idx)]
@@ -120,7 +139,7 @@ seq_msa = seq_msa[:, np.array(pos_idx)]
 fasta_keys = keys_list
 fasta_seq_num = seq_msa
 
-with open("./output/" + "/seq_msa.pkl", 'wb') as file_handle:
+with open(out_dir + "/seq_msa.pkl", 'wb') as file_handle:
     pickle.dump(seq_msa, file_handle)
 
 ## reweighting sequences
@@ -135,7 +154,7 @@ for j in range(seq_msa.shape[1]):
         seq_weight[i,j] = (1.0/num_type) * (1.0/aa_dict[seq_msa[i,j]])
 tot_weight = np.sum(seq_weight)
 seq_weight = seq_weight.sum(1) / tot_weight 
-with open("./output/" + "/seq_weight.pkl", 'wb') as file_handle:
+with open(out_dir + "/seq_weight.pkl", 'wb') as file_handle:
     pickle.dump(seq_weight, file_handle)
 
 ## Detect how many sequences was used and its average and max lenght
@@ -143,7 +162,7 @@ lengths = [len(i) for i in seq_msa]
 av_len = 0 if len(lengths) == 0 else (float(sum(lengths)) / len(lengths))
 
 print("="*60)
-print("Pfam ID : {0}, Reference sequence {1}".format(pfam_id, PRAGMA_REFERENCE))
+print("Pfam ID : {0} - {2}, Reference sequence {1}".format(pfam_id, PRAGMA_REFERENCE, rp_id))
 print("Sequences used: {0}".format(seq_msa.shape[0]))
 print("Average lenght: {0}".format(av_len))
 print("Max lenght of sequence: {0}".format(max(lengths)))
@@ -159,7 +178,7 @@ seq_msa_binary = np.zeros((num_seq, len_seq_msa, K))
 for i in range(num_seq):
     seq_msa_binary[i,:,:] = D[seq_msa[i]]
 
-with open("./output/" + "/seq_msa_binary.pkl", 'wb') as file_handle:
+with open(out_dir + "/seq_msa_binary.pkl", 'wb') as file_handle:
     pickle.dump(seq_msa_binary, file_handle)
 
 ###################################################################
@@ -184,6 +203,6 @@ for i in range(len(fasta_keys)):
     fasta_dict[fasta_keys[i]] = ''.join([str(elem) for elem in amino_seq])
 
 ## Now transform sequences back to fasta
-with open("./FastTree/{0}_for_tree_gen.fasta".format(pfam_id), 'w') as file_handle:
+with open("./FastTree/{0}_for_tree_gen.fasta".format(gen_dir_id), 'w') as file_handle:
     for seq_name, seq in fasta_dict.items():
         file_handle.write(">" + seq_name + "\n" + seq + "\n")

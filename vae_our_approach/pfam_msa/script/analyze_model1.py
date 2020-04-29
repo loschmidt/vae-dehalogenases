@@ -17,9 +17,27 @@ from sklearn import linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sys import exit
 from ete3 import Tree
+import argparse
 
+parser = argparse.ArgumentParser(description='Parameters for training the model')
+parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
+parser.add_argument("--RPgroup", help = "RP specifier of given Pfam_id family, e.g. RP15")
+
+args = parser.parse_args()
+
+# Prepare input name and create directory name
+gen_dir_id = ""
+out_dir = "./output"
+## get RP subgroup if it is specified
+if args.RPgroup is not None and args.Pfam_id is not None:
+    rp_id = args.RPgroup
+    pfam_id = args.Pfam_id
+    gen_dir_id = "{0}_{1}".format(pfam_id, rp_id)
+    out_dir = "./output/{0}".format(gen_dir_id)
+
+#
 ## read data
-with open("./output/seq_msa_binary.pkl", 'rb') as file_handle:
+with open(out_dir + "/seq_msa_binary.pkl", 'rb') as file_handle:
     msa_binary = pickle.load(file_handle)    
 num_seq = msa_binary.shape[0]
 len_protein = msa_binary.shape[1]
@@ -27,7 +45,7 @@ num_res_type = msa_binary.shape[2]
 msa_binary = msa_binary.reshape((num_seq, -1))
 msa_binary = msa_binary.astype(np.float32)
 
-with open("./output/keys_list.pkl", 'rb') as file_handle:
+with open(out_dir + "/keys_list.pkl", 'rb') as file_handle:
     msa_keys = pickle.load(file_handle)    
 
 msa_weight = np.ones(num_seq) / num_seq
@@ -39,7 +57,7 @@ train_data_loader = DataLoader(train_data, batch_size = batch_size)
 vae = VAE(20, 2, len_protein * num_res_type, [100])
 vae.cuda()
 #vae.load_state_dict(torch.load("./output/vae_0.01.model"))
-vae.load_state_dict(torch.load("./output/model/vae_0.01_fold_0.model"))
+vae.load_state_dict(torch.load(out_dir + "/model/vae_0.01_fold_0.model"))
 
 mu_list = []
 sigma_list = []
@@ -54,10 +72,10 @@ for idx, data in enumerate(train_data_loader):
 mu = np.vstack(mu_list)
 sigma = np.vstack(sigma_list)
 
-with open("./output/latent_space.pkl", 'wb') as file_handle:
+with open(out_dir + "/latent_space.pkl", 'wb') as file_handle:
     pickle.dump({'key': key, 'mu': mu, 'sigma': sigma}, file_handle)
 
-with open("./output/latent_space.pkl", 'rb') as file_handle:
+with open(out_dir + "/latent_space.pkl", 'rb') as file_handle:
     latent_space = pickle.load(file_handle)
 mu = latent_space['mu']
 sigma = latent_space['sigma']
@@ -70,7 +88,7 @@ plt.ylim((-6, 6))
 plt.xlabel("$Z_1$")
 plt.ylabel("$Z_2$")
 plt.tight_layout()
-plt.savefig("./output/Fibronectin_III_latent_mu_scatter.png")
+plt.savefig(out_dir + "/{0}_latent_mu_scatter.png".format(gen_dir_id))
     
 ## plot latent space    
 # t = Tree("./output/random_tree.newick", format = 1)

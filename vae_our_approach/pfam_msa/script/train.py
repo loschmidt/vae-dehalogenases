@@ -28,20 +28,41 @@ sys.path.append("/home/xqding/course/projectsOnGitHub/PEVAE_Paper/pfam_msa/scrip
 from VAE_model import *
 from sys import exit
 import argparse
+import subprocess as sp   ## command line hangling
 
 parser = argparse.ArgumentParser(description='Parameters for training the model')
 parser.add_argument('--num_epoch', type=int)
 parser.add_argument('--weight_decay', type = float)
+parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
+parser.add_argument("--RPgroup", help = "RP specifier of given Pfam_id family, e.g. RP15")
+
 args = parser.parse_args()
 
 num_epoches = args.num_epoch
 weight_decay = args.weight_decay
 
+pfam_id = args.Pfam_id
+## get RP subgroup if it is specified
+rp_id = ""
+if args.RPgroup is not None:
+    rp_id = args.RPgroup
+else:
+    ## using full sequence
+    rp_id = "full"
+
+## Prepare input name and create directory name
+gen_dir_id = "{0}_{1}".format(pfam_id, rp_id)
+out_dir = "./output/{0}".format(gen_dir_id)
+
 print("num_epoches: ", num_epoches)
 print("weight_decay: ", str(weight_decay))
+print("output directory: ", out_dir)
+
+## Create output directory in ../output/out_dir/
+sp.run("mkdir -p {0}/model".format(out_dir), shell=True)
 
 ## read data
-with open("./output/seq_msa_binary.pkl", 'rb') as file_handle:
+with open(out_dir + "/seq_msa_binary.pkl", 'rb') as file_handle:
     seq_msa_binary = pickle.load(file_handle)    
 num_seq = seq_msa_binary.shape[0]
 len_protein = seq_msa_binary.shape[1]
@@ -49,11 +70,11 @@ num_res_type = seq_msa_binary.shape[2]
 seq_msa_binary = seq_msa_binary.reshape((num_seq, -1))
 seq_msa_binary = seq_msa_binary.astype(np.float32)
 
-with open("./output/seq_weight.pkl", 'rb') as file_handle:
+with open(out_dir + "/seq_weight.pkl", 'rb') as file_handle:
     seq_weight = pickle.load(file_handle)
 seq_weight = seq_weight.astype(np.float32)
 
-with open("./output/keys_list.pkl", 'rb') as file_handle:
+with open(out_dir + "/keys_list.pkl", 'rb') as file_handle:
     seq_keys = pickle.load(file_handle)
 
 #### training model with K-fold cross validation
@@ -113,7 +134,7 @@ for k in range(K):
 
     ## cope trained model to cpu and save it
     vae.cpu()
-    torch.save(vae.state_dict(), "./output/model/vae_{}_fold_{}.model".format(str(weight_decay), k))
+    torch.save(vae.state_dict(), out_dir + "/model/vae_{}_fold_{}.model".format(str(weight_decay), k))
 
     print("Finish the {}th fold training".format(k))
     print("="*60)
@@ -157,7 +178,7 @@ elbo_mean = np.mean(elbo_all)
 ## weight decay factor or network structure that has large mean_elbo
 print("mean_elbo: {:.3f}".format(elbo_mean))
 
-with open("./output/elbo_all.pkl", 'wb') as file_handle:
+with open(out_dir + "/elbo_all.pkl", 'wb') as file_handle:
     pickle.dump(elbo_all, file_handle)
 
 ## after choosing the weight decay and network structure that have
