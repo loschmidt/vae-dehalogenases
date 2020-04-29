@@ -16,9 +16,7 @@ else
   conda activate #vae-env
 
   # Download desire sequence and its rps and seed seq
-  pwd
   cd $SCRIPT_RUN
-  pwd
   python3 ./script/download_MSA.py --Pfam_id ${1}
   cd ../../.
   # Deactivate venv
@@ -28,7 +26,7 @@ else
   for rp_i in "full" "rp75" "rp55" "rp35" "rp15" "seed"; do
     # Run qsub with desired param
     echo "Running qsub on GPU node with sequence ${1} and ${rp_i}"
-   # qsub -v seqID=${1},rp=${rp_i} train_vae.sh &
+    qsub -v seqID=${1},rp=${rp_i} train_vae.sh &
   done
 fi
 
