@@ -18,7 +18,7 @@ parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
 args = parser.parse_args()
 pfam_id = args.Pfam_id
 
-down_seq = ["full", "RP75", "RP55", "RP35", "RP15", "seed"]
+down_seq = ["full", "rp75", "rp55", "rp35", "rp15", "seed"]
 
 for dow in down_seq:
     print("Downloading the {1} multiple sequence alignment for Pfam: {0} ......".format(pfam_id, dow))
