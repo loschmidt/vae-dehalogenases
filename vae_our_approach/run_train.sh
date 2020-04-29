@@ -3,7 +3,7 @@
 ## This git repository is allocate in DATADIR_BASE/AI-dir/vae-for-hlds
 ## Please change for your location
 DATADIR_BASE=/storage/brno2/home/xkohou15
-SCRIPT_RUN=./AI_dir/var-for-hlds/vae_our_approach/pfam_msa
+SCRIPT_RUN=AI_dir/vae-for-hlds/vae_our_approach/pfam_msa
 
 # check number of parameters
 if [ $# == 0 ]; then
@@ -15,8 +15,10 @@ else
   source .bashrc
   conda activate #vae-env
 
-  # Download desire sequence and its rps and seed seqs
+  # Download desire sequence and its rps and seed seq
+  pwd
   cd $SCRIPT_RUN
+  pwd
   python3 ./script/download_MSA.py --Pfam_id ${1}
   cd ../../.
   # Deactivate venv
@@ -26,7 +28,7 @@ else
   for rp_i in "full" "rp75" "rp55" "rp35" "rp15" "seed"; do
     # Run qsub with desired param
     echo "Running qsub on GPU node with sequence ${1} and ${rp_i}"
-    qsub -v seqID=${1},rp=${rp_i} train_vae.sh &
+   # qsub -v seqID=${1},rp=${rp_i} train_vae.sh &
   done
 fi
 
