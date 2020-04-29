@@ -1,13 +1,13 @@
 #!/bin/bash
-#PBS -N latentSpaceJob
-#PBS -q gpu -l select=1:ngpus=1:mem=20gb:scratch_local=500mb
+#PBS -N latentSpaceJob${seqID}${rp}
+#PBS -q gpu -l select=1:ngpus=1:mem=2gb:scratch_local=500mb
 #PBS -l walltime=24:00:00 
 #PBS -m ae
 
 # define a DATADIR variable: directory where the input files are taken from and where output will be copied to
 DATADIR_BASE=/storage/brno2/home/xkohou15 # substitute to your home directory
-DATADIR=/storage/brno2/xkohou15/AI_dir/vae-for-hlds/vae_our_aproach/pfam_msa # substitute username and path to to your real username and path
-LOGDIR=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_aproach/pfam_msa # substitute for your log directory
+DATADIR=/storage/brno2/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/pfam_msa # substitute username and path to to your real username and path
+LOGDIR=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/pfam_msa # substitute for your log directory
 
 # Parse passed sequence code throught param
 PFAMSEQ=${seqID}
