@@ -46,7 +46,7 @@ sp.run("mkdir -p {0}/highlight".format(out_dir))
 ## Get keys and show them
 
 
-group_name = file_name.split(".")[0]
+group_name = file_name.split(".")[0].split("/")[-1]
 colors = ("red", "blue")
 groups = ("latent space", group_name)
 
