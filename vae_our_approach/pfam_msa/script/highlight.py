@@ -41,7 +41,7 @@ with open(file_name, 'r') as file_handle:
         seq_dict[seq_id] = seq.upper()
 
 ## create directory for highlight
-sp.run("mkdir -p {0}/highlight".format(out_dir))
+sp.run("mkdir -p {0}/highlight".format(out_dir), shell=True)
 
 ## Get keys and show them
 
