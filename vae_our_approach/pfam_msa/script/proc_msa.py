@@ -2,14 +2,10 @@ __author__ = "Xinqiang Ding <xqding@umich.edu>"
 __date__ = "2017/05/10 19:51:12"
 
 import pickle
-import sys
 import numpy as np
-from sys import exit
 import argparse
-import random
-from ete3 import Tree
 
-PRAGMA_REFERENCE = True
+PRAGMA_REFERENCE = False
 
 parser = argparse.ArgumentParser(description = "Process given MSA")
 parser.add_argument("--Pfam_file", help = "the ID of Pfam; e.g. PF00041")
