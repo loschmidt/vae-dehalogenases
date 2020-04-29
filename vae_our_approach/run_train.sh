@@ -12,7 +12,6 @@ if [ $# == 0 ]; then
 else
   cd $DATADIR_BASE
   # Activate venv for download script
-  cd ../../.
   source .bashrc
   conda activate #vae-env
 
@@ -27,7 +26,7 @@ else
   for rp_i in "full" "rp75" "rp55" "rp35" "rp15" "seed"; do
     # Run qsub with desired param
     echo "Running qsub on GPU node with sequence ${1} and ${rp_i}"
-    qsub -v seqID=${1} rp=${rp_i} train_vae.sh &
+    qsub -v seqID=${1},rp=${rp_i} train_vae.sh &
   done
 fi
 
