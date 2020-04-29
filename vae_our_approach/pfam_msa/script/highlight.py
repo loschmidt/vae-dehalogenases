@@ -68,7 +68,7 @@ succ = 0
 fail = 0
 for n in names:
     try:
-        idx.append(key2idx[n])
+        idx.append(int(key2idx[n]))
         succ += 1
     except KeyError as e:
         fail += 1
@@ -79,10 +79,10 @@ plt.figure(0)
 plt.clf()
 plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3)
 ## Plot selected
-plt.plot(mu[idx:, 0], mu[idx:, 1], '.', color='red', alpha=0.1, markersize=5)
+plt.plot(mu[idx, 0], mu[idx, 1], '.', color='red', alpha=1, markersize=3)
 plt.xlim((-6, 6))
 plt.ylim((-6, 6))
 plt.xlabel("$Z_1$")
 plt.ylabel("$Z_2$")
 plt.tight_layout()
-plt.savefig(out_dir + "/{0}_{1}_highlight.png".format(gen_dir_id, group_name))
+plt.savefig(out_dir + "/highlight/{0}_{1}_highlight.png".format(gen_dir_id, group_name))
