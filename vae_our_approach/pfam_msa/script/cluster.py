@@ -14,9 +14,32 @@ mpl.rc('ytick', labelsize = 'large')
 import matplotlib.pyplot as plt
 from sklearn import linear_model
 import time
+import argparse
+import subprocess as sp   ## command line hangling
+
+parser = argparse.ArgumentParser(description='Parameters for clustering')
+parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
+parser.add_argument("--RPgroup", help = "RP specifier of given Pfam_id family, e.g. RP15")
+
+args = parser.parse_args()
+
+# Prepare input name and create directory name
+gen_dir_id = ""
+src_dir = "./output"
+out_dir = "./output"
+## get RP subgroup if it is specified
+if args.RPgroup is not None and args.Pfam_id is not None:
+    rp_id = args.RPgroup
+    pfam_id = args.Pfam_id
+    gen_dir_id = "{0}_{1}".format(pfam_id, rp_id)
+    src_dir = "./output/{0}".format(gen_dir_id)
+    out_dir = "./output/{0}/clustering".format(gen_dir_id)
+
+## Prepare cluster directory if not exists
+sp.run("mkdir {0}".format(out_dir), shell=True)
 
 ## read latent space representation
-with open("./output/latent_space.pkl", 'rb') as file_handle:
+with open(src_dir + "/latent_space.pkl", 'rb') as file_handle:
     data = pickle.load(file_handle)
 key = data['key']
 mu = data['mu']
@@ -27,7 +50,7 @@ for i in range(len(key)):
     key2idx[key[i]] = i
 
 ## read tree
-t = Tree("./FastTree/fast_tree.newick", format = 1)
+t = Tree("./FastTree/{0}.newick".format(gen_dir_id), format = 1)
 num_leaf = len(t)
 t.name = str(num_leaf)
 ##leaf_idx = []
@@ -111,7 +134,7 @@ for i in range(len(head_node_names)):
 plt.xlabel(r'$Z_1$')
 plt.ylabel(r'$Z_2$')
 plt.tight_layout()
-fig.savefig("./output/cluster.eps")
+fig.savefig(out_dir + "/cluster.eps")
 
 main_nodes = []
 
@@ -166,7 +189,7 @@ for branch in main_nodes[4:11]:
     plt.xlabel(r'$Z_1$')
     plt.ylabel(r'$Z_2$')
     plt.tight_layout()
-    fig.savefig("./output/branch_{}_cluster.eps".format(branch.replace("/","_")))
+    fig.savefig(out_dir + "/branch_{}_cluster.eps".format(branch.replace("/","_")))
 
 
 #plt.show()
