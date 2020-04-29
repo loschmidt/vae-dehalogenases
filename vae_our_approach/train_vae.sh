@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -N latentSpaceJob${seqID}${rp}
+#PBS -N latentSpaceJob
 #PBS -q gpu -l select=1:ngpus=1:mem=2gb:scratch_local=500mb
 #PBS -l walltime=24:00:00 
 #PBS -m ae
