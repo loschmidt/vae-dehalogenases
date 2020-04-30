@@ -27,7 +27,11 @@ if args.High is None:
     print("Nothing to highlight!! Use --High file_name in Stackholm format")
     exit(0)
 
-in_files = [int(item) for item in args.High.split(',')]
+in_files = [item for item in args.High.split(',')]
+## Not array of files just one file
+if len(in_files) == 0:
+    in_files = args.High
+
 ## read all the sequences into a dictionary
 high_seq = {}
 for file_name in in_files:
@@ -49,7 +53,7 @@ sp.run("mkdir -p {0}/highlight".format(out_dir), shell=True)
 ## Get keys and show them
 labels = ["latent space"]
 for file_name in in_files:
-    label_name = file_name.split(".")[0].split("/")[-1]
+    label_name = file_name.split(".")[-2].split("/")[-1]
     labels.append(label_name)
 
 colors = ["red", "brown", "black", "green", "yellow", "magenta"]
@@ -99,4 +103,4 @@ plt.ylim((-6, 6))
 plt.xlabel("$Z_1$")
 plt.ylabel("$Z_2$")
 plt.tight_layout()
-plt.savefig(out_dir + "/highlight/{0}_{1}_highlight.png".format(gen_dir_id, labels[0]))
+plt.savefig(out_dir + "/highlight/{0}_{1}_highlight.png".format(gen_dir_id, labels[-1]))
