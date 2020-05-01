@@ -66,6 +66,10 @@ for rps in in_files:
     msa_weight = msa_weight.astype(np.float32)
 
     batch_size = num_seq
+
+    msa_binary = msa_binary.reshape((num_seq, -1))
+    msa_binary = msa_binary.astype(np.float32)
+
     train_data = MSA_Dataset(msa_binary, msa_weight, msa_keys)
     train_data_loader = DataLoader(train_data, batch_size = batch_size)
 
