@@ -149,7 +149,7 @@ for k in dict_lat_sps.keys():
     col = colors[color_i]
     color_i += 1
     plt.plot(sub_mu[:, 0], sub_mu[:, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i]) ## Overlap original with subfamily
-plt.title("All RPs")
+graph_str = "All RPs"
 plt.legend(loc='upper right')
 plt.xlim((-6, 6))
 plt.ylim((-6, 6))
@@ -161,5 +161,5 @@ save_name = out_dir + "/highlight/"
 for i in range(1,len(labels)):
     save_name += labels[i].split("_")[-1] + "_"
 save_name += "highlight.png"
-print(" Saving plot to : {1}".format(save_name))
+print(" Saving plot to : {0}".format(save_name))
 plt.savefig(save_name)
