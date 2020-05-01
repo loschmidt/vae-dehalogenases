@@ -23,7 +23,9 @@ class MSA_VAE_loader():
         '''
         Creates binary sequence of given length
         '''
-        seq_msa, key_list = self._rem_seq_with_unknown_res(self.seq_dict)
+        ret = self._rem_seq_with_unknown_res(self.seq_dict)
+        seq_msa = ret[0]
+        key_list = ret[1]
         seq_msa = self._aling_to_len(seq_msa, length)
         seq_msa_binary = self._to_binary(seq_msa)
         return seq_msa_binary, key_list

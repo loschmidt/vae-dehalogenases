@@ -57,7 +57,9 @@ for rps in in_files:
     dict_key = rps.split(".")[-2].split("/")[-1]
     ## Load data and prepare them for VAE
     msa_vae = MSA_VAE_loader(rps, gen_dir_id)
-    msa_binary, msa_keys = msa_vae.binary_seq(len_protein)
+    ret = msa_vae.binary_seq(len_protein)
+    msa_binary = ret[0]
+    msa_keys = ret[1]
 
     num_seq = msa_binary.shape[0]
     msa_weight = np.ones(num_seq) / num_seq
