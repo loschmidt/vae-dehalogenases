@@ -67,17 +67,14 @@ if PRAGMA_REFERENCE:
     query_seq = seq_dict[query_seq_id] ## without gaps
 
 ## remove sequences with too many gaps
-if PRAGMA_REFERENCE:
-    len_query_seq = len(query_seq)
-    seq_id = list(seq_dict.keys())
-    num_gaps = []
-    for k in seq_id:
-        num_gaps.append(seq_dict[k].count("-") + seq_dict[k].count("."))
-        if seq_dict[k].count("-") + seq_dict[k].count(".") > 10:
-            seq_dict.pop(k)
+seq_id = list(seq_dict.keys())
+num_gaps = []
+for k in seq_id:
+    if seq_dict[k].count("-") + seq_dict[k].count(".") > 10:
+        seq_dict.pop(k)
 
-    with open(out_dir + "/seq_dict.pkl", 'wb') as file_handle:
-        pickle.dump(seq_dict, file_handle)
+with open(out_dir + "/seq_dict.pkl", 'wb') as file_handle:
+    pickle.dump(seq_dict, file_handle)
         
 ## convert aa type into num 0-20
 aa = ['R', 'H', 'K',
