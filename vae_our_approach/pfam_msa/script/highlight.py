@@ -112,11 +112,12 @@ for file_name in in_files:
 cnt_of_subplots = len(labels) + 1 ## plus everything
 str_plot = str(cnt_of_subplots) + "2"
 
+save_loc = out_dir + "/highlight/"
+
 plt.figure(0)
 plt.clf()
 ## Initial plot with latent space
 cur_sub = str_plot + str(1)
-plt.subplot(int(cur_sub))
 plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0])
 plt.yscale('linear')
 plt.title = labels[0]
@@ -125,15 +126,18 @@ plt.ylim((-6, 6))
 plt.xlabel("$Z_1$")
 plt.ylabel("$Z_2$")
 plt.tight_layout()
+save_name = save_loc + labels[0] + "_highlight.png"
+print(" Saving plot to : {0}".format(save_name))
+plt.savefig(save_name)
 
 ## plot individual subplots
 color_i = 0
 for k in dict_lat_sps.keys():
+    plt.clf()
     sub_mu = dict_lat_sps[k]['mu']
     col = colors[color_i]
     color_i += 1
     cur_sub = str_plot + str(color_i+1)
-    plt.subplot(int(cur_sub))
     plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
     plt.plot(sub_mu[:, 0], sub_mu[:, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i]) ## Overlap original with subfamily
     plt.yscale('linear')
@@ -145,10 +149,13 @@ for k in dict_lat_sps.keys():
     plt.xlabel("$Z_1$")
     plt.ylabel("$Z_2$")
     plt.tight_layout()
+    save_name = save_loc + labels[color_i] + "_highlight.png"
+    print(" Saving plot to : {0}".format(save_name))
+    plt.savefig(save_name)
 
 ## Print everything at one last plot
+plt.clf()
 cur_sub = str_plot + str(cnt_of_subplots)
-plt.subplot(int(cur_sub))
 plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
 plt.yscale('linear')
 color_i = 0
@@ -168,7 +175,7 @@ plt.tight_layout()
 
 plt.subplots_adjust(top=2.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25, wspace=0.35)
 
-save_name = out_dir + "/highlight/"
+save_name = save_loc
 for i in range(1,len(labels)):
     save_name += labels[i].split("_")[-1] + "_"
 save_name += "highlight.png"
