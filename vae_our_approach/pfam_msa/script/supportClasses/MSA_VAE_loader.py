@@ -46,7 +46,7 @@ class MSA_VAE_loader():
         ## remove sequences with too many gaps
         seq_id = list(seq_dict.keys())
         for k in seq_id:
-            if seq_dict[k].count("-") + seq_dict[k].count(".") > 0.8*len(seq_dict[k]):
+            if seq_dict[k].count("-") + seq_dict[k].count(".") > 0.99*len(seq_dict[k]):
                 seq_dict.pop(k)
 
         return seq_dict
@@ -78,11 +78,13 @@ class MSA_VAE_loader():
         This method is optimized for highlighting RPXX subfamilies in a plot
         '''
         pos_idx = []
+        print("Length of posind is {0}".format(len(self.pos_ind)))
+        print("Length of loaded seq: {0} {1}".format(seq_msa.shape[0],seq_msa.shape[1]))
         for i in self.pos_ind:
             ## Remove column in legal range and keep enough column count
-            if i < seq_msa.shape[1] and seq_msa.shape[1]-pos_idx >= length:
+            if i < seq_msa.shape[1]:
                 pos_idx.append(i)
-
+        print("Lenght of pos_idx {0}".format(len(pos_idx)))
         seq_msa = seq_msa[:, np.array(pos_idx)]
         if seq_msa.shape[1] == length:
             return seq_msa
