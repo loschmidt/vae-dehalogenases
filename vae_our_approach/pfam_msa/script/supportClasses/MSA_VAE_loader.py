@@ -46,7 +46,7 @@ class MSA_VAE_loader():
         ## remove sequences with too many gaps
         seq_id = list(seq_dict.keys())
         for k in seq_id:
-            if seq_dict[k].count("-") + seq_dict[k].count(".") > 10:
+            if seq_dict[k].count("-") + seq_dict[k].count(".") > 0.8*len(seq_dict[k]):
                 seq_dict.pop(k)
 
         return seq_dict
