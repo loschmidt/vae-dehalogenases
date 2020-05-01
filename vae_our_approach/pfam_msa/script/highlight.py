@@ -162,6 +162,8 @@ plt.xlabel("$Z_1$")
 plt.ylabel("$Z_2$")
 plt.tight_layout()
 
+plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25, wspace=0.35)
+
 save_name = out_dir + "/highlight/"
 for i in range(1,len(labels)):
     save_name += labels[i].split("_")[-1] + "_"
