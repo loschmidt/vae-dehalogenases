@@ -68,7 +68,6 @@ if PRAGMA_REFERENCE:
 
 ## remove sequences with too many gaps
 seq_id = list(seq_dict.keys())
-num_gaps = []
 for k in seq_id:
     if seq_dict[k].count("-") + seq_dict[k].count(".") > 10:
         seq_dict.pop(k)
