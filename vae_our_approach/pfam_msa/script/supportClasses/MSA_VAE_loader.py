@@ -79,7 +79,8 @@ class MSA_VAE_loader():
         '''
         pos_idx = []
         for i in self.pos_ind:
-            if i < seq_msa.shape[1]:
+            ## Remove column in legal range and keep enough column count
+            if i < seq_msa.shape[1] and seq_msa.shape[1]-pos_idx >= length:
                 pos_idx.append(i)
 
         seq_msa = seq_msa[:, np.array(pos_idx)]
