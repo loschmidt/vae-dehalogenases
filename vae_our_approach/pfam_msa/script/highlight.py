@@ -3,8 +3,14 @@ __date__ = "2020/04/30 00:33:12"
 
 import argparse
 import pickle
+import numpy as np
 import matplotlib.pyplot as plt
 import subprocess as sp   ## command line hangling
+
+import torch
+
+from supportClasses.MSA_VAE_loader import *
+from VAE_model import *
 
 parser = argparse.ArgumentParser(description='Parameters for training the model')
 parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
@@ -24,31 +30,72 @@ if args.RPgroup is not None and args.Pfam_id is not None:
     out_dir = "./output/{0}".format(gen_dir_id)
 
 if args.High is None:
-    print("Nothing to highlight!! Use --High file_name in Stackholm format")
+    print("Nothing to highlight!! Use --High file_name in Stockholm format")
     exit(0)
 
 in_files = [item for item in args.High.split(',')]
 ## Not array of files just one file
 if len(in_files) == 0:
-    in_files = args.High
-
-## read all the sequences into a dictionary
-high_seq = {}
-for file_name in in_files:
-    seq_dict = {}
-    with open(file_name, 'r') as file_handle:
-        for line in file_handle:
-            if line[0] == "#" or line[0] == "/" or line[0] == "":
-                continue
-            line = line.strip()
-            if len(line) == 0:
-                continue
-            seq_id, seq = line.split()
-            seq_dict[seq_id] = seq.upper()
-    high_seq[file_name] = seq_dict.copy()
+    in_files = [args.High]
 
 ## create directory for highlight
 sp.run("mkdir -p {0}/highlight".format(out_dir), shell=True)
+
+## prepare model to mapping from highlighting files
+with open(out_dir + "/seq_msa_binary.pkl", 'rb') as file_handle:
+    msa_original_binary = pickle.load(file_handle)
+len_protein = msa_original_binary.shape[1]
+num_res_type = msa_original_binary.shape[2]
+vae = VAE(20, 2, len_protein * num_res_type, [100])
+vae.cuda()
+vae.load_state_dict(torch.load(out_dir + "/model/vae_0.01_fold_0.model"))
+
+## read data from highlighting files, transform to binary and run through VAE
+dict_lat_sps = {}
+for rps in in_files:
+    ## Prepare key to dictionary
+    dict_key = rps.split(".")[-2].split("/")[-1]
+    ## Load data and prepare them for VAE
+    msa_vae = MSA_VAE_loader(rps, gen_dir_id)
+    msa_binary, msa_keys = msa_vae.binary_seq(len_protein)
+
+    num_seq = msa_binary.shape[0]
+    msa_weight = np.ones(num_seq) / num_seq
+    msa_weight = msa_weight.astype(np.float32)
+
+    batch_size = num_seq
+    train_data = MSA_Dataset(msa_binary, msa_weight, msa_keys)
+    train_data_loader = DataLoader(train_data, batch_size = batch_size)
+
+    mu_list = []
+    sigma_list = []
+    for idx, data in enumerate(train_data_loader):
+        msa, weight, key = data
+        with torch.no_grad():
+            msa = msa.cuda()
+            mu, sigma = vae.encoder(msa)
+            mu_list.append(mu.cpu().data.numpy())
+            sigma_list.append(sigma.cpu().data.numpy())
+
+    mu = np.vstack(mu_list)
+    sigma = np.vstack(sigma_list)
+
+    rp_latent_space = {}
+    rp_latent_space['mu'] = mu
+    rp_latent_space['sigma'] = sigma
+    dict_lat_sps[dict_key] = rp_latent_space
+
+## Get referent latent space (it'll be background in plots)
+with open(out_dir + "/latent_space.pkl", 'rb') as file_handle:
+    latent_space = pickle.load(file_handle)
+mu = latent_space['mu']
+sigma = latent_space['sigma']
+key = latent_space['key']
+
+## ---------------
+## Plotting part
+## ---------------
+colors = ["red", "green", "brown", "black", "yellow", "magenta"]
 
 ## Get keys and show them
 labels = ["latent space"]
@@ -56,51 +103,57 @@ for file_name in in_files:
     label_name = file_name.split(".")[-2].split("/")[-1]
     labels.append(label_name)
 
-colors = ["red", "brown", "black", "green", "yellow", "magenta"]
-
-with open(out_dir + "/latent_space.pkl", 'rb') as file_handle:
-    latent_space = pickle.load(file_handle)
-mu = latent_space['mu']
-sigma = latent_space['sigma']
-key = latent_space['key']
-
-## Key to representation of index
-key2idx = {}
-for i in range(len(key)):
-    key2idx[key[i]] = i
-
-## Name to highlight and gets its indices
-high_idx = {}
-for file_name in in_files:
-    names = high_seq[file_name].keys()
-    idx = []
-    succ = 0
-    fail = 0
-    for n in names:
-        try:
-            idx.append(int(key2idx[n]))
-            succ += 1
-        except KeyError as e:
-            fail += 1
-    print(file_name, " Success: ", succ, " Fails: ", fail)
-    high_idx[file_name] = idx.copy()
+cnt_of_subplots = len(labels) + 1 ## plus everything
+str_plot = str(cnt_of_subplots) + "1"
 
 plt.figure(0)
 plt.clf()
+## Initial plot with latent space
+cur_sub = str_plot + str(1)
+plt.subplot(int(cur_sub))
 plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0])
+plt.title = labels[0]
 
-## Plot selected
+## plot individual subplots
 color_i = 0
-for file_name in in_files:
-    idx = high_idx[file_name]
+for k in dict_lat_sps.keys():
+    sub_mu = dict_lat_sps[k]['mu']
     col = colors[color_i]
     color_i += 1
-    plt.plot(mu[idx, 0], mu[idx, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i])
+    cur_sub = str_plot + str(color_i+1)
+    plt.subplot(int(cur_sub))
+    plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
+    plt.plot(sub_mu[:, 0], sub_mu[:, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i]) ## Overlap original with subfamily
+    plt.title = labels[color_i].split("_")[-1]
 
+    plt.legend(loc='upper right')
+    plt.xlim((-6, 6))
+    plt.ylim((-6, 6))
+    plt.xlabel("$Z_1$")
+    plt.ylabel("$Z_2$")
+    plt.tight_layout()
+
+## Print everything at one last plot
+cur_sub = str_plot + str(cnt_of_subplots)
+plt.subplot(int(cur_sub))
+plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
+color_i = 0
+for k in dict_lat_sps.keys():
+    sub_mu = dict_lat_sps[k]['mu']
+    col = colors[color_i]
+    color_i += 1
+    plt.plot(sub_mu[:, 0], sub_mu[:, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i]) ## Overlap original with subfamily
+plt.title("All RPs")
 plt.legend(loc='upper right')
 plt.xlim((-6, 6))
 plt.ylim((-6, 6))
 plt.xlabel("$Z_1$")
 plt.ylabel("$Z_2$")
 plt.tight_layout()
-plt.savefig(out_dir + "/highlight/{0}_{1}_highlight.png".format(gen_dir_id, labels[-1]))
+
+save_name = out_dir + "/highlight/"
+for i in range(1,len(labels)):
+    save_name += labels[i].split("_")[-1] + "_"
+save_name += "highlight.png"
+print(" Saving plot to : {1}".format(save_name))
+plt.savefig(save_name)
