@@ -118,6 +118,7 @@ plt.clf()
 cur_sub = str_plot + str(1)
 plt.subplot(int(cur_sub))
 plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0])
+plt.yscale('linear')
 plt.title = labels[0]
 plt.xlim((-6, 6))
 plt.ylim((-6, 6))
@@ -135,6 +136,7 @@ for k in dict_lat_sps.keys():
     plt.subplot(int(cur_sub))
     plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
     plt.plot(sub_mu[:, 0], sub_mu[:, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i]) ## Overlap original with subfamily
+    plt.yscale('linear')
     plt.title = labels[color_i].split("_")[-1]
 
     plt.legend(loc='upper right')
@@ -148,12 +150,14 @@ for k in dict_lat_sps.keys():
 cur_sub = str_plot + str(cnt_of_subplots)
 plt.subplot(int(cur_sub))
 plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
+plt.yscale('linear')
 color_i = 0
 for k in dict_lat_sps.keys():
     sub_mu = dict_lat_sps[k]['mu']
     col = colors[color_i]
     color_i += 1
     plt.plot(sub_mu[:, 0], sub_mu[:, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i]) ## Overlap original with subfamily
+    plt.yscale('linear')
 graph_str = "All RPs"
 plt.legend(loc='upper right')
 plt.xlim((-6, 6))
@@ -162,7 +166,7 @@ plt.xlabel("$Z_1$")
 plt.ylabel("$Z_2$")
 plt.tight_layout()
 
-plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25, wspace=0.35)
+plt.subplots_adjust(top=2.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25, wspace=0.35)
 
 save_name = out_dir + "/highlight/"
 for i in range(1,len(labels)):
