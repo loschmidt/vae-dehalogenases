@@ -85,6 +85,17 @@ class MSA_VAE_loader():
             if i < seq_msa.shape[1]:
                 pos_idx.append(i)
         print("Lenght of pos_idx {0}".format(len(pos_idx)))
+        if len(pos_idx) < length:
+            ## It is smaller keep some valuable sequences positions
+            gaps_idx = {}  ## count of gaps, index
+            for i in range(seq_msa.shape[1]):
+                gaps_idx[i] = np.sum(seq_msa[:, i] != 0)
+            gaps_idx = {k: v for k, v in sorted(gaps_idx.items(), key=lambda item: item[1])}
+            while len(pos_idx) < length:
+                k, v = gaps_idx.popitem()
+                if k not in pos_idx:
+                    pos_idx.append(k)
+        print("Lenght of pos_idx {0}".format(len(pos_idx)))
         seq_msa = seq_msa[:, np.array(pos_idx)]
         if seq_msa.shape[1] == length:
             return seq_msa
