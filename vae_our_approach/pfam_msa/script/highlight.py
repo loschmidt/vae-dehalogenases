@@ -110,7 +110,7 @@ for file_name in in_files:
     labels.append(label_name)
 
 cnt_of_subplots = len(labels) + 1 ## plus everything
-str_plot = str(cnt_of_subplots) + "1"
+str_plot = str(cnt_of_subplots) + "2"
 
 plt.figure(0)
 plt.clf()
@@ -119,6 +119,11 @@ cur_sub = str_plot + str(1)
 plt.subplot(int(cur_sub))
 plt.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0])
 plt.title = labels[0]
+plt.xlim((-6, 6))
+plt.ylim((-6, 6))
+plt.xlabel("$Z_1$")
+plt.ylabel("$Z_2$")
+plt.tight_layout()
 
 ## plot individual subplots
 color_i = 0
