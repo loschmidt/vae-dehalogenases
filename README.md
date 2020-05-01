@@ -43,4 +43,4 @@ batch scripts per specific file run by scripts above.
 of standard interface `--Pfam_id` and `--RPgroup`.
 * analyze_model1.py - creates latent space representation
 * highlight.py - shows subfamily mapping to latent space learned by selected `--Pfam_id` and `--RPgroup`
-family. `--High` option for file (multiple files) to be highlighted in selected latent space
+family. `--High` option for file (multiple files, delimiter `,`) to be highlighted in selected latent space
