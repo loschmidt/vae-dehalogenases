@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import subprocess as sp   ## command line hangling
 
 import torch
-
+from torch.utils.data import Dataset, DataLoader
 from supportClasses.MSA_VAE_loader import *
 from VAE_model import *
 
