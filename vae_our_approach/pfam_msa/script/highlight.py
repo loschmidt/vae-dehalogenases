@@ -143,7 +143,7 @@ for k in dict_lat_sps.keys():
     axs[(color_i // 2),(color_i % 2)].plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
     axs[(color_i // 2),(color_i % 2)].plot(sub_mu[:, 0], sub_mu[:, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i]) ## Overlap original with subfamily
     #plt.yscale('linear')
-    axs[(color_i // 2),(color_i % 2)].title = labels[color_i].split("_")[-1]
+    axs[(color_i // 2),(color_i % 2)].set_title(labels[color_i].split("_")[-1])
 
     axs[(color_i // 2),(color_i % 2)].legend(loc='upper right')
     #plt.xlim((-6, 6))
@@ -170,6 +170,7 @@ for k in dict_lat_sps.keys():
     plt.yscale('linear')
 graph_str = "All RPs"
 axs[(lats_plot // 2),(lats_plot % 2)].legend(loc='upper right')
+axs[(lats_plot // 2),(lats_plot % 2)].set_title(graph_str)
 #plt.xlim((-6, 6))
 #plt.ylim((-6, 6))
 #axs[(lats_plot // 2),(lats_plot % 2)].xlabel("$Z_1$")
@@ -188,4 +189,4 @@ for i in range(1,len(labels)):
     save_name += labels[i].split("_")[-1] + "_"
 save_name += "highlight.png"
 print(" Saving plot to : {0}".format(save_name))
-plt.savefig(save_name)
+plt.savefig(save_name,bbox_inches="tight")
