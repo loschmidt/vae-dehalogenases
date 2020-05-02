@@ -114,8 +114,6 @@ str_plot = str(cnt_of_subplots) + "2"
 
 save_loc = out_dir + "/highlight/"
 
-#plt.figure(0)
-#plt.clf()
 fig, axs = plt.subplots(4, 2)
 fig.set_size_inches(14.5, 28.5, forward=True)
 ## Initial plot with latent space
