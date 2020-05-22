@@ -3,6 +3,7 @@ __date__ = "2020/04/30 00:33:12"
 
 import argparse
 import pickle
+from math import ceil
 import numpy as np
 import matplotlib.pyplot as plt
 import subprocess as sp   ## command line hangling
@@ -64,32 +65,37 @@ for rps in in_files:
     msa_keys = ret[2]
     Mus = ret[0]
 
-    num_seq = msa_binary.shape[0]
-    msa_weight = np.ones(num_seq) / num_seq
-    msa_weight = msa_weight.astype(np.float32)
+    mu_list = np.ndarray(Mus.shape)
+    sigma_list = np.ndarray(Mus.shape)
+    if msa_binary is not None:
+        ## Some sequences will be process through VAE
+        num_seq = msa_binary.shape[0]
+        msa_weight = np.ones(num_seq) / num_seq
+        msa_weight = msa_weight.astype(np.float32)
 
-    batch_size = num_seq
+        batch_size = num_seq
 
-    msa_binary = msa_binary.reshape((num_seq, -1))
-    msa_binary = msa_binary.astype(np.float32)
+        msa_binary = msa_binary.reshape((num_seq, -1))
+        msa_binary = msa_binary.astype(np.float32)
 
-    train_data = MSA_Dataset(msa_binary, msa_weight, msa_keys)
-    train_data_loader = DataLoader(train_data, batch_size = batch_size)
+        train_data = MSA_Dataset(msa_binary, msa_weight, msa_keys)
+        train_data_loader = DataLoader(train_data, batch_size = batch_size)
 
-    mu_list = []
-    sigma_list = []
-    for idx, data in enumerate(train_data_loader):
-        msa, weight, key = data
-        with torch.no_grad():
-            msa = msa.cuda()
-            mu, sigma = vae.encoder(msa)
-            mu_list.append(mu.cpu().data.numpy())
-            sigma_list.append(sigma.cpu().data.numpy())
+        for idx, data in enumerate(train_data_loader):
+            msa, weight, key = data
+            with torch.no_grad():
+                msa = msa.cuda()
+                mu, sigma = vae.encoder(msa)
+                mu_list.append(mu.cpu().data.numpy())
+                sigma_list.append(sigma.cpu().data.numpy())
 
     ## Concat with name matched sequencies
-    mu = np.vstack(mu_list + Mus)
+    mu = []
+    if msa_binary is None:
+        mu = np.vstack(Mus)
+    else:
+        mu = np.vstack(np.concatenate((mu_list, Mus)))
     sigma = np.vstack(sigma_list)
-
     rp_latent_space = {}
     rp_latent_space['mu'] = mu
     rp_latent_space['sigma'] = sigma
@@ -115,7 +121,7 @@ for file_name in in_files:
 
 cnt_of_subplots = len(labels) + 1 ## plus plotting everything
 
-fig, axs = plt.subplots(cnt_of_subplots/2, 2)
+fig, axs = plt.subplots(ceil(cnt_of_subplots/2), 2)
 fig.set_size_inches(14.5, 28.5, forward=True)
 ## Initial plot with latent space
 axs[0,0].plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0])

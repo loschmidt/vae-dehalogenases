@@ -31,6 +31,9 @@ class MSA_VAE_loader():
         '''
         mus = self._name_match_with_origin()
         seq_msa = self._rem_seq_with_unknown_res(self.missing_seq)
+        if len(seq_msa) == 0:
+            ## Everything is removed due to unknown residues
+            return mus, None, self.key_list
         seq_msa = self._aling_to_len(seq_msa)
         seq_msa_binary = self._to_binary(seq_msa)
         return mus, seq_msa_binary, self.key_list
