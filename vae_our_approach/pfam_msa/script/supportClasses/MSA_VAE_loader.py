@@ -8,34 +8,39 @@ class MSA_VAE_loader():
     '''
     Class for transforming Stockholm file to binary seq code
     '''
-    def __init__(self, file_name, src_dir):
+    def __init__(self, file_name, src_dir, src_MSA_file):
         '''
         file_name - name of file in stockholm format to be prepared
         src_dir - name of directory in output directory with source latent space
+        src_MSA_file - name of file with main MSAs (for RPs rp75, for seeds highlight full set ...)
         '''
         self.file_name = file_name
         self.pickle_aa_index = "./output/{0}/aa_index.pkl".format(src_dir)
         self.pickle_inds = "./output/{0}/seq_pos_idx.pkl".format(src_dir)
-        self.seq_dict = self._init_dict()
-        self.pos_ind, self.aa_index = self._read_pickles()
+        self.pickle_key_list = "./output/{0}/keys_list.pkl".format(src_dir)
+        self.pickle_latent = "./output/{0}/latent_space.pkl".format(src_dir)
+        self.high_seq = self._init_dict(self.file_name)
+        self.seq_dict = self._init_dict(src_MSA_file)
+        self.pos_ind, self.aa_index, self.latent_keys, self.latent_mu, self.key_list= self._read_pickles()
+        self.missing_seq = {} # Will be initialized in _name_match_with_origin function
 
-    def binary_seq(self, length):
+    def get_Mus_and_unknown_binary_seq(self):
         '''
-        Creates binary sequence of given length
+        Prepare MUs of Gaussian matched through name match and
+        prepare seqs for future VAE processing with original weighting
         '''
-        ret = self._rem_seq_with_unknown_res(self.seq_dict)
-        seq_msa = ret[0]
-        key_list = ret[1]
-        seq_msa = self._aling_to_len(seq_msa, length)
+        mus = self._name_match_with_origin()
+        seq_msa = self._rem_seq_with_unknown_res(self.missing_seq)
+        seq_msa = self._aling_to_len(seq_msa)
         seq_msa_binary = self._to_binary(seq_msa)
-        return seq_msa_binary, key_list
+        return mus, seq_msa_binary, self.key_list
 
-    def _init_dict(self):
+    def _init_dict(self, file_name):
         '''
         Trasforming file to dictionary without sequences with lots of gaps
         '''
         seq_dict = {}
-        with open(self.file_name, 'r') as file_handle:
+        with open(file_name, 'r') as file_handle:
             for line in file_handle:
                 if line[0] == "#" or line[0] == "/" or line[0] == "":
                     continue
@@ -54,72 +59,43 @@ class MSA_VAE_loader():
         return seq_dict
 
     def _read_pickles(self):
-        ''' Just loads pickle files '''
+        '''
+        Just loads pickle files
+        '''
         aa_index = {}
         pos_idx = []
+        key_list = []
         with open(self.pickle_inds, 'rb') as file_handle:
             pos_idx = pickle.load(file_handle)
         with open(self.pickle_aa_index, 'rb') as file_handle:
             aa_index = pickle.load(file_handle)
-        return pos_idx, aa_index
+        with open(self.pickle_key_list, 'rb') as file_handle:
+            key_list = pickle.load(file_handle)
+        with open(self.pickle_latent, 'rb') as file_handle:
+            latent_space = pickle.load(file_handle)
+        mu = latent_space['mu']
+        key = latent_space['key']
+        return pos_idx, aa_index, key, mu, key_list
 
     def _rem_seq_with_unknown_res(self, seq_dict):
+        '''
+        Removes MSA with unknown residues
+        '''
         seq_msa = []
-        keys_list = []
         for k in seq_dict.keys():
             if seq_dict[k].count('X') > 0 or seq_dict[k].count('Z') > 0:
                 continue
             seq_msa.append([self.aa_index[s] for s in seq_dict[k]])
-            keys_list.append(k)
         seq_msa = np.array(seq_msa)
-        return seq_msa, keys_list
+        return seq_msa
 
-    def _aling_to_len(self, seq_msa, length):
+    def _aling_to_len(self, seq_msa):
         '''
         Removes positions in MSA on given position according to reference processing
         This method is optimized for highlighting RPXX subfamilies in a plot
         '''
-        pos_idx = []
-        #for i in self.pos_ind:
-            ## Remove column in legal range and keep enough column count
-         #   if i < seq_msa.shape[1]:
-         #       pos_idx.append(i)
-        #if len(pos_idx) < length:
-            ## It is smaller keep some valuable sequences positions
-        #    gaps_idx = {}  ## count of gaps, index
-        #    for i in range(seq_msa.shape[1]):
-        #        gaps_idx[i] = np.sum(seq_msa[:, i] != 0)
-        #    gaps_idx = {k: v for k, v in sorted(gaps_idx.items(), key=lambda item: item[1])}
-        #    while len(pos_idx) < length:
-        #        k, v = gaps_idx.popitem()
-        #        if k not in pos_idx:
-        #            pos_idx.append(k)
-        #seq_msa = seq_msa[:, np.array(pos_idx)]
-        if seq_msa.shape[1] == length:
-            return seq_msa
-        if length < seq_msa.shape[1]:
-            ## Somehow reduce MSA
-            gaps_idx = {}  ## count of gaps, index
-            for i in range(seq_msa.shape[1]):
-                gaps_idx[i] = np.sum(seq_msa[:, i] == 0)
-            ## Sort by count of gapsa
-            gaps_idx = {k: v for k, v in sorted(gaps_idx.items(), key=lambda item: item[1])}
-            pos_idx_to_remove = []
-            while (seq_msa.shape[1] - len(pos_idx_to_remove)) > length:
-                ## Remove with most gaps
-                k, v = gaps_idx.popitem()
-                pos_idx_to_remove.append(k)
-            ## Keep just position without less gaps
-            pos_idx = []
-            for i in range(seq_msa.shape[1]):
-                if i not in pos_idx_to_remove:
-                    pos_idx.append(i)
-            seq_msa = seq_msa[:, np.array(pos_idx)]
-            return seq_msa
-        else:
-            print("Preparation MSA ERROR -------------- ")
-            print("MSA length is {0} but target length {1} is bigger".format(length, seq_msa.shape[1]))
-            exit(1)
+        seq_msa = seq_msa[:, np.array(self.pos_ind)]
+        return seq_msa
 
     def _to_binary(self, seq_msa):
         '''
@@ -133,3 +109,35 @@ class MSA_VAE_loader():
         for i in range(num_seq):
             seq_msa_binary[i, :, :] = D[seq_msa[i]]
         return seq_msa_binary
+
+    def _name_match_with_origin(self):
+        '''
+        Returns mus of Gaussians with name matched sequencies and
+        dictionary with not name matched seqs for future processing through VAE
+            WARNING side effect sets self.missing_seq class attribute
+        '''
+        ## Key to representation of index
+        key2idx = {}
+        for i in range(len(self.latent_keys)):
+            key2idx[self.latent_keys[i]] = i
+
+        names = self.high_seq.keys()
+        idx = []
+        succ = 0
+        fail = 0
+        for n in names:
+            try:
+                idx.append(int(key2idx[n]))
+                succ += 1
+            except KeyError as e:
+                try:
+                    ## Get original alignment of searching sequence
+                    self.missing_seq[n] = self.seq_dict[n]
+                    succ += 1
+                except KeyError as e:
+                    fail += 1 # That seq is missing even in original seq set. Something terrifying is happening here.
+        print("="*60)
+        print("Printing match stats")
+        print(self.file_name, " Success: ", succ, " Fails: ", fail)
+
+        return self.latent_mu[idx,:]
