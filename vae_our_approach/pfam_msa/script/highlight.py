@@ -50,16 +50,19 @@ vae = VAE(20, 2, len_protein * num_res_type, [100])
 vae.cuda()
 vae.load_state_dict(torch.load(out_dir + "/model/vae_0.01_fold_0.model"))
 
+## Main MSA on which we highlighting
+src_MSA_file = "./MSA/{0}_{1}.txt".format(args.Pfam_id, args.RPgroup)
 ## read data from highlighting files, transform to binary and run through VAE
 dict_lat_sps = {}
 for rps in in_files:
     ## Prepare key to dictionary
     dict_key = rps.split(".")[-2].split("/")[-1]
     ## Load data and prepare them for VAE
-    msa_vae = MSA_VAE_loader(rps, gen_dir_id)
-    ret = msa_vae.binary_seq(len_protein)
-    msa_binary = ret[0]
-    msa_keys = ret[1]
+    msa_vae = MSA_VAE_loader(rps, gen_dir_id, src_MSA_file)
+    ret = msa_vae.get_Mus_and_unknown_binary_seq()
+    msa_binary = ret[1]
+    msa_keys = ret[2]
+    Mus = ret[0]
 
     num_seq = msa_binary.shape[0]
     msa_weight = np.ones(num_seq) / num_seq
@@ -83,7 +86,8 @@ for rps in in_files:
             mu_list.append(mu.cpu().data.numpy())
             sigma_list.append(sigma.cpu().data.numpy())
 
-    mu = np.vstack(mu_list)
+    ## Concat with name matched sequencies
+    mu = np.vstack(mu_list + Mus)
     sigma = np.vstack(sigma_list)
 
     rp_latent_space = {}
@@ -109,15 +113,11 @@ for file_name in in_files:
     label_name = file_name.split(".")[-2].split("/")[-1]
     labels.append(label_name)
 
-cnt_of_subplots = len(labels) + 1 ## plus everything
-str_plot = str(cnt_of_subplots) + "2"
+cnt_of_subplots = len(labels) + 1 ## plus plotting everything
 
-save_loc = out_dir + "/highlight/"
-
-fig, axs = plt.subplots(4, 2)
+fig, axs = plt.subplots(cnt_of_subplots/2, 2)
 fig.set_size_inches(14.5, 28.5, forward=True)
 ## Initial plot with latent space
-cur_sub = str_plot + str(1)
 axs[0,0].plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0])
 axs[0,0].set_title(labels[0])
 
@@ -127,7 +127,6 @@ for k in dict_lat_sps.keys():
     sub_mu = dict_lat_sps[k]['mu']
     col = colors[color_i]
     color_i += 1
-    cur_sub = str_plot + str(color_i+1)
     axs[(color_i // 2),(color_i % 2)].plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
     axs[(color_i // 2),(color_i % 2)].plot(sub_mu[:, 0], sub_mu[:, 1], '.', color=col, alpha=1, markersize=3, label=labels[color_i]) ## Overlap original with subfamily
     axs[(color_i // 2),(color_i % 2)].set_title(labels[color_i].split("_")[-1])
@@ -135,7 +134,6 @@ for k in dict_lat_sps.keys():
     axs[(color_i // 2),(color_i % 2)].legend(loc='upper right')
 
 ## Print everything at one last plot
-cur_sub = str_plot + str(cnt_of_subplots)
 lats_plot = color_i + 1
 axs[(lats_plot // 2),(lats_plot % 2)].plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0]) ## Original latent space
 plt.yscale('linear')
@@ -157,7 +155,7 @@ for ax in axs.flat:
 for ax in axs.flat:
     ax.label_outer()
 
-save_name = save_loc
+save_name = out_dir + "/highlight/"
 for i in range(1,len(labels)):
     save_name += labels[i].split("_")[-1] + "_"
 save_name += "highlight.png"
