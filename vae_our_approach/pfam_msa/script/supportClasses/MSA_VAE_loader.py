@@ -4,6 +4,8 @@ __date__ = "2020/05/01 12:45:00"
 import pickle
 import numpy as np
 
+from collections import Counter
+
 class MSA_VAE_loader():
     '''
     Class for transforming Stockholm file to binary seq code
@@ -90,11 +92,15 @@ class MSA_VAE_loader():
                 unk_pos = [i for i, letter in enumerate(seq_dict[k]) if letter == 'X' or letter == 'Z']
                 for pos in unk_pos:
                     ## Get the most common amino in that position and replace it with it
-                    amino_acid = max(set(seq_dict[:,pos]), key=seq_dict[:,pos].count)
+                    amino_acid = self._most_frequent(seq_dict[:,pos])
                     seq_dict[k][pos] = amino_acid
             seq_msa.append([self.aa_index[s] for s in seq_dict[k]])
         seq_msa = np.array(seq_msa)
         return seq_msa
+
+    def _most_frequent(self, msa_column):
+        occurence_count = Counter(msa_column)
+        return occurence_count.most_common(1)[0][0]
 
     def _aling_to_len(self, seq_msa):
         '''
