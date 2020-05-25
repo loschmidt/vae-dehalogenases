@@ -4,8 +4,6 @@ __date__ = "2020/05/01 12:45:00"
 import pickle
 import numpy as np
 
-from collections import Counter
-
 class MSA_VAE_loader():
     '''
     Class for transforming Stockholm file to binary seq code
@@ -32,7 +30,7 @@ class MSA_VAE_loader():
         prepare seqs for future VAE processing with original weighting
         '''
         mus = self._name_match_with_origin()
-        seq_msa = self._rem_seq_with_unknown_res(self.missing_seq)
+        seq_msa, self.key_list = self._rem_seq_with_unknown_res(self.missing_seq)
         if len(seq_msa) == 0:
             ## Everything is removed due to unknown residues
             return mus, None, self.key_list
@@ -87,20 +85,29 @@ class MSA_VAE_loader():
         Replace unknown positions in MSA with the most frequent one in column
         '''
         seq_msa = []
+        key_list = []
         for k in seq_dict.keys():
             if seq_dict[k].count('X') > 0 or seq_dict[k].count('Z') > 0:
                 unk_pos = [i for i, letter in enumerate(seq_dict[k]) if letter == 'X' or letter == 'Z']
                 for pos in unk_pos:
                     ## Get the most common amino in that position and replace it with it
-                    amino_acid = self._most_frequent([s[pos] for s in seq_dict])
-                    seq_dict[k][pos] = amino_acid
+                    col_seq = []
+                    for kk in seq_dict.keys():
+                        if len(seq_dict[kk]) > pos:
+                            col_seq.append(seq_dict[kk][pos])
+                    amino_acid = self._most_frequent(col_seq)
+                    tmp = list(seq_dict[k])
+                    tmp[pos] = amino_acid 
+                    seq_dict[k] = ''.join(tmp)
             seq_msa.append([self.aa_index[s] for s in seq_dict[k]])
+            key_list.append(k)
         seq_msa = np.array(seq_msa)
-        return seq_msa
+        return seq_msa, key_list
 
-    def _most_frequent(self, msa_column):
-        occurence_count = Counter(msa_column)
-        return occurence_count.most_common(1)[0][0]
+    def _most_frequent(self, col):
+        numeral = [[col.count(nb),nb] for nb in col]
+        numeral.sort(key=lambda x:x[0], reverse=True)
+        return(numeral[0][1])
 
     def _aling_to_len(self, seq_msa):
         '''

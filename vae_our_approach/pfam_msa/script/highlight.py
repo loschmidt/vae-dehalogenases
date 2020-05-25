@@ -64,9 +64,11 @@ for rps in in_files:
     msa_binary = ret[1]
     msa_keys = ret[2]
     Mus = ret[0]
-
-    mu_list = np.ndarray(Mus.shape)
-    sigma_list = np.ndarray(Mus.shape)
+    
+    #mu_list = np.ndarray(Mus.shape)
+    #sigma_list = np.ndarray(Mus.shape)
+    mu_list = []
+    sigma_list = []
     if msa_binary is not None:
         ## Some sequences will be process through VAE
         num_seq = msa_binary.shape[0]
@@ -80,7 +82,7 @@ for rps in in_files:
 
         train_data = MSA_Dataset(msa_binary, msa_weight, msa_keys)
         train_data_loader = DataLoader(train_data, batch_size = batch_size)
-
+        
         for idx, data in enumerate(train_data_loader):
             msa, weight, key = data
             with torch.no_grad():
@@ -88,13 +90,13 @@ for rps in in_files:
                 mu, sigma = vae.encoder(msa)
                 mu_list.append(mu.cpu().data.numpy())
                 sigma_list.append(sigma.cpu().data.numpy())
-
+            
     ## Concat with name matched sequencies
     mu = []
     if msa_binary is None:
         mu = np.vstack(Mus)
     else:
-        mu = np.vstack(np.concatenate((mu_list, Mus)))
+        mu = np.vstack(np.concatenate((np.vstack(mu_list), Mus)))
     sigma = np.vstack(sigma_list)
     rp_latent_space = {}
     rp_latent_space['mu'] = mu
@@ -138,6 +140,8 @@ for k in dict_lat_sps.keys():
     axs[(color_i // 2),(color_i % 2)].set_title(labels[color_i].split("_")[-1])
 
     axs[(color_i // 2),(color_i % 2)].legend(loc='upper right')
+
+    print("Label : ", labels[color_i], " Count highlighted : ", sub_mu.shape[0])
 
 ## Print everything at one last plot
 lats_plot = color_i + 1
