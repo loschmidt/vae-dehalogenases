@@ -92,7 +92,7 @@ class MSA_VAE_loader():
                 unk_pos = [i for i, letter in enumerate(seq_dict[k]) if letter == 'X' or letter == 'Z']
                 for pos in unk_pos:
                     ## Get the most common amino in that position and replace it with it
-                    amino_acid = self._most_frequent(seq_dict[:,pos])
+                    amino_acid = self._most_frequent([s[pos] for s in seq_dict])
                     seq_dict[k][pos] = amino_acid
             seq_msa.append([self.aa_index[s] for s in seq_dict[k]])
         seq_msa = np.array(seq_msa)
