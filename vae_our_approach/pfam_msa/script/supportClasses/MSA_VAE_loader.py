@@ -82,12 +82,16 @@ class MSA_VAE_loader():
 
     def _rem_seq_with_unknown_res(self, seq_dict):
         '''
-        Removes MSA with unknown residues
+        Replace unknown positions in MSA with the most frequent one in column
         '''
         seq_msa = []
         for k in seq_dict.keys():
             if seq_dict[k].count('X') > 0 or seq_dict[k].count('Z') > 0:
-                continue
+                unk_pos = [i for i, letter in enumerate(seq_dict[k]) if letter == 'X' or letter == 'Z']
+                for pos in unk_pos:
+                    ## Get the most common amino in that position and replace it with it
+                    amino_acid = max(set(seq_dict[:,pos]), key=seq_dict[:,pos].count)
+                    seq_dict[k][pos] = amino_acid
             seq_msa.append([self.aa_index[s] for s in seq_dict[k]])
         seq_msa = np.array(seq_msa)
         return seq_msa
