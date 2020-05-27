@@ -69,7 +69,7 @@ if PRAGMA_REFERENCE:
 ## remove sequences with too many gaps
 seq_id = list(seq_dict.keys())
 for k in seq_id:
-    if seq_dict[k].count("-") + seq_dict[k].count(".") > 10:
+    if seq_dict[k].count("-") + seq_dict[k].count(".") > len(seq_dict[k]) * 0.8:
         seq_dict.pop(k)
 
 with open(out_dir + "/seq_dict.pkl", 'wb') as file_handle:
