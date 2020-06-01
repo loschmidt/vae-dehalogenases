@@ -176,7 +176,7 @@ print("="*60)
 print()
 
 ## change aa numbering into binary
-K = 21 ## num of classes of aa
+K = 22 ## num of classes of aa
 D = np.identity(K)
 num_seq = seq_msa.shape[0]
 len_seq_msa = seq_msa.shape[1]

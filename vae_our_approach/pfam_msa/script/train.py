@@ -98,7 +98,7 @@ for k in range(K):
     print("-"*60)
     
     ## build a VAE model with random parameters
-    vae = VAE(21, 2, len_protein * num_res_type, [100])
+    vae = VAE(22, 2, len_protein * num_res_type, [100])
 
     ## move the VAE onto a GPU
     vae.cuda()
