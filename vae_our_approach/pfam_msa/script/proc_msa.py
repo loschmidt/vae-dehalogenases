@@ -66,11 +66,21 @@ if PRAGMA_REFERENCE:
         seq_dict[k] = [seq_dict[k][i] for i in range(len(seq_dict[k])) if idx[i] == False]
     query_seq = seq_dict[query_seq_id] ## without gaps
 
+    ## remove sequences with too many gaps
+    len_query_seq = len(query_seq)
+    seq_id = list(seq_dict.keys())
+    num_gaps = []
+    for k in seq_id:
+        num_gaps.append(seq_dict[k].count("-") + seq_dict[k].count("."))
+        if seq_dict[k].count("-") + seq_dict[k].count(".") > 0.2 * len_query_seq:
+            seq_dict.pop(k)
+
 ## remove sequences with too many gaps
-seq_id = list(seq_dict.keys())
-for k in seq_id:
-    if seq_dict[k].count("-") + seq_dict[k].count(".") > len(seq_dict[k]) * 0.8:
-        seq_dict.pop(k)
+if not PRAGMA_REFERENCE:
+    seq_id = list(seq_dict.keys())
+    for k in seq_id:
+        if seq_dict[k].count("-") + seq_dict[k].count(".") > len(seq_dict[k]) * 0.8:
+            seq_dict.pop(k)
 
 with open(out_dir + "/seq_dict.pkl", 'wb') as file_handle:
     pickle.dump(seq_dict, file_handle)
