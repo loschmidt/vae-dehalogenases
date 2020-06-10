@@ -141,7 +141,7 @@ class MSA_VAE_loader():
         key2idx_reducted = {}
         for i in range(len(self.latent_keys)):
             key2idx[self.latent_keys[i]] = i
-            key2idx_reducted[self.latent_keys[i].split('/')] = i
+            key2idx_reducted[self.latent_keys[i].split('/')[0]] = i
 
         names = self.high_seq.keys()
         names_list = list(names)
@@ -162,7 +162,9 @@ class MSA_VAE_loader():
                 except KeyError as e:
                     #Try to find in reducted name form
                     try:
-                        idx.append(int(proceed_names[cur_ind]))
+                        idx.append(int(key2idx_reducted[proceed_names[cur_ind]]))
+                        print("Reduce name match")
+                        succ += 1
                     except KeyError as e:
                         fail += 1 # That seq is missing even in original seq set. Something terrifying is happening here.
         print("="*60)
