@@ -138,14 +138,19 @@ class MSA_VAE_loader():
         '''
         ## Key to representation of index
         key2idx = {}
+        key2idx_reducted = {}
         for i in range(len(self.latent_keys)):
             key2idx[self.latent_keys[i]] = i
+            key2idx_reducted[self.latent_keys[i].split('/')] = i
 
         names = self.high_seq.keys()
+        names_list = list(names)
+        proceed_names = [name.split('/')[0] for name in names_list]
         idx = []
         succ = 0
         fail = 0
         for n in names:
+            cur_ind = succ + fail
             try:
                 idx.append(int(key2idx[n]))
                 succ += 1
@@ -155,7 +160,11 @@ class MSA_VAE_loader():
                     self.missing_seq[n] = self.seq_dict[n]
                     succ += 1
                 except KeyError as e:
-                    fail += 1 # That seq is missing even in original seq set. Something terrifying is happening here.
+                    #Try to find in reducted name form
+                    try:
+                        idx.append(int(proceed_names[cur_ind]))
+                    except KeyError as e:
+                        fail += 1 # That seq is missing even in original seq set. Something terrifying is happening here.
         print("="*60)
         print("Printing match stats")
         print(self.file_name, " Success: ", succ, " Fails: ", fail)
