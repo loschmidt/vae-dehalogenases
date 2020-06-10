@@ -123,11 +123,13 @@ for file_name in in_files:
 
 cnt_of_subplots = len(labels) + 1 ## plus plotting everything
 
-fig, axs = plt.subplots(ceil(cnt_of_subplots/2), 2)
+fig, axs = plt.subplots(ceil(cnt_of_subplots/2), 2, sharex=True, sharey=True)
 fig.set_size_inches(14.5, 28.5, forward=True)
+
 ## Initial plot with latent space
 axs[0,0].plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, label=labels[0])
 axs[0,0].set_title(labels[0])
+axs[0,0].set(adjustable='box', aspect='equal')
 
 ## plot individual subplots
 color_i = 0
@@ -140,6 +142,7 @@ for k in dict_lat_sps.keys():
     axs[(color_i // 2),(color_i % 2)].set_title(labels[color_i].split("_")[-1])
 
     axs[(color_i // 2),(color_i % 2)].legend(loc='upper right')
+    axs[(color_i // 2),(color_i % 2)].set(adjustable='box', aspect='equal')
 
     print("Label : ", labels[color_i], " Count highlighted : ", sub_mu.shape[0])
 
@@ -157,6 +160,13 @@ for k in dict_lat_sps.keys():
 graph_str = "All RPs"
 axs[(lats_plot // 2),(lats_plot % 2)].legend(loc='upper right')
 axs[(lats_plot // 2),(lats_plot % 2)].set_title(graph_str)
+axs[(lats_plot // 2),(lats_plot % 2)].set(adjustable='box', aspect='equal')
+
+if ((len(labels)+1) % 2) == 1:
+    # Plot fake graph and remove it
+    axs[(lats_plot // 2),1].plot([1,2],[1,2])
+    axs[(lats_plot // 2),1].set(adjustable='box', aspect='equal')
+    axs[(lats_plot // 2),1].set_visible(False)
 
 for ax in axs.flat:
     ax.set(xlabel='$Z_1$', ylabel='$Z_2$')
