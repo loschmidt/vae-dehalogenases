@@ -95,6 +95,7 @@ for rps in in_files:
     mu = []
     if msa_binary is None:
         mu = np.vstack(Mus)
+        sigma_list = np.ndarray(Mus.shape)
     else:
         mu = np.vstack(np.concatenate((np.vstack(mu_list), Mus)))
     sigma = np.vstack(sigma_list)
