@@ -8,6 +8,9 @@ import argparse
 import subprocess as sp   ## command line hangling
 
 PRAGMA_REFERENCE = False
+# Pragma for proccessing to detect how effects no removing col with lots of gaps
+# Original pipeline with False
+PRAGMA_PROC_WITHOUT_REMOVE_COL = False
 
 parser = argparse.ArgumentParser(description = "Process given MSA")
 parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
@@ -44,7 +47,11 @@ file_name = "./MSA/{0}_{1}.txt".format(pfam_id, rp_id)
 sp.run("mkdir -p {0}".format(out_dir), shell=True)
 
 if PRAGMA_REFERENCE:
-    query_seq_id =  ref_seq #"TENA_HUMAN/804-884"
+    query_seq_id = ref_seq #"TENA_HUMAN/804-884"
+else:
+    # Default ref sequence for PF00561
+    # 40812 left in dataset after processing
+    query_seq_id = "PIP_BREBN/26-275"
 
 ## read all the sequences into a dictionary
 seq_dict = {}
@@ -59,7 +66,7 @@ with open(file_name, 'r') as file_handle:
         seq_dict[seq_id] = seq.upper()
 
 ## remove gaps in the query sequences
-if PRAGMA_REFERENCE:
+if PRAGMA_REFERENCE or PRAGMA_PROC_WITHOUT_REMOVE_COL:
     query_seq = seq_dict[query_seq_id] ## with gaps
     idx = [ s == "-" or s == "." for s in query_seq]
     for k in seq_dict.keys():
@@ -117,9 +124,13 @@ with open(out_dir + "/keys_list.pkl", 'wb') as file_handle:
 
 ## remove positions where too many sequences have gaps
 pos_idx = []
-for i in range(seq_msa.shape[1]):
-    if np.sum(seq_msa[:,i] == 0) <= seq_msa.shape[0]*0.2:
-        pos_idx.append(i)
+if not PRAGMA_PROC_WITHOUT_REMOVE_COL:
+    for i in range(seq_msa.shape[1]):
+        if np.sum(seq_msa[:,i] == 0) <= seq_msa.shape[0]*0.2:
+            pos_idx.append(i)
+else:
+    ## Keep all sequence positions
+    pos_idx = [i for i in seq_msa.shape[1]]
 
 if args.Length is not None:
     ## Length is set this have to have same length as target length
