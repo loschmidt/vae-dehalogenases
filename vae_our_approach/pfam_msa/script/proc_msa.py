@@ -8,7 +8,8 @@ import argparse
 import subprocess as sp   ## command line hangling
 
 PRAGMA_REFERENCE = False
-# Pragma for proccessing to detect how effects no removing col with lots of gaps
+# Pragma for proccessing to detect how effects no removing position with lots of gaps
+# Has to be preproccessing with ref seq to remove seqs with many gaps on seed positions
 # Original pipeline with False
 PRAGMA_PROC_WITHOUT_REMOVE_COL = False
 
