@@ -131,7 +131,7 @@ if not PRAGMA_PROC_WITHOUT_REMOVE_COL:
             pos_idx.append(i)
 else:
     ## Keep all sequence positions
-    pos_idx = [i for i in seq_msa.shape[1]]
+    pos_idx = [i for i in range(seq_msa.shape[1])]
 
 if args.Length is not None:
     ## Length is set this have to have same length as target length
