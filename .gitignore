@@ -1,1 +1,15 @@
 .idea/
+
+# Ignore fasta files and stockholm files
+*.fasta
+
+#
+vae_our_approach/pfam_msa/MSA/
+vae_our_approach/pfam_msa/output/
+
+# Cache files
+*__pycache__*
+
+# Dont show testing scripts
+vae_our_approach/pfam_msa/script/supportClasses/graphs.py
+vae_our_approach/pfam_msa/script/supportClasses/tmp.png
