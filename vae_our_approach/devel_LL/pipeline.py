@@ -7,6 +7,12 @@ import subprocess as sp   ## command line handling
 class StructChecker:
     def __init__(self):
         self.pfam_id, self.args = self.get_parser()
+        if self.args.ref is not None:
+            self.ref_seq = True
+            self.ref_n = self.args.ref
+        else:
+            self.ref_seq = False
+            self.ref_n = ""
 
         self.res_root_fld = "./results/"
         self.run_root_dir = self.res_root_fld + self.pfam_id + "/"
@@ -24,6 +30,7 @@ class StructChecker:
         parser = argparse.ArgumentParser(description='Parameters for training the model')
         parser.add_argument("--Pfam_id", help="the ID of Pfam; e.g. PF00041, will create subdir for script data")
         parser.add_argument("--RP", help="RP specifier of given Pfam_id family, e.g. RP15, default value is full")
+        parser.add_argument("--ref", help="the reference sequence; e.g. TENA_HUMAN/804-884")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))

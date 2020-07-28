@@ -32,4 +32,4 @@ class Downloader:
 if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
-    downloader = Downloader(tar_dir)
+    downloader = Downloader(tar_dir, all=True)
