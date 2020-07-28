@@ -11,10 +11,12 @@ import gzip
 from pipeline import StructChecker
 
 class Downloader:
-    def __init__(self, setuper):
+    def __init__(self, setuper, all=False):
         self.msa_dir = setuper.MSA_fld
         self.pfam_id = setuper.pfam_id
-        self.down_seq = ["full", "rp75", "rp55", "rp35", "rp15", "seed"]
+        self.down_seq = [setuper.rp]
+        if all:
+            self.down_seq = ["full", "rp75", "rp55", "rp35", "rp15", "seed"]
         self._download()
 
     def _download(self):
