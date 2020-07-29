@@ -27,7 +27,6 @@ class MSA:
         self._remove_unexplored_and_covert_aa()
         if not self.values["keep_gaps"]:
             self._rem_gaps_msa_positions()
-            print("odstraneno")
         else:
             ## Keep all sequence positions
             pos_idx = [i for i in range(self.seq_msa.shape[1])]
@@ -101,7 +100,7 @@ class MSA:
             seq_msa.append([self.aa_index[s] for s in self.seq_dict[k]])
             keys_list.append(k)
         self.seq_msa = np.array(seq_msa)
-
+        self.keys_list = keys_list
         with open(self.pickle + "/keys_list.pkl", 'wb') as file_handle:
             pickle.dump(keys_list, file_handle)
 
@@ -126,9 +125,10 @@ class MSA:
             for i in range(self.seq_msa.shape[0]):
                 seq_weight[i, j] = (1.0 / num_type) * (1.0 / aa_dict[self.seq_msa[i, j]])
         tot_weight = np.sum(seq_weight)
-        seq_weight = seq_weight.sum(1) / tot_weight
+        ## Normalize weights of sequences
+        self.seq_weight = seq_weight.sum(1) / tot_weight
         with open(self.pickle + "/seq_weight.pkl", 'wb') as file_handle:
-            pickle.dump(seq_weight, file_handle)
+            pickle.dump(self.seq_weight, file_handle)
 
     def _to_binary(self):
         K = len(self.aa)+1  ## num of classes of aa
@@ -138,7 +138,7 @@ class MSA:
         seq_msa_binary = np.zeros((num_seq, len_seq_msa, K))
         for i in range(num_seq):
             seq_msa_binary[i, :, :] = D[self.seq_msa[i]]
-
+        self.seq_msa_binary = seq_msa_binary
         with open(self.pickle + "/seq_msa_binary.pkl", 'wb') as file_handle:
             pickle.dump(seq_msa_binary, file_handle)
 
