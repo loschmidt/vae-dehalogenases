@@ -15,6 +15,9 @@ class StructChecker:
             self.ref_n = ""
         self.keep_gaps = bool(self.args.keep_gaps)
         self.stats = bool(self.args.stats)
+        self.epochs = self.args.num_epoch
+        self.decay = self.args.weight_decay
+        self.K = self.args.K # cross validation counts
 
         self.res_root_fld = "./results/"
         self.run_root_dir = self.res_root_fld + self.pfam_id + "/"
@@ -38,6 +41,9 @@ class StructChecker:
         parser.add_argument("--ref", help="the reference sequence; e.g. TENA_HUMAN/804-884")
         parser.add_argument("--keep_gaps", help="Setup in case you want to keep all gaps in sequences. Default False", default=False)
         parser.add_argument("--stats", help="Printing statistics of msa processing. Default False", default=False)
+        parser.add_argument('--num_epoch', type=int, default=10000)
+        parser.add_argument('--weight_decay', type=float, default=0.01)
+        parser.add_argument('--K', type=int, default=5)
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
@@ -68,6 +74,7 @@ if __name__ == '__main__':
     ## Our modules imports
     from download_MSA import Downloader
     from msa_prepar import MSA
+    from train import Train
 
     '''Pipeline of our VAE data preparation, training, executing'''
     tar_dir = StructChecker()
@@ -75,3 +82,4 @@ if __name__ == '__main__':
     down_MSA = Downloader(tar_dir)
     msa = MSA(tar_dir)
     msa.proc_msa()
+    Train(tar_dir, msa=msa).train()
