@@ -1,3 +1,6 @@
+__author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
+__date__ = "2020/07/28 11:30:00"
+
 import pickle
 import numpy as np
 from pipeline import StructChecker
