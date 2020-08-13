@@ -3,9 +3,11 @@ __date__ = "2020/07/27 11:30:00"
 
 import argparse
 import subprocess as sp   ## command line handling
+import os
 
 class StructChecker:
     def __init__(self):
+        ## Setup all parameters
         self.pfam_id, self.args = self.get_parser()
         if self.args.ref is not None:
             self.ref_seq = True
@@ -18,7 +20,13 @@ class StructChecker:
         self.epochs = self.args.num_epoch
         self.decay = self.args.weight_decay
         self.K = self.args.K # cross validation counts
+        self.preserve_catalytic = self.args.preserve_catalytic
+        self.ec = self.args.ec_num
 
+        ## Setup enviroment variable
+        os.environ['PIP_BRANCH'] = str(self.preserve_catalytic)
+
+        ## Directory structure variables
         self.res_root_fld = "./results/"
         self.run_root_dir = self.res_root_fld + self.pfam_id + "/"
         self.MSA_fld = self.run_root_dir + "MSA/"
@@ -43,7 +51,11 @@ class StructChecker:
         parser.add_argument("--stats", help="Printing statistics of msa processing. Default False", default=False)
         parser.add_argument('--num_epoch', type=int, default=10000)
         parser.add_argument('--weight_decay', type=float, default=0.01)
-        parser.add_argument('--K', type=int, default=5)
+        parser.add_argument('--K', type=int, default=5, help="Cross validation iterations setup. Default is 5")
+        parser.add_argument('--preserve_catalytic', type=bool, default=True, help="Alternative filtering of MSA. Default true. Set EC number for EnzymeMiner"
+                                                                                  "https://loschmidt.chemi.muni.cz/enzymeminer/ , Default value is \"3.8.1.5\"")
+        parser.add_argument('--ec_num', type=str, default="3.8.1.5", help="EC number for EnzymeMiner. Will pick up sequences from table and select with the most "
+                                                                          "catalytic residues to further processing.")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
@@ -71,14 +83,16 @@ class StructChecker:
               " (for different rp rerun script with --RP [e.g. rp75] paramater)".format(self.rp, self.rp_dir))
 
 if __name__ == '__main__':
-    ## Our modules imports
-    from download_MSA import Downloader
-    from msa_prepar import MSA
-    from train import Train
 
     '''Pipeline of our VAE data preparation, training, executing'''
     tar_dir = StructChecker()
     tar_dir.setup_struct()
+
+    ## Our modules imports
+    from download_MSA import Downloader
+    from pipeline_importer import MSA
+    from train import Train
+
     down_MSA = Downloader(tar_dir)
     msa = MSA(tar_dir)
     msa.proc_msa()
