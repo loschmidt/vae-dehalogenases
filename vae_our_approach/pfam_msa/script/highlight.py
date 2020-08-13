@@ -13,6 +13,31 @@ from torch.utils.data import Dataset, DataLoader
 from supportClasses.MSA_VAE_loader import *
 from VAE_model import *
 
+class PairHighlighter:
+    def __init__(self, background, out_dir):
+        self.mu = background
+        self.out_dir = out_dir + "/highlight/"
+        self.name = "class_highlight.png"
+
+    def _init_plot(self):
+        plt.figure(0)
+        plt.clf()
+        plt.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='rp75')
+        plt.xlim((-6, 6))
+        plt.ylim((-6, 6))
+        plt.xlabel("$Z_1$")
+        plt.ylabel("$Z_2$")
+        plt.legend(loc="upper left")
+        plt.tight_layout()
+        return plt
+
+    def highlight(self, name, high_data):
+        plt = self._init_plot()
+        plt.plot(high_data[:, 0], high_data[:, 1], '.',color='red', alpha=0.2, markersize=3, label=name)
+        save_path = self.out_dir + name + '_' + self.name
+        print("Class highlighter saving graph to", save_path)
+        plt.savefig(save_path)
+
 parser = argparse.ArgumentParser(description='Parameters for training the model')
 parser.add_argument("--Pfam_id", help = "the ID of Pfam; e.g. PF00041")
 parser.add_argument("--RPgroup", help = "RP specifier of given Pfam_id family, e.g. RP15")
