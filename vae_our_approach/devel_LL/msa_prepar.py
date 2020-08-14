@@ -12,7 +12,7 @@ class MSA:
         self.msa_file = setuper.msa_file
         self.pickle = setuper.pickles_fld
         self.values = {"ref": setuper.ref_seq, "ref_n": setuper.ref_n, "keep_gaps": setuper.keep_gaps, "stats": setuper.stats}
-        self._load_msa()
+        self.seq_msa = self._load_msa()
         if processMSA:
             self._amino_acid_dict()
 
@@ -50,7 +50,7 @@ class MSA:
                     continue
                 seq_id, seq = line.split()
                 seq_dict[seq_id] = seq.upper()
-        self.seq_dict = seq_dict
+        return seq_dict
 
     def _ref_filtering(self):
         """Filter sequences against query sequences"""
