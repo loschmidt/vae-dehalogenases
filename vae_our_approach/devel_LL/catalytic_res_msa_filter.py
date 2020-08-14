@@ -9,14 +9,31 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 from time import sleep
 from PIL import Image
-from io import StringIO, BytesIO
+from io import BytesIO
 
 class PageHandler:
-    def __init__(self, driver, ec):
-        self.driver = self._init_driver()
+    def __init__(self, ec=None):
         self.scr_n = 0
-        self.table = TableLoader(driver)
-        self.ec = ec
+        if ec is None:
+            ## Uniprot
+            self.URL = "https://www.uniprot.org"
+            self.msg = "Uniprot"
+            self.driver = self._init_driver()
+            self.table = TableLoader(self.driver)
+        else:
+            ## EnzymeMiner
+            self.ec = ec
+            self.URL = "https://loschmidt.chemi.muni.cz/enzymeminer/ec/" + self.ec
+            self.msg = "Swissprot"
+            self.driver = self._init_driver()
+            self.table = TableLoader(self.driver)
+
+    def translate(self, uniCode):
+        request = self.URL + "/uniprot/" + uniCode
+        self.driver.get(request)
+        sleep(0.3) # Wait for loading
+        name = self.driver.find_element_by_xpath("//section[@id='page-header']//h2//span").text[1:-1] ## Without brackets
+        return name
 
     def screen(self):
         self.driver.fullscreen_window()
@@ -54,16 +71,18 @@ class PageHandler:
     def get_catalytic_res(self):
         return self.table.get_catalytic_res_names()
 
+    def close(self):
+        self.driver.close()
+
     def _init_driver(self):
-        self.EnzymeMiner = "https://loschmidt.chemi.muni.cz/enzymeminer/ec/"
-
-        URL = self.EnzymeMiner + self.ec
-
         opts = Options()
         opts.headless = True
         assert opts.headless  # Operating in headless mode
         browser = Firefox(options=opts)
-        browser.get(URL)
+        browser.get(self.URL)
+        print("Loading {} tab page...".format(self.msg))
+        sleep(0.5)  ## Just wait to load the page, stupid
+        return browser
 
 class TableLoader:
     def __init__(self, driver):
@@ -121,57 +140,39 @@ class CatalyticMSAPreprocessor:
     def __init__(self, setuper):
         self.setuper = setuper
         self.ec = setuper.ec
-        self._enzymeMiner_handler()
-
+        self._enzymeMiner_handler() ##Setup queries and catalytic residues
+        self._pfam_handler()
 
     def _enzymeMiner_handler(self):
         print("="*60)
         print("Scraping sequences from EnzymeMiner with EC number", self.ec)
-
         ## Connect to page with desired ec number
-        URL = self.EnzymeMiner + self.ec
-
-        opts = Options()
-        opts.headless = True
-        assert opts.headless  # Operating in headless mode
-        browser = Firefox(options=opts)
-        browser.get(URL)
+        page = PageHandler(ec=self.ec)
         try:
-            print("Loading SwissProt tab page...")
-            sleep(1) ## Just wait to load the page, stupid
-            html_code = browser.page_source
-            if 'btn btn-secondary' in html_code:
-                print("Yes it is in")
-            else:
-                print("No it is not in")
-
             ## Get tabs and switch their visibility
-            page = PageHandler(browser)
-            page.screen()
             page.select_all()
             page.switch_tabs()
-            page.screen()
-
             ## Select data from table
-
-
-            res_page = browser.page_source
-            if 'll-manual-col-name' in res_page:
-                print("Yes it is in result")
-            else:
-                print("No it is not in result")
-
-            table = TableLoader(browser)
-            head = table.select_queries(head)
-
-            print(head)
-
-            ##pprint(results)
-            ##print(results[0].text)
+            self.queries = page.get_queries() ## names and positions of catalytic residues
+            self.aa_cat_res = page.get_catalytic_res()
         finally:
-            print("Closing the browser")
-            browser.close()
+            print("Closing connection to EnzymeMiner browser")
+            page.close()
 
+    def _pfam_handler(self):
+        print("=" * 60)
+        print("Translation of queries names to Pfam name format")
+        ## Connect to uniprot
+        page = PageHandler()
+        pfam_names = []
+        try:
+            ## Get tabs and switch their visibility
+            for k in self.queries.keys():
+                pfam_names.append(page.translate(uniCode=k))
+        finally:
+            print("Closing connection to Uniprot browser")
+            page.close()
+        print(pfam_names)
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
