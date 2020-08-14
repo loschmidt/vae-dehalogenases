@@ -7,13 +7,14 @@ from pipeline import StructChecker
 from download_MSA import Downloader
 
 class MSA:
-    def __init__(self, setuper: StructChecker):
+    def __init__(self, setuper: StructChecker, processMSA=True):
         self.setup = setuper
         self.msa_file = setuper.msa_file
         self.pickle = setuper.pickles_fld
         self.values = {"ref": setuper.ref_seq, "ref_n": setuper.ref_n, "keep_gaps": setuper.keep_gaps, "stats": setuper.stats}
         self._load_msa()
-        self._amino_acid_dict()
+        if processMSA:
+            self._amino_acid_dict()
 
     def proc_msa(self):
         if self.values["ref"] or self.values["keep_gaps"]:
