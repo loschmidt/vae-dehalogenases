@@ -2,6 +2,7 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/08/10 11:30:00"
 
 from download_MSA import Downloader
+from msa_prepar import MSA
 from pipeline import StructChecker
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
@@ -172,7 +173,18 @@ class CatalyticMSAPreprocessor:
         finally:
             print("Closing connection to Uniprot browser")
             page.close()
-        print(pfam_names)
+        ## Find pfam alignment in dataset
+        msa = MSA(setuper=self.setuper, processMSA=False).load_msa()
+        to_align = [] ## Those which are not found
+        pfam_keys = {}
+        for k in msa.keys():
+            for p in pfam_names:
+                if p in k:
+                    pfam_keys[k] = msa[k]
+                    pfam_names.remove(p)
+                    to_align.append(p)
+        ## Align those which were not founf in original dataset with pfam alignment
+        ## TODO alignment to found sequences
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
