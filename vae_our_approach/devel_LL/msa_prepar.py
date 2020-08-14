@@ -12,8 +12,8 @@ class MSA:
         self.msa_file = setuper.msa_file
         self.pickle = setuper.pickles_fld
         self.values = {"ref": setuper.ref_seq, "ref_n": setuper.ref_n, "keep_gaps": setuper.keep_gaps, "stats": setuper.stats}
-        self.seq_msa = self._load_msa()
         if processMSA:
+            self.seq_msa = self.load_msa()
             self._amino_acid_dict()
 
     def proc_msa(self):
@@ -39,7 +39,7 @@ class MSA:
         self._to_binary()
         self._stats()
 
-    def _load_msa(self):
+    def load_msa(self):
         seq_dict = {}
         with open(self.msa_file, 'r') as file_handle:
             for line in file_handle:
