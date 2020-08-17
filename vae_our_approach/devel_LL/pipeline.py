@@ -53,8 +53,7 @@ class StructChecker:
         parser.add_argument('--weight_decay', type=float, default=0.01)
         parser.add_argument('--output_dir', type=str, default=None, help="Option for setup output directory")
         parser.add_argument('--K', type=int, default=5, help="Cross validation iterations setup. Default is 5")
-        parser.add_argument('--no_preserve_catalytic', action='store_false', default=True, help="Alternative filtering of MSA. Default true. Set EC number for EnzymeMiner"
-                                                                                  "https://loschmidt.chemi.muni.cz/enzymeminer/ , Default value is \"3.8.1.5\"")
+        parser.add_argument('--no_preserve_catalytic', action='store_false', default=True, help="Alternative filtering of MSA (original pipeline).")
         parser.add_argument('--ec_num', type=str, default="3.8.1.5", help="EC number for EnzymeMiner. Will pick up sequences from table and select with the most "
                                                                           "catalytic residues to further processing.")
         args = parser.parse_args()
