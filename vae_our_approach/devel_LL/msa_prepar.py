@@ -13,7 +13,7 @@ class MSA:
         self.pickle = setuper.pickles_fld
         self.values = {"ref": setuper.ref_seq, "ref_n": setuper.ref_n, "keep_gaps": setuper.keep_gaps, "stats": setuper.stats}
         if processMSA:
-            self.seq_msa = self.load_msa()
+            self.seq_dict = self.load_msa()
             self._amino_acid_dict()
 
     def proc_msa(self):
