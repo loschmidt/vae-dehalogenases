@@ -85,6 +85,13 @@ class PageHandler:
         sleep(0.5)  ## Just wait to load the page, stupid
         return browser
 
+    def get_uniprot_seq(self, uniCode):
+        request = self.URL + "/uniprot/" + uniCode + '.fasta'
+        self.driver.get(request)
+        sleep(0.3)  # Wait for loading
+        sequence = ''.join(self.driver.find_element_by_xpath("//pre").text.split('\n')[1:]) ## Remove first line and the others join together
+        return sequence
+
 class TableLoader:
     def __init__(self, driver):
         self.driver = driver
@@ -141,6 +148,8 @@ class CatalyticMSAPreprocessor:
     def __init__(self, setuper):
         self.setuper = setuper
         self.ec = setuper.ec
+
+    def proc_msa(self):
         self._enzymeMiner_handler() ##Setup queries and catalytic residues
         self._pfam_handler()
 
@@ -162,14 +171,16 @@ class CatalyticMSAPreprocessor:
 
     def _pfam_handler(self):
         print("=" * 60)
-        print("Translation of queries names to Pfam name format")
+        print("Translation of query names to Pfam name format")
         ## Connect to uniprot
         page = PageHandler()
         pfam_names = []
+        uniprot_seqs = {}
         try:
             ## Get tabs and switch their visibility
             for k in self.queries.keys():
                 pfam_names.append(page.translate(uniCode=k))
+                uniprot_seqs[k] = page.get_uniprot_seq(uniCode=k)
         finally:
             print("Closing connection to Uniprot browser")
             page.close()
@@ -184,7 +195,9 @@ class CatalyticMSAPreprocessor:
                     pfam_names.remove(p)
                     to_align.append(p)
         ## Align those which were not founf in original dataset with pfam alignment
-        ## TODO alignment to found sequences
+        ## TODO alignment to found sequences and kept of correct position agoaing pfam alignment
+        print('Found sequence', uniprot_seqs[[i for i in self.queries.keys()][0]])
+        print('Pfam  sequence', pfam_keys[[i for i in pfam_keys.keys()][0]])
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
