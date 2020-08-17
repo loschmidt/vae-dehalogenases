@@ -20,7 +20,7 @@ class StructChecker:
         self.epochs = self.args.num_epoch
         self.decay = self.args.weight_decay
         self.K = self.args.K # cross validation counts
-        self.preserve_catalytic = self.args.preserve_catalytic
+        self.preserve_catalytic = self.args.no_preserve_catalytic
         self.ec = self.args.ec_num
 
         ## Setup enviroment variable
@@ -51,8 +51,9 @@ class StructChecker:
         parser.add_argument("--stats", help="Printing statistics of msa processing. Default False", default=False)
         parser.add_argument('--num_epoch', type=int, default=10000)
         parser.add_argument('--weight_decay', type=float, default=0.01)
+        parser.add_argument('--output_dir', type=str, default=None, help="Option for setup output directory")
         parser.add_argument('--K', type=int, default=5, help="Cross validation iterations setup. Default is 5")
-        parser.add_argument('--preserve_catalytic', type=bool, default=True, help="Alternative filtering of MSA. Default true. Set EC number for EnzymeMiner"
+        parser.add_argument('--no_preserve_catalytic', action='store_false', default=True, help="Alternative filtering of MSA. Default true. Set EC number for EnzymeMiner"
                                                                                   "https://loschmidt.chemi.muni.cz/enzymeminer/ , Default value is \"3.8.1.5\"")
         parser.add_argument('--ec_num', type=str, default="3.8.1.5", help="EC number for EnzymeMiner. Will pick up sequences from table and select with the most "
                                                                           "catalytic residues to further processing.")
@@ -73,7 +74,7 @@ class StructChecker:
         self.rp = "full"
         if self.args.RP is not None:
             self.rp = self.args.RP
-        self.rp_dir = self.run_root_dir + "/" + self.rp
+        self.rp_dir = self.run_root_dir + "/" + (self.rp if self.args.output_dir is None else self.args.output_dir)
         self.VAE_model_dir = self.rp_dir + "/" + "model"
         self.pickles_fld = self.rp_dir + "/" + "pickles"
         self.add_to_dir(self.rp_dir)
