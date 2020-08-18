@@ -39,9 +39,9 @@ class MSA:
         self._to_binary()
         self._stats()
 
-    def load_msa(self):
+    def load_msa(self, file=None):
         seq_dict = {}
-        with open(self.msa_file, 'r') as file_handle:
+        with open(self.msa_file if file is None else file, 'r') as file_handle:
             for line in file_handle:
                 if line[0] == "#" or line[0] == "/" or line[0] == "":
                     continue
