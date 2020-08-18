@@ -22,6 +22,8 @@ class StructChecker:
         self.K = self.args.K # cross validation counts
         self.preserve_catalytic = self.args.no_preserve_catalytic
         self.ec = self.args.ec_num
+        self.highlight_files = self.args.highlight_files
+        self.highlight_seqs = self.args.highlight_seqs
 
         ## Setup enviroment variable
         os.environ['PIP_BRANCH'] = str(self.preserve_catalytic)
@@ -56,6 +58,9 @@ class StructChecker:
         parser.add_argument('--no_preserve_catalytic', action='store_false', default=True, help="Alternative filtering of MSA (original pipeline).")
         parser.add_argument('--ec_num', type=str, default="3.8.1.5", help="EC number for EnzymeMiner. Will pick up sequences from table and select with the most "
                                                                           "catalytic residues to further processing.")
+        parser.add_argument('--highlight_files', type=str, default=None, help="Files with sequences to be highlighted. Array of files. Should be as"
+                                                                              " the last param in case of usage")
+        parser.add_argument('--highlight_seqs', type=str, default=None, help="Highlight sequences in dataset")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
@@ -73,12 +78,14 @@ class StructChecker:
         self.rp = "full"
         if self.args.RP is not None:
             self.rp = self.args.RP
-        self.rp_dir = self.run_root_dir + "/" + (self.rp if self.args.output_dir is None else self.args.output_dir)
+        self.rp_dir = self.run_root_dir + (self.rp if self.args.output_dir is None else self.args.output_dir)
         self.VAE_model_dir = self.rp_dir + "/" + "model"
         self.pickles_fld = self.rp_dir + "/" + "pickles"
+        self.high_fld = self.rp_dir + '/highlight'
         self.add_to_dir(self.rp_dir)
         self.add_to_dir(self.VAE_model_dir)
         self.add_to_dir(self.pickles_fld)
+        self.add_to_dir(self.high_fld)
         print("The run will be continue with RP \"{0}\" and data will be generated to {1}"
               " (for different rp rerun script with --RP [e.g. rp75] paramater)".format(self.rp, self.rp_dir))
 
@@ -92,8 +99,22 @@ if __name__ == '__main__':
     from download_MSA import Downloader
     from pipeline_importer import MSA
     from train import Train
+    from analyzer import VAEHandler, Highlighter
 
     down_MSA = Downloader(tar_dir)
     msa = MSA(tar_dir)
     msa.proc_msa()
     Train(tar_dir, msa=msa).train()
+    ## Create latent space
+    VAEHandler(setuper=tar_dir).latent_space()
+    ## Highlight
+    if tar_dir.highlight_files is not None:
+        highlighter = Highlighter(tar_dir)
+        files = tar_dir.highlight_files.split()
+        for f in files:
+            highlighter.highlight_file(file_name=f)
+    if tar_dir.highlight_seqs is not None:
+        highlighter = Highlighter(tar_dir)
+        names = tar_dir.highlight_seqs.split()
+        for n in names:
+            highlighter.highlight_name(name=n)
