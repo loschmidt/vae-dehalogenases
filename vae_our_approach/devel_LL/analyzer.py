@@ -35,12 +35,12 @@ class Highlighter:
     def _highlight(self, name, high_data):
         plt = self._init_plot()
         alpha = 0.2
-        save_path = self.out_dir + name.replace('/', '-') + '_' + self.name
         if len(high_data) < len(self.mu) * 0.1:
             alpha = 1 ## When low number of points should be highlighted make them brighter
-        plt.plot(high_data[:, 0], high_data[:, 1], '.',color='red', alpha=alpha, markersize=3, label=save_path)
+        plt.plot(high_data[:, 0], high_data[:, 1], '.',color='red', alpha=alpha, markersize=3, label=name)
         plt.legend(loc="upper left")
         plt.tight_layout()
+        save_path = self.out_dir + name.replace('/', '-') + '_' + self.name
         print("Class highlighter saving graph to", save_path)
         plt.savefig(save_path)
 
