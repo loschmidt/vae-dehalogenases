@@ -12,6 +12,8 @@ from time import sleep
 from PIL import Image
 from io import BytesIO
 
+import re
+
 class PageHandler:
     def __init__(self, ec=None):
         self.scr_n = 0
@@ -151,7 +153,8 @@ class CatalyticMSAPreprocessor:
 
     def proc_msa(self):
         self._enzymeMiner_handler() ##Setup queries and catalytic residues
-        self._pfam_handler()
+        msa, references = self._pfam_handler()
+        self._filter_against_ref(references, msa)
 
     def _enzymeMiner_handler(self):
         print("="*60)
@@ -163,13 +166,13 @@ class CatalyticMSAPreprocessor:
             page.select_all()
             page.switch_tabs()
             ## Select data from table
-            self.queries = page.get_queries() ## names and positions of catalytic residues
+            self.queries = page.get_queries() ## uniprot names and positions of catalytic residues
             self.aa_cat_res = page.get_catalytic_res()
         finally:
             print("Closing connection to EnzymeMiner browser")
             page.close()
 
-    def _pfam_handler(self):
+    def _pfam_handler(self, ):
         print("=" * 60)
         print("Translation of query names to Pfam name format")
         ## Connect to uniprot
@@ -179,28 +182,88 @@ class CatalyticMSAPreprocessor:
         try:
             ## Get tabs and switch their visibility
             for k in self.queries.keys():
-                pfam_names.append(page.translate(uniCode=k))
-                uniprot_seqs[k] = page.get_uniprot_seq(uniCode=k)
+                pfam_id = page.translate(uniCode=k)
+                pfam_names.append(pfam_id)
+                uniprot_seqs[pfam_id] = (page.get_uniprot_seq(uniCode=k), self.queries[k]) ## Tuple(Uniprot original sequences, catalytic residues position)
+                                                                                            # stored under pfam id in dictionary
         finally:
             print("Closing connection to Uniprot browser")
             page.close()
         ## Find pfam alignment in dataset
         msa = MSA(setuper=self.setuper, processMSA=False).load_msa()
-        to_align = [] ## Those which are not found
-        pfam_keys = {}
+        found_pfam = [] ## Those which are found
+        pfam_sequences = {}
         for k in msa.keys():
             for p in pfam_names:
                 if p in k:
-                    pfam_keys[k] = msa[k]
+                    pfam_sequences[p] = msa[k]
                     pfam_names.remove(p)
-                    to_align.append(p)
+                    found_pfam.append(p)
         ## Align those which were not founf in original dataset with pfam alignment
-        ## TODO alignment to found sequences and kept of correct position agoaing pfam alignment
-        print('Found sequence', uniprot_seqs[[i for i in self.queries.keys()][0]])
-        print('Pfam  sequence', pfam_keys[[i for i in pfam_keys.keys()][0]])
+        ## TODO alignment to found sequences and kept of correct position against pfam alignment
+        references = {}
+        for k in pfam_sequences.keys():
+            references[k] = self._allocate_catalytic_sites(uniprot_seqs[k][0], uniprot_seqs[k][1], pfam_sequences[k])
+        return msa, references
+
+    def _filter_against_ref(self, refs, msa):
+        '''Look at given positions if residues fits catalytic residues from EnzymeMiner'''
+        query_names = refs.keys()
+        filtered_msa = {}
+        for pfam_n in msa.keys():
+            if pfam_n.split('/')[0] in query_names:
+                ## Keep query sequences in MSA
+                filtered_msa[pfam_n] = msa[pfam_n]
+                continue
+            ## Check sequence if has the catalytic residues same at least as one query
+            for pos in refs.values():
+                hit_cnt = len(self.aa_cat_res)
+                for i, p in enumerate(pos):
+                    if msa[pfam_n][p] in self.aa_cat_res[i]:
+                        print('hit ', hit_cnt-1)
+                        hit_cnt -= 1
+                if hit_cnt <= 2: ## Match of residues in 100 percent of cases
+                    filtered_msa[pfam_n] = msa[pfam_n]
+                    break
+        if self.setuper.stats:
+            print('Catalytic residues query based filtering left:', len(filtered_msa.keys()))
+        return filtered_msa
+
+    def _allocate_catalytic_sites(self, uni_seq, sites_in_uni, pfam_seq):
+        '''Return positions of catalytic sites in pfam MSA'''
+        clear_pfam_seq = pfam_seq.replace('-', '').replace('.', '')
+        idx = [] ## index in pfam MSA sequence
+        for t in [i for i in range(0, len(pfam_seq))]:
+            if pfam_seq[t] not in ['.', '-']:
+                idx.append(t)
+        cat_idx = [] ## Store positions of catalytic residues in MSA
+        for site in [int(i) for i in sites_in_uni]:
+            pos = site
+            size = 2
+            while size > 0:
+                catalytic = uni_seq[pos - (size+1):pos + size] ## Take sourroundings 2 AA
+                found_catalytic = re.findall('{}+'.format(catalytic), clear_pfam_seq)
+                if len(found_catalytic) == 0:
+                    size -= 1
+                else:
+                    break
+            if size == 0:
+                print('Catalytic residue', catalytic, ' on position', pos, ' was not found...')
+                continue
+            ## only first occurance take to account
+            cat_idx.append(idx[clear_pfam_seq.index(found_catalytic[0])+size])
+            # startIndex = clear_pfam_seq.index(found_catalytic[0])
+            # endIndex = startIndex + len(found_catalytic[0]) - 1
+            # print('-'*70)
+            # print('catalytic residue pfam:', clear_pfam_seq[startIndex:endIndex])
+            # print('uniprot catalytic', catalytic)
+            # print('Residue pfam', pfam_seq[cat_idx[-1]], ' Residue expected', self.aa_cat_res[len(cat_idx)-1], ' Residue original', uni_seq[pos-1])
+            # print('index by idx', idx[clear_pfam_seq.index(found_catalytic[0])+size], ' or ', clear_pfam_seq[clear_pfam_seq.index(found_catalytic[0])+size])
+        return cat_idx
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     dow = Downloader(tar_dir)
     msa = CatalyticMSAPreprocessor(tar_dir)
+    msa.proc_msa()
