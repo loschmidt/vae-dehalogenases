@@ -78,7 +78,7 @@ class StructChecker:
         self.rp = "full"
         if self.args.RP is not None:
             self.rp = self.args.RP
-        self.rp_dir = self.run_root_dir + (self.rp if self.args.output_dir is None else self.args.output_dir)
+        self.rp_dir = self.run_root_dir + (self.rp if self.args.output_dir is None else self.args.output_dir.replace('/', '-'))
         self.VAE_model_dir = self.rp_dir + "/" + "model"
         self.pickles_fld = self.rp_dir + "/" + "pickles"
         self.high_fld = self.rp_dir + '/highlight'
