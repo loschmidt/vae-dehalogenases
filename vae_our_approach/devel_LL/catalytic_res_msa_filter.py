@@ -14,6 +14,11 @@ from io import BytesIO
 
 import re
 
+## Alignment
+from Bio import SeqIO
+from Bio.Align.Applications import MafftCommandline
+import tempfile
+
 class PageHandler:
     def __init__(self, ec=None):
         self.scr_n = 0
@@ -191,15 +196,23 @@ class CatalyticMSAPreprocessor:
             page.close()
         ## Find pfam alignment in dataset
         msa = MSA(setuper=self.setuper, processMSA=False).load_msa()
-        found_pfam = [] ## Those which are found
         pfam_sequences = {}
         for k in msa.keys():
             for p in pfam_names:
                 if p in k:
                     pfam_sequences[p] = msa[k]
+                    # from Bio import SeqIO
+                    # records = SeqIO.parse(self.setuper.MSA_fld+'PF00561_full.txt', "stockholm")
+                    # count = SeqIO.write(records, self.setuper.MSA_fld+"THIS_IS_YOUR_OUTPUT_FILE.fasta", "fasta")
+                    # print(k)
                     pfam_names.remove(p)
-                    found_pfam.append(p)
         ## Align those which were not founf in original dataset with pfam alignment
+        if len(list(pfam_sequences.values())) > 0:
+            key = next(iter(pfam_sequences))
+            al = Alignmer(self.setuper.MSA_fld, pfam_sequences[key], key=key)
+            for n in pfam_names:
+                name, seq = al.align(uniprot_seqs[n][0], n)
+                pfam_sequences[name] = seq
         ## TODO alignment to found sequences and kept of correct position against pfam alignment
         references = {}
         for k in pfam_sequences.keys():
@@ -220,9 +233,8 @@ class CatalyticMSAPreprocessor:
                 hit_cnt = len(self.aa_cat_res)
                 for i, p in enumerate(pos):
                     if msa[pfam_n][p] in self.aa_cat_res[i]:
-                        print('hit ', hit_cnt-1)
                         hit_cnt -= 1
-                if hit_cnt <= 2: ## Match of residues in 100 percent of cases
+                if hit_cnt <= 3: ## Match of residues in 100 percent of cases
                     filtered_msa[pfam_n] = msa[pfam_n]
                     break
         if self.setuper.stats:
@@ -260,6 +272,38 @@ class CatalyticMSAPreprocessor:
             # print('Residue pfam', pfam_seq[cat_idx[-1]], ' Residue expected', self.aa_cat_res[len(cat_idx)-1], ' Residue original', uni_seq[pos-1])
             # print('index by idx', idx[clear_pfam_seq.index(found_catalytic[0])+size], ' or ', clear_pfam_seq[clear_pfam_seq.index(found_catalytic[0])+size])
         return cat_idx
+
+class Alignmer:
+    def __init__(self, path, ref, key):
+        self.file_name = path + 'tmp.fasta'
+        self.ref_seq = ref
+        self.key = key
+
+    def align(self, uni_seq, name):
+        fasta_dict = {}
+        fasta_dict[self.key] = self.ref_seq
+        fasta_dict[name] = uni_seq
+        ## Now transform sequences back to fasta
+        with open(self.file_name, 'w') as file_handle:
+            for seq_name, seq in fasta_dict.items():
+                file_handle.write(">" + seq_name + "\n" + seq + "\n")
+
+        reference = 0
+        count = 0
+        with tempfile.NamedTemporaryFile() as temp:
+            for record in SeqIO.parse(self.file_name, "fasta"):
+                if count == 0:
+                    reference = record
+                else:
+                    SeqIO.write([reference, record], temp.name, "fasta")
+                    mafft_cline = MafftCommandline(input=temp.name)
+                    stdout, stderr = mafft_cline()
+                    aligned_fasta = stdout.split('>')[2]
+                    seq_name = aligned_fasta.split()[0]
+                    seq_seq = aligned_fasta.split()[1]
+                count += 1
+        return seq_name, seq_seq
+
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
