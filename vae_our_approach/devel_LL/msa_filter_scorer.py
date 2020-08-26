@@ -19,7 +19,7 @@ class MSAFilterCutOff :
         self.aa, self.aa_index = msa_obj.amino_acid_dict(export=True)
         msa_col_num = self._remove_cols_with_gaps(msa) ## converted to numbers
         msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num)
-        msa_overlap, self.key_list = self._get_seqs_overlap_ref(msa_no_gaps)
+        msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_no_gaps)
         self.seq_weight = self._weighting_sequences(msa_overlap)
         self.seq_msa_binary = self._to_binary(msa_overlap)
         self._stats(msa_overlap)
