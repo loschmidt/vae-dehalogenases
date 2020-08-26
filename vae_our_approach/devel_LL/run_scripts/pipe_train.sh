@@ -24,7 +24,7 @@ conda activate #vae-env
 echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 ## Run pipeline
 cd $DATADIR
-python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats True --no_preserve_catalytic --highlight_seqs ${QUERY} >> $LOGDIR/jobs_info.txt
+python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats True --highlight_seqs ${QUERY}
 
 ##python3 ./script/analyze_model1.py --Pfam_id $PFAMSEQ --RPgroup ${RPgroup}
 echo "Training process is finished" >> $LOGDIR/jobs_info.txt
