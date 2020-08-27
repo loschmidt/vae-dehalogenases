@@ -110,11 +110,16 @@ class MSAFilterCutOff :
         """
         seq_msa = []
         keys_list = []
+        no_essential = 0
         for k in msa.keys():
             if msa[k].count('X') > 0 or msa[k].count('Z') > 0:
                 continue
-            seq_msa.append([self.aa_index[s] for s in msa[k]])
+            try:
+                seq_msa.append([self.aa_index[s] for s in msa[k]])
+            except KeyError:
+                no_essential += 1
             keys_list.append(k)
+        self.no_essentials = no_essential
         return np.array(seq_msa), keys_list
 
     def _weighting_sequences(self, msa):
@@ -154,6 +159,7 @@ class MSAFilterCutOff :
             print("Pfam ID : {0} - {2}, Reference sequence {1}".format(self.setuper.pfam_id, name, self.setuper.rp))
             print("Sequences used: {0}".format(msa.shape[0]))
             print("Max lenght of sequence: {0}".format(max([len(i) for i in msa])))
+            print('Sequences removed due to nnoessential AA: ', self.no_essentials)
             print("=" * 60)
             print()
 

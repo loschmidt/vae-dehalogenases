@@ -76,8 +76,7 @@ class MSA:
               'D', 'E',
               'S', 'T', 'N', 'Q',
               'C', 'G', 'P',
-              'A', 'V', 'I', 'L', 'M', 'F', 'Y', 'W',
-              'O', 'B']
+              'A', 'V', 'I', 'L', 'M', 'F', 'Y', 'W']
         self.aa_index = {}
         self.aa_index['-'] = 0
         self.aa_index['.'] = 0
