@@ -102,9 +102,9 @@ class MSA:
                 continue
             try:
                 seq_msa.append([self.aa_index[s] for s in self.seq_dict[k]])
+                keys_list.append(k)
             except KeyError:
                 nonessential += 1
-            keys_list.append(k)
         self.seq_msa = np.array(seq_msa)
         self.keys_list = keys_list
         with open(self.pickle + "/keys_list.pkl", 'wb') as file_handle:

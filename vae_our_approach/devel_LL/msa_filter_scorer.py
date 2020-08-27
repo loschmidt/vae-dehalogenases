@@ -17,7 +17,7 @@ class MSAFilterCutOff :
         msa_obj = MSA(setuper=self.setuper, processMSA=False)
         msa = msa_obj.load_msa()
         self.aa, self.aa_index = msa_obj.amino_acid_dict(export=True)
-        msa_col_num = self._remove_cols_with_gaps(msa) ## converted to numbers
+        msa_col_num = self._remove_cols_with_gaps(msa, keep_ref=True) ## converted to numbers
         msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num)
         msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_no_gaps)
         self.seq_weight = self._weighting_sequences(msa_overlap)
@@ -34,9 +34,11 @@ class MSAFilterCutOff :
             ref_pos = self._get_ref_pos(msa)
         np_msa, key_list = self._remove_unexplored_and_covert_aa(msa)
         for i in range(np_msa.shape[1]):
-            if i not in ref_pos:
-                if np.sum(np_msa[:, i] == 0) <= np_msa.shape[0] * threshold:
-                    pos_idx.append(i)
+            # Hold all position as in reference sequence
+            if i in ref_pos:
+                pos_idx.append(i)
+            elif np.sum(np_msa[:, i] == 0) <= np_msa.shape[0] * threshold:
+                pos_idx.append(i)
         with open(self.pickle + "/seq_pos_idx.pkl", 'wb') as file_handle:
             pickle.dump(pos_idx, file_handle)
         np_msa = np_msa[:, np.array(pos_idx)]
@@ -47,15 +49,21 @@ class MSAFilterCutOff :
         return msa_dict
 
     def _get_ref_pos(self, msa):
-        """Returns position of reference sequence with no gaps"""
+        """Returns position of reference sequence with no gaps
+           Cut gaps at the beginning and at the end. Gaps inside keep
+           -----------[--AAAAA-AA-A-A-A---A--]------------
+                    begin    keep this      end
+                     of core of sequence"""
         if not self.setuper.ref_seq:
             return []
         query_seq = msa[self.setuper.ref_n]  ## with gaps
-        idx = []
         gaps = [s == "-" or s == "." for s in query_seq]
-        for i, gap in enumerate(gaps):
-            if not gap:
-                idx.append(i)
+        # for i, gap in enumerate(gaps):
+        #     if not gap:
+        #         idx.append(i)
+        ## first and last position of AA. Keep 2 gaps on each side.
+        begin_end = [[i for i, gap in enumerate(gaps) if not gap][ii]-2-(4*ii) for ii in (0, -1)]
+        idx = list(range(begin_end[0], begin_end[1]+1))
         return idx
 
     def _remove_seqs_with_gaps(self, msa, threshold=0.2):
@@ -116,9 +124,9 @@ class MSAFilterCutOff :
                 continue
             try:
                 seq_msa.append([self.aa_index[s] for s in msa[k]])
+                keys_list.append(k)
             except KeyError:
                 no_essential += 1
-            keys_list.append(k)
         self.no_essentials = no_essential
         return np.array(seq_msa), keys_list
 
