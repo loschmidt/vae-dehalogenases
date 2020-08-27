@@ -14,7 +14,7 @@ class MSA:
         self.values = {"ref": setuper.ref_seq, "ref_n": setuper.ref_n, "keep_gaps": setuper.keep_gaps, "stats": setuper.stats}
         if processMSA:
             self.seq_dict = self.load_msa()
-            self._amino_acid_dict()
+            self.amino_acid_dict()
 
     def proc_msa(self):
         if self.values["ref"] or self.values["keep_gaps"]:
@@ -70,7 +70,7 @@ class MSA:
                 if self.seq_dict[k].count("-") + self.seq_dict[k].count(".") > threshold * seq_len:
                     self.seq_dict.pop(k)
 
-    def _amino_acid_dict(self):
+    def amino_acid_dict(self, export=False):
         ## convert aa type into num 0-20
         self.aa = ['R', 'H', 'K',
               'D', 'E',
@@ -87,6 +87,8 @@ class MSA:
             i += 1
         with open(self.pickle + "/aa_index.pkl", 'wb') as file_handle:
             pickle.dump(self.aa_index, file_handle)
+        if export:
+            return self.aa, self.aa_index
 
     def _remove_unexplored_and_covert_aa(self):
         """

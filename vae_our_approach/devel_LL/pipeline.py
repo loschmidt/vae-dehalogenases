@@ -20,13 +20,19 @@ class StructChecker:
         self.epochs = self.args.num_epoch
         self.decay = self.args.weight_decay
         self.K = self.args.K # cross validation counts
-        self.preserve_catalytic = self.args.no_preserve_catalytic
+        ## MSA processing handling
+        self.preserve_catalytic = self.args.preserve_catalytic
         self.ec = self.args.ec_num
+        self.filter_score = self.args.no_score_filter
+        self.paper_pipe = self.args.paper_pipeline
+
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
 
         ## Setup enviroment variable
-        os.environ['PIP_BRANCH'] = str(self.preserve_catalytic)
+        os.environ['PIP_CAT'] = str(self.preserve_catalytic)
+        os.environ['PIP_PAPER'] = str(self.paper_pipe)
+        os.environ['PIP_SCORE'] = str(self.filter_score)
 
         ## Directory structure variables
         self.res_root_fld = "./results/"
@@ -55,9 +61,14 @@ class StructChecker:
         parser.add_argument('--weight_decay', type=float, default=0.01)
         parser.add_argument('--output_dir', type=str, default=None, help="Option for setup output directory")
         parser.add_argument('--K', type=int, default=5, help="Cross validation iterations setup. Default is 5")
-        parser.add_argument('--no_preserve_catalytic', action='store_false', default=True, help="Alternative filtering of MSA (original pipeline).")
-        parser.add_argument('--ec_num', type=str, default="3.8.1.5", help="EC number for EnzymeMiner. Will pick up sequences from table and select with the most "
-                                                                          "catalytic residues to further processing.")
+        parser.add_argument('--preserve_catalytic', action='store_true', default=False, help="Alternative filtering of MSA. Cooperate with EnzymeMiner,"
+                                                                                              " keep cat. residues. Use --ec_num param to setup mine reference sequences.")
+        parser.add_argument('--ec_num', type=str, default="3.8.1.5",
+                            help="EC number for EnzymeMiner. Will pick up sequences from table and select with the most "
+                                 "catalytic residues to further processing.")
+        parser.add_argument('--no_score_filter', action='store_false', default=True, help="Default. Loschmidt Labs pipeline for processing MSA.")
+        parser.add_argument('--paper_pipeline', action='store_true', default=False,
+                            help="Original paper pipeline. Exclusive use score_filter and preserve_catalytics.")
         parser.add_argument('--highlight_files', type=str, default=None, help="Files with sequences to be highlighted. Array of files. Should be as"
                                                                               " the last param in case of usage")
         parser.add_argument('--highlight_seqs', type=str, default=None, help="Highlight sequences in dataset")

@@ -1,13 +1,19 @@
 import os
 
-if 'PIP_BRANCH' in os.environ:
-    if os.environ['PIP_BRANCH'] == 'True':
-        from catalytic_res_msa_filter import CatalyticMSAPreprocessor as MSA
-    else:
-        from msa_prepar import MSA as MSA
+for var in ['PIP_CAT', 'PIP_PAPER', 'PIP_SCORE']:
+    if var not in os.environ:
+        print("The os environment variables were not set!! Variable : ", var)
+        exit(1)
+if os.environ['PIP_CAT'] == 'True':
+    from catalytic_res_msa_filter import CatalyticMSAPreprocessor as MSA
+elif os.environ['PIP_PAPER'] == 'True' or os.environ['PIP_SCORE'] == 'False':
+    # Default variant in the case of setting just --no_score_filter param
+    from msa_prepar import MSA as MSA
+elif os.environ['PIP_SCORE'] == 'True':
+    from msa_filter_scorer import MSAFilterCutOff as MSA
 
-    ## Unset linux environment variable
-    del os.environ['PIP_BRANCH']
-else:
-    print("The os environment variable was not set!!")
-    exit(1)
+## Unset linux environment variable
+del os.environ['PIP_SCORE']
+del os.environ['PIP_CAT']
+del os.environ['PIP_PAPER']
+

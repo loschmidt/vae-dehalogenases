@@ -15,7 +15,7 @@ PFAMSEQ=${seqID}
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
 # this information helps to find a scratch directory in case the job fails and you need to remove the scratch directory manually
-echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" >> $LOGDIR/jobs_info.txt
+echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR"
 
 # move into data directory
 cd $DATADIR_BASE
