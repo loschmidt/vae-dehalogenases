@@ -18,7 +18,7 @@ class MSAFilterCutOff :
         msa = msa_obj.load_msa()
         self.aa, self.aa_index = msa_obj.amino_acid_dict(export=True)
         msa_col_num = self._remove_cols_with_gaps(msa, keep_ref=True) ## converted to numbers
-        msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num)
+        msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num, threshold=0.75)
         msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_no_gaps)
         self.seq_weight = self._weighting_sequences(msa_overlap)
         self.seq_msa_binary = self._to_binary(msa_overlap)
@@ -56,14 +56,68 @@ class MSAFilterCutOff :
                      of core of sequence"""
         if not self.setuper.ref_seq:
             return []
+
+        def get_gaps_regions(gaps_arr, offset):
+            prev_pos = False
+            regions = []
+            start_pos = 0
+            for i, gap in enumerate(gaps_arr, offset):
+                if not prev_pos and gap:
+                    # Start of gap region
+                    start_pos = i
+                elif prev_pos and not gap:
+                    # End of gap region, modify end index
+                    regions.append((start_pos, i-1))
+                prev_pos = gap
+            # Correct last one region
+            regions.append((start_pos, len(core_protein)-1))
+            return regions
+
         query_seq = msa[self.setuper.ref_n]  ## with gaps
         gaps = [s == "-" or s == "." for s in query_seq]
-        # for i, gap in enumerate(gaps):
-        #     if not gap:
-        #         idx.append(i)
         ## first and last position of AA. Keep 2 gaps on each side.
         begin_end = [[i for i, gap in enumerate(gaps) if not gap][ii]-2-(4*ii) for ii in (0, -1)]
-        idx = list(range(begin_end[0], begin_end[1]+1))
+        core_protein = gaps[begin_end[0]: begin_end[1]+1]
+        # Search for big gap regions in the core
+        max_region_size = len(core_protein)*0.4
+        # Gaps region and its positions
+        offset = begin_end[0]
+        regions = get_gaps_regions(core_protein, offset)
+        # Get maximum region and select which part of alignment will be used
+        region_sizes = list(map(lambda e: e[1]-e[0], regions))
+        idx_max, max_val = max(enumerate(region_sizes), key=lambda e: e[1])
+        # Split up to max region only if region is really big
+        if max_val > max_region_size:
+            fst_reg = core_protein[0:regions[idx_max][0]]
+            snd_reg = core_protein[regions[idx_max][1]:]
+            # Use that region with more information (amino acids)
+            begin_end = (offset, regions[idx_max][0]+2) if fst_reg.count(False) > snd_reg.count(False) else (regions[idx_max][1]-2, begin_end[1])
+
+        # Amino acid positions in selected region will be hold
+        idx = []
+        # Get aa and their position get to idx
+        for i, gap in enumerate(gaps[begin_end[0]: begin_end[1]+1], begin_end[0]):
+            if not gap:
+                idx.append(i)
+
+        # Region is selected modify it to shorter version cca. 450 aa
+        regions = get_gaps_regions(gaps[begin_end[0]: begin_end[1] + 1], offset=begin_end[0])
+        actual_size = begin_end[1] - begin_end[0]
+        region_sizes = list(map(lambda e: e[1] - e[0], regions))
+        print('actual size is', actual_size, 'region len', len(regions))
+        # Remove regions form the biggest until the length is sufficient
+        while actual_size > 450:
+            max_region_i, max_region_value = max(enumerate(region_sizes), key=lambda e: e[1])
+            del region_sizes[max_region_i]
+            del regions[max_region_i]
+            actual_size -= max_region_value
+            print('actual size is', actual_size, 'region len', len(regions))
+        # Include positions of kept gaps into idx
+        for r in regions:
+            idx.extend(list(range(r[0], r[1]+1)))
+        idx.sort()
+        print(idx)
+        print(idx[0], idx[-1])
         return idx
 
     def _remove_seqs_with_gaps(self, msa, threshold=0.2):
@@ -71,6 +125,8 @@ class MSAFilterCutOff :
         seq_id = list(msa.keys())
         seq_len = len(list(msa.values())[0]) ## All seqs same len, select first
         for k in seq_id:
+            if self.setuper.ref_seq and self.setuper.ref_n == k:
+                continue # keep query sequence in msa
             unique, counts = np.unique(msa[k], return_counts=True)
             cnt_gaps = dict(zip(unique, counts))
             try:
