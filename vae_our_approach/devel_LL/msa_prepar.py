@@ -96,15 +96,20 @@ class MSA:
         """
         seq_msa = []
         keys_list = []
+        nonessential = 0
         for k in self.seq_dict.keys():
             if self.seq_dict[k].count('X') > 0 or self.seq_dict[k].count('Z') > 0:
                 continue
-            seq_msa.append([self.aa_index[s] for s in self.seq_dict[k]])
+            try:
+                seq_msa.append([self.aa_index[s] for s in self.seq_dict[k]])
+            except KeyError:
+                nonessential += 1
             keys_list.append(k)
         self.seq_msa = np.array(seq_msa)
         self.keys_list = keys_list
         with open(self.pickle + "/keys_list.pkl", 'wb') as file_handle:
             pickle.dump(keys_list, file_handle)
+        self.nonessential = nonessential
 
     def _rem_gaps_msa_positions(self):
         pos_idx = []
@@ -150,6 +155,7 @@ class MSA:
             print("Pfam ID : {0} - {2}, Reference sequence {1}".format(self.setup.pfam_id, self.values["ref"], self.setup.rp))
             print("Sequences used: {0}".format(self.seq_msa.shape[0]))
             print("Max lenght of sequence: {0}".format(max([len(i) for i in self.seq_msa])))
+            print('Sequences removed due to nnoessential AA: ', self.no_essentials)
             print("=" * 60)
             print()
 
