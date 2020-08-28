@@ -71,7 +71,7 @@ class StructChecker:
         parser.add_argument('--paper_pipeline', action='store_true', default=False,
                             help="Original paper pipeline. Exclusive use score_filter and preserve_catalytics.")
         parser.add_argument('--align', action='store_true', default=False,
-                            help="For highlighting. Align with reference sequence and then highlight in latent space.")
+                            help="For highlighting. Align with reference sequence and then highlight in latent space. Sequences are passed through highlight_files param in file")
         parser.add_argument('--highlight_files', type=str, default=None, help="Files with sequences to be highlighted. Array of files. Should be as"
                                                                               " the last param in case of usage")
         parser.add_argument('--highlight_seqs', type=str, default=None, help="Highlight sequences in dataset")
