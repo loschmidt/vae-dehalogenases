@@ -25,6 +25,7 @@ class StructChecker:
         self.ec = self.args.ec_num
         self.filter_score = self.args.no_score_filter
         self.paper_pipe = self.args.paper_pipeline
+        self.align = self.args.align
 
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
@@ -69,6 +70,8 @@ class StructChecker:
         parser.add_argument('--no_score_filter', action='store_false', default=True, help="Default. Loschmidt Labs pipeline for processing MSA.")
         parser.add_argument('--paper_pipeline', action='store_true', default=False,
                             help="Original paper pipeline. Exclusive use score_filter and preserve_catalytics.")
+        parser.add_argument('--align', action='store_true', default=False,
+                            help="For highlighting. Align with reference sequence and then highlight in latent space.")
         parser.add_argument('--highlight_files', type=str, default=None, help="Files with sequences to be highlighted. Array of files. Should be as"
                                                                               " the last param in case of usage")
         parser.add_argument('--highlight_seqs', type=str, default=None, help="Highlight sequences in dataset")
