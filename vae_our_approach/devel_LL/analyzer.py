@@ -1,10 +1,12 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/07/18 09:33:12"
 
+from Bio import pairwise2
 from pipeline import StructChecker
 from torch.utils.data import Dataset, DataLoader
 from VAE_model import MSA_Dataset, VAE
 from msa_prepar import MSA
+from msa_filter_scorer import MSAFilterCutOff as Convertor
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +17,8 @@ import os.path as path
 
 class Highlighter:
     def __init__(self, setuper):
-        self.mu, self.sigma, self.latent_keys = VAEHandler(setuper).latent_space(check_exists=True)
+        self.handler = VAEHandler(setuper)
+        self.mu, self.sigma, self.latent_keys = self.handler.latent_space(check_exists=True)
         self.out_dir = setuper.high_fld + '/'
         self.name = "class_highlight.png"
         self.setuper = setuper
@@ -48,7 +51,12 @@ class Highlighter:
         msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=file_name)
         name = (file_name.split("/")[-1]).split(".")[0]
         names = list(msa.keys())
-        data = self._name_match(names)
+        if self.setuper.align:
+            msa = AncestorsHandler(seq_to_align=msa).align_to_ref()
+            binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(msa)
+            data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
+        else:
+            data = self._name_match(names)
         self._highlight(name=name, high_data=data)
 
     def highlight_name(self, name):
@@ -89,6 +97,7 @@ class VAEHandler:
     def __init__(self, setuper):
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
+        self.vae = None
         if torch.cuda.is_available():
             self.use_cuda = True
         else:
@@ -114,6 +123,7 @@ class VAEHandler:
         return vae, msa_binary, num_seq
 
     def _load_pickles(self):
+        '''Side effect setups self.vae'''
         with open(self.pickle + "/keys_list.pkl", 'rb') as file_handle:
             msa_keys = pickle.load(file_handle)
         with open(self.pickle + "/seq_weight.pkl", 'rb') as file_handle:
@@ -131,6 +141,7 @@ class VAEHandler:
 
         msa_weight, msa_keys = self._load_pickles()
         vae, msa_binary, num_seq = self._prepare_model()
+        self.vae = vae
 
         batch_size = num_seq
         train_data = MSA_Dataset(msa_binary, msa_weight, msa_keys)
@@ -155,6 +166,54 @@ class VAEHandler:
         with open(self.pickle + "/latent_space.pkl", 'wb') as file_handle:
             pickle.dump({'key': key, 'mu': mu, 'sigma': sigma}, file_handle)
         return mu, sigma, key
+
+    def propagate_through_VAE(self, binaries, weights, keys):
+        # check if VAE is already ready from latent space method
+        vae = self.vae
+        if vae is None:
+            vae, msa_binary, num_seq = self._prepare_model()
+
+        train_data = MSA_Dataset(binaries, weights, keys)
+        train_data_loader = DataLoader(train_data, batch_size=binaries.shape[0])
+        mu_list = []
+        sigma_list = []
+        for idx, data in enumerate(train_data_loader):
+            msa, weight, key = data
+            with torch.no_grad():
+                if self.use_cuda:
+                    msa = msa.cuda()
+                mu, sigma = vae.encoder(msa)
+                if self.use_cuda:
+                    mu = mu.cpu().data.numpy()
+                    sigma = sigma.cpu().data.numpy()
+                mu_list.append(mu)
+                sigma_list.append(sigma)
+        mu = np.vstack(mu_list)
+        sigma = np.vstack(sigma_list)
+        return mu, sigma
+
+class AncestorsHandler:
+    def __init__(self, setuper, seq_to_align):
+        self.sequences = seq_to_align
+        self.setuper = setuper
+
+    def align_to_ref(self):
+        if not self.setuper.align:
+            return []
+        if not self.setuper.ref_seq:
+            print('Reference sequence was not set. There is not to be align to...')
+            return []
+        with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
+            ref = pickle.load(file_handle)
+        ref_name = list(ref.keys())[0]
+        ref_seq = list(ref.values())[0]
+        aligned = {}
+        print('Alignment ref is', ref_name, ref_seq)
+        for k in self.sequences.keys():
+            seq = self.sequences[k]
+            alignments = pairwise2.align.globalxx(ref_seq, seq)
+            aligned[k] = alignments[0][1]
+        return aligned
 
 if __name__ == '__main__':
     tar_dir = StructChecker()

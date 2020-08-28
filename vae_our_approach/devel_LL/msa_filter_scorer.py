@@ -20,9 +20,29 @@ class MSAFilterCutOff :
         msa_col_num = self._remove_cols_with_gaps(msa, keep_ref=True) ## converted to numbers
         msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num, threshold=0.72)
         msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_no_gaps)
+        self._save_reference_sequence(msa_no_gaps)
         self.seq_weight = self._weighting_sequences(msa_overlap)
         self.seq_msa_binary = self._to_binary(msa_overlap)
         self._stats(msa_overlap)
+
+    def prepare_aligned_msa_for_Vae(self, msa):
+        '''Prepares MSA for VAE, msa aligned'''
+        seqs, keys = self._remove_unexplored_and_covert_aa(msa)
+        converted_msa = {}
+        for i, k in enumerate(keys):
+            converted_msa[k] = seqs[i]
+        weights = self._weighting_sequences(msa=converted_msa, pickle=False)
+        binary = self._to_binary(converted_msa, pickle=False)
+        return binary, weights, keys
+
+    def _save_reference_sequence(self, msa):
+        if not self.setuper.ref_seq:
+            return None
+        ref_seq = {}
+        ref_seq[self.setuper.ref_n] = msa[self.setuper.ref_n]
+        ref_seq = self._back_to_amino(ref_seq)
+        with open(self.pickle + "/reference_seq.pkl", 'wb') as file_handle:
+            pickle.dump(ref_seq, file_handle)
 
     def _remove_cols_with_gaps(self, msa, threshold=0.2, keep_ref=False):
         '''Remove positions with too many gaps. Set threshold and
@@ -183,7 +203,7 @@ class MSAFilterCutOff :
         self.no_essentials = no_essential
         return np.array(seq_msa), keys_list
 
-    def _weighting_sequences(self, msa):
+    def _weighting_sequences(self, msa, pickle=True):
         ## reweighting sequences
         seq_weight = np.zeros(msa.shape)
         for j in range(msa.shape[1]):
@@ -197,11 +217,12 @@ class MSAFilterCutOff :
         tot_weight = np.sum(seq_weight)
         ## Normalize weights of sequences
         seq_weight = seq_weight.sum(1) / tot_weight
-        with open(self.pickle + "/seq_weight.pkl", 'wb') as file_handle:
-            pickle.dump(seq_weight, file_handle)
+        if pickle:
+            with open(self.pickle + "/seq_weight.pkl", 'wb') as file_handle:
+                pickle.dump(seq_weight, file_handle)
         return seq_weight
 
-    def _to_binary(self, msa):
+    def _to_binary(self, msa, pickle=True):
         K = len(self.aa)+1  ## num of classes of aa
         D = np.identity(K)
         num_seq = msa.shape[0]
@@ -209,9 +230,26 @@ class MSAFilterCutOff :
         seq_msa_binary = np.zeros((num_seq, len_seq_msa, K))
         for i in range(num_seq):
             seq_msa_binary[i, :, :] = D[msa[i]]
-        with open(self.pickle + "/seq_msa_binary.pkl", 'wb') as file_handle:
-            pickle.dump(seq_msa_binary, file_handle)
+        if pickle:
+            with open(self.pickle + "/seq_msa_binary.pkl", 'wb') as file_handle:
+                pickle.dump(seq_msa_binary, file_handle)
         return seq_msa_binary
+
+    def _back_to_amino(self, msa):
+        ## Reverse transformation
+        reverse_index = {}
+        reverse_index[0] = '-'
+        i = 1
+        for a in self.aa:
+            reverse_index[i] = a
+            i += 1
+        transformed = {}
+        ## Sequencies back to aminoacid representation
+        for k in msa.keys():
+            to_amino = msa[k]
+            amino_seq = [reverse_index[s] for s in to_amino]
+            transformed[k] = amino_seq
+        return transformed
 
     def _stats(self, msa):
         if self.setuper.stats:

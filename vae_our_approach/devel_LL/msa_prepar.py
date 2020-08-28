@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 from pipeline import StructChecker
 from download_MSA import Downloader
+from Bio import SeqIO
 
 class MSA:
     def __init__(self, setuper: StructChecker, processMSA=True):
@@ -41,6 +42,14 @@ class MSA:
 
     def load_msa(self, file=None):
         seq_dict = {}
+        # Check format of file
+        if file is not None:
+            if file.endswith('.fasta'):
+                fasta_sequences = SeqIO.parse(open(file), 'fasta')
+                for fasta in fasta_sequences:
+                    name, seq = fasta.id, str(fasta.seq)
+                    seq_dict[name] = seq
+                return seq_dict
         with open(self.msa_file if file is None else file, 'r') as file_handle:
             for line in file_handle:
                 if line[0] == "#" or line[0] == "/" or line[0] == "":
