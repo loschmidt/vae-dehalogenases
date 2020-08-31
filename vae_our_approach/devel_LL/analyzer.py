@@ -2,6 +2,7 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/07/18 09:33:12"
 
 from Bio import pairwise2
+from download_MSA import Downloader
 from pipeline import StructChecker
 from torch.utils.data import Dataset, DataLoader
 from VAE_model import MSA_Dataset, VAE
