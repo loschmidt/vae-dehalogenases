@@ -1,5 +1,5 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
-__date__ = "2020/08/10 11:30:00"
+__date__ = "2020/08/24 11:30:00"
 
 from download_MSA import Downloader
 from msa_prepar import MSA
