@@ -45,6 +45,7 @@ class MSA:
         # Check format of file
         if file is not None:
             if file.endswith('.fasta'):
+                print('Loading fasta format file')
                 fasta_sequences = SeqIO.parse(open(file), 'fasta')
                 for fasta in fasta_sequences:
                     name, seq = fasta.id, str(fasta.seq)
