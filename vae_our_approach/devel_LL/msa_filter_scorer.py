@@ -31,7 +31,7 @@ class MSAFilterCutOff :
         converted_msa = {}
         for i, k in enumerate(keys):
             converted_msa[k] = seqs[i]
-        weights = self._weighting_sequences(msa=converted_msa, pickle=False)
+        weights = self._weighting_sequences(msa=converted_msa, gen_pickle=False)
         binary = self._to_binary(converted_msa, gen_pickle=False)
         return binary, weights, keys
 
@@ -222,7 +222,7 @@ class MSAFilterCutOff :
                 pickle.dump(seq_weight, file_handle)
         return seq_weight
 
-    def _to_binary(self, msa, pickle=True):
+    def _to_binary(self, msa, gen_pickle=True):
         K = len(self.aa)+1  ## num of classes of aa
         D = np.identity(K)
         num_seq = msa.shape[0]
@@ -230,7 +230,7 @@ class MSAFilterCutOff :
         seq_msa_binary = np.zeros((num_seq, len_seq_msa, K))
         for i in range(num_seq):
             seq_msa_binary[i, :, :] = D[msa[i]]
-        if pickle:
+        if gen_pickle:
             with open(self.pickle + "/seq_msa_binary.pkl", 'wb') as file_handle:
                 pickle.dump(seq_msa_binary, file_handle)
         return seq_msa_binary
