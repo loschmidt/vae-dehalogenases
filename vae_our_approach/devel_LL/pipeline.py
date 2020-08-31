@@ -16,7 +16,7 @@ class StructChecker:
             self.ref_seq = False
             self.ref_n = ""
         self.keep_gaps = bool(self.args.keep_gaps)
-        self.stats = bool(self.args.stats)
+        self.stats = self.args.stats
         self.epochs = self.args.num_epoch
         self.decay = self.args.weight_decay
         self.K = self.args.K # cross validation counts
@@ -57,7 +57,7 @@ class StructChecker:
         parser.add_argument("--RP", help="RP specifier of given Pfam_id family, e.g. RP15, default value is full")
         parser.add_argument("--ref", help="the reference sequence; e.g. TENA_HUMAN/804-884")
         parser.add_argument("--keep_gaps", help="Setup in case you want to keep all gaps in sequences. Default False", default=False)
-        parser.add_argument("--stats", help="Printing statistics of msa processing. Default False", default=False)
+        parser.add_argument("--stats", action='store_true', help="Printing statistics of msa processing", default=False)
         parser.add_argument('--num_epoch', type=int, default=10000)
         parser.add_argument('--weight_decay', type=float, default=0.01)
         parser.add_argument('--output_dir', type=str, default=None, help="Option for setup output directory")
