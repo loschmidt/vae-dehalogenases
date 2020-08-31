@@ -213,7 +213,7 @@ class AncestorsHandler:
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
             ref = pickle.load(file_handle)
         ref_name = list(ref.keys())[0]
-        ref_seq = list(ref.values())[0]
+        ref_seq = str(list(ref.values())[0])
         aligned = {}
         print('Alignment ref is', ref_name, ref_seq)
         for k in self.sequences.keys():
