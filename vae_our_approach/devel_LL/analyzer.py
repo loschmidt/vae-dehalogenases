@@ -35,24 +35,27 @@ class Highlighter:
         #plt.tight_layout()
         return plt
 
-    def _highlight(self, name, high_data, one_by_one=False):
+    def _highlight(self, name, high_data, one_by_one=False, wait=False):
         plt = self._init_plot()
         alpha = 0.2
         if len(high_data) < len(self.mu) * 0.1:
             alpha = 1 ## When low number of points should be highlighted make them brighter
         if one_by_one:
+            colors = ["green", "brown", "black", "yellow", "magenta", "cyan"]
             for name_idx, data in enumerate(high_data):
-                plt.plot(data[0], data[1], '.', color='red', alpha=1, markersize=3, label=name[name_idx])
+                plt.plot(data[0], data[1], '.', color=colors[name_idx], alpha=1, markersize=3, label=name[name_idx])
             name = 'ancestors'
         else:
             plt.plot(high_data[:, 0], high_data[:, 1], '.',color='red', alpha=alpha, markersize=3, label=name)
-        plt.legend(loc="upper left")
-        plt.tight_layout()
-        save_path = self.out_dir + name.replace('/', '-') + '_' + self.name
-        print("Class highlighter saving graph to", save_path)
-        plt.savefig(save_path)
+        if not wait:
+            # Nothing will be appended to plot so generate it
+            plt.legend(loc="upper left")
+            plt.tight_layout()
+            save_path = self.out_dir + name.replace('/', '-') + '_' + self.name
+            print("Class highlighter saving graph to", save_path)
+            plt.savefig(save_path)
 
-    def highlight_file(self, file_name):
+    def highlight_file(self, file_name, wait=False):
         msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=file_name)
         name = (file_name.split("/")[-1]).split(".")[0]
         names = list(msa.keys())
@@ -60,7 +63,7 @@ class Highlighter:
             msa = AncestorsHandler(seq_to_align=msa).align_to_ref()
             binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
-            self._highlight(name=names, high_data=data, one_by_one=True)
+            self._highlight(name=names, high_data=data, one_by_one=True, wait=wait)
         else:
             data = self._name_match(names)
             self._highlight(name=name, high_data=data)
@@ -227,13 +230,13 @@ if __name__ == '__main__':
     ## Create latent space
     VAEHandler(setuper=tar_dir).latent_space()
     ## Highlight
+    highlighter = Highlighter(tar_dir)
     if tar_dir.highlight_files is not None:
-        highlighter = Highlighter(tar_dir)
         files = tar_dir.highlight_files.split()
+        wait_high = True if len(files) == 1 and tar_dir.highlight_seqs is not None else False
         for f in files:
-            highlighter.highlight_file(file_name=f)
+            highlighter.highlight_file(file_name=f, wait=wait_high)
     if tar_dir.highlight_seqs is not None:
-        highlighter = Highlighter(tar_dir)
         names = tar_dir.highlight_seqs.split()
         for n in names:
             highlighter.highlight_name(name=n)

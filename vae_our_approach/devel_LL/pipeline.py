@@ -122,13 +122,13 @@ if __name__ == '__main__':
     ## Create latent space
     VAEHandler(setuper=tar_dir).latent_space()
     ## Highlight
+    highlighter = Highlighter(tar_dir)
     if tar_dir.highlight_files is not None:
-        highlighter = Highlighter(tar_dir)
         files = tar_dir.highlight_files.split()
+        wait_high = True if len(files) == 1 and tar_dir.highlight_seqs is not None else False
         for f in files:
-            highlighter.highlight_file(file_name=f)
+            highlighter.highlight_file(file_name=f, wait=wait_high)
     if tar_dir.highlight_seqs is not None:
-        highlighter = Highlighter(tar_dir)
         names = tar_dir.highlight_seqs.split()
         for n in names:
             highlighter.highlight_name(name=n)
