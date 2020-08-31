@@ -28,11 +28,8 @@ class MSAFilterCutOff :
     def prepare_aligned_msa_for_Vae(self, msa):
         '''Prepares MSA for VAE, msa aligned'''
         seqs, keys = self._remove_unexplored_and_covert_aa(msa)
-        converted_msa = {}
-        for i, k in enumerate(keys):
-            converted_msa[k] = seqs[i]
-        weights = self._weighting_sequences(msa=converted_msa, gen_pickle=False)
-        binary = self._to_binary(converted_msa, gen_pickle=False)
+        weights = self._weighting_sequences(msa=seqs, gen_pickle=False)
+        binary = self._to_binary(seqs, gen_pickle=False)
         return binary, weights, keys
 
     def _save_reference_sequence(self, msa):
