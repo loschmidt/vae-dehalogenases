@@ -12,11 +12,11 @@ class MSAFilterCutOff :
     def __init__(self, setuper):
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
+        self.msa_obj = MSA(setuper=self.setuper, processMSA=False)
+        self.aa, self.aa_index = self.msa_obj.amino_acid_dict(export=True)
 
     def proc_msa(self):
-        msa_obj = MSA(setuper=self.setuper, processMSA=False)
-        msa = msa_obj.load_msa()
-        self.aa, self.aa_index = msa_obj.amino_acid_dict(export=True)
+        msa = self.msa_obj.load_msa()
         msa_col_num = self._remove_cols_with_gaps(msa, keep_ref=True) ## converted to numbers
         msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num, threshold=0.72)
         msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_no_gaps)
