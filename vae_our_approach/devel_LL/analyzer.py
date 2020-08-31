@@ -174,6 +174,7 @@ class VAEHandler:
 
         with open(self.pickle + "/latent_space.pkl", 'wb') as file_handle:
             pickle.dump({'key': key, 'mu': mu, 'sigma': sigma}, file_handle)
+        print('The latent space was created....')
         return mu, sigma, key
 
     def propagate_through_VAE(self, binaries, weights, keys):
@@ -227,6 +228,7 @@ class AncestorsHandler:
 if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
+    down_MSA = Downloader(tar_dir)
     ## Create latent space
     VAEHandler(setuper=tar_dir).latent_space()
     ## Highlight
