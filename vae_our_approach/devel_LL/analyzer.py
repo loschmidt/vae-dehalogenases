@@ -35,12 +35,17 @@ class Highlighter:
         #plt.tight_layout()
         return plt
 
-    def _highlight(self, name, high_data):
+    def _highlight(self, name, high_data, one_by_one=False):
         plt = self._init_plot()
         alpha = 0.2
         if len(high_data) < len(self.mu) * 0.1:
             alpha = 1 ## When low number of points should be highlighted make them brighter
-        plt.plot(high_data[:, 0], high_data[:, 1], '.',color='red', alpha=alpha, markersize=3, label=name)
+        if one_by_one:
+            for name_idx, data in enumerate(high_data):
+                plt.plot(data[0], data[1], '.', color='red', alpha=1, markersize=3, label=name[name_idx])
+            name = 'ancestors'
+        else:
+            plt.plot(high_data[:, 0], high_data[:, 1], '.',color='red', alpha=alpha, markersize=3, label=name)
         plt.legend(loc="upper left")
         plt.tight_layout()
         save_path = self.out_dir + name.replace('/', '-') + '_' + self.name
@@ -55,9 +60,10 @@ class Highlighter:
             msa = AncestorsHandler(seq_to_align=msa).align_to_ref()
             binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
+            self._highlight(name=names, high_data=data, one_by_one=True)
         else:
             data = self._name_match(names)
-        self._highlight(name=name, high_data=data)
+            self._highlight(name=name, high_data=data)
 
     def highlight_name(self, name):
         data = self._name_match([name])
