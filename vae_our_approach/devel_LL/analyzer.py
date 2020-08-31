@@ -207,6 +207,7 @@ class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):
         self.sequences = seq_to_align
         self.setuper = setuper
+        self.pickle = setuper.pickles_fld
 
     def align_to_ref(self):
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
