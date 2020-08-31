@@ -61,7 +61,7 @@ class Highlighter:
         name = (file_name.split("/")[-1]).split(".")[0]
         names = list(msa.keys())
         if self.setuper.align:
-            msa = AncestorsHandler(seq_to_align=msa).align_to_ref()
+            msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
             binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
             self._highlight(name=names, high_data=data, one_by_one=True, wait=wait)
