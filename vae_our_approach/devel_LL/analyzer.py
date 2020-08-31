@@ -209,11 +209,6 @@ class AncestorsHandler:
         self.setuper = setuper
 
     def align_to_ref(self):
-        if not self.setuper.align:
-            return []
-        if not self.setuper.ref_seq:
-            print('Reference sequence was not set. There is not to be align to...')
-            return []
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
             ref = pickle.load(file_handle)
         ref_name = list(ref.keys())[0]
