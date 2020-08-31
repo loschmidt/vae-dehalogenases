@@ -32,7 +32,7 @@ class MSAFilterCutOff :
         for i, k in enumerate(keys):
             converted_msa[k] = seqs[i]
         weights = self._weighting_sequences(msa=converted_msa, pickle=False)
-        binary = self._to_binary(converted_msa, pickle=False)
+        binary = self._to_binary(converted_msa, gen_pickle=False)
         return binary, weights, keys
 
     def _save_reference_sequence(self, msa):
@@ -203,7 +203,7 @@ class MSAFilterCutOff :
         self.no_essentials = no_essential
         return np.array(seq_msa), keys_list
 
-    def _weighting_sequences(self, msa, pickle=True):
+    def _weighting_sequences(self, msa, gen_pickle=True):
         ## reweighting sequences
         seq_weight = np.zeros(msa.shape)
         for j in range(msa.shape[1]):
@@ -217,7 +217,7 @@ class MSAFilterCutOff :
         tot_weight = np.sum(seq_weight)
         ## Normalize weights of sequences
         seq_weight = seq_weight.sum(1) / tot_weight
-        if pickle:
+        if gen_pickle:
             with open(self.pickle + "/seq_weight.pkl", 'wb') as file_handle:
                 pickle.dump(seq_weight, file_handle)
         return seq_weight
