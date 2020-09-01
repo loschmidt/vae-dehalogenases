@@ -23,6 +23,7 @@ class Highlighter:
         self.out_dir = setuper.high_fld + '/'
         self.name = "class_highlight.png"
         self.setuper = setuper
+        self.plt = self._init_plot()
 
     def _init_plot(self):
         plt.figure(0)
@@ -37,14 +38,14 @@ class Highlighter:
         return plt
 
     def _highlight(self, name, high_data, one_by_one=False, wait=False):
-        plt = self._init_plot()
+        plt = self.plt if self.setuper.align else self._init_plot()
         alpha = 0.2
         if len(high_data) < len(self.mu) * 0.1:
             alpha = 1 ## When low number of points should be highlighted make them brighter
         if one_by_one:
-            colors = ["green", "brown", "black", "yellow", "magenta", "cyan"]
             for name_idx, data in enumerate(high_data):
-                plt.plot(data[0], data[1], '.', color=colors[name_idx], alpha=1, markersize=3, label=name[name_idx])
+                plt.plot(data[0], data[1], '.', color='black', alpha=1, markersize=3, label=name[name_idx]+'({})'.format(name_idx))
+                plt.annotate(str(name_idx), (data[0], data[1]))
             name = 'ancestors'
         else:
             plt.plot(high_data[:, 0], high_data[:, 1], '.',color='red', alpha=alpha, markersize=3, label=name)
@@ -138,7 +139,7 @@ class VAEHandler:
             msa_keys = pickle.load(file_handle)
         with open(self.pickle + "/seq_weight.pkl", 'rb') as file_handle:
             seq_weight = pickle.load(file_handle)
-        return seq_weight, msa_keys
+        return seq_weight.astype(np.float32), msa_keys
 
     def latent_space(self, check_exists=False):
         pickle_name = self.pickle + "/latent_space.pkl"
@@ -184,6 +185,9 @@ class VAEHandler:
         if vae is None:
             vae, msa_binary, num_seq = self._prepare_model()
 
+        binaries = binaries.astype(np.float32)
+        binaries = binaries.reshape((binaries.shape[0], -1))
+        weights = weights.astype(np.float32)
         train_data = MSA_Dataset(binaries, weights, keys)
         train_data_loader = DataLoader(train_data, batch_size=binaries.shape[0])
         mu_list = []
@@ -213,13 +217,16 @@ class AncestorsHandler:
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
             ref = pickle.load(file_handle)
         ref_name = list(ref.keys())[0]
-        ref_seq = str(list(ref.values())[0])
+        ref_seq = "".join(ref[ref_name])
         aligned = {}
-        print('Alignment ref is', ref_name, ref_seq)
+        i = 0
         for k in self.sequences.keys():
+            i += 1
             seq = self.sequences[k]
-            alignments = pairwise2.align.globalxx(ref_seq, seq)
+            alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
             aligned[k] = alignments[0][1]
+            if self.setuper.stats:
+                print(k, ':', alignments[0][2])
         return aligned
 
 if __name__ == '__main__':

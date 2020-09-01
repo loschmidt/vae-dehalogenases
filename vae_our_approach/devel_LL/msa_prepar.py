@@ -49,7 +49,7 @@ class MSA:
                 fasta_sequences = SeqIO.parse(open(file), 'fasta')
                 for fasta in fasta_sequences:
                     name, seq = fasta.id, str(fasta.seq)
-                    seq_dict[name] = seq
+                    seq_dict[name] = seq.upper()
                 return seq_dict
         with open(self.msa_file if file is None else file, 'r') as file_handle:
             for line in file_handle:

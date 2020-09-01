@@ -7,6 +7,7 @@ from pipeline import StructChecker
 
 import numpy as np
 import pickle
+import pandas as pd
 
 class MSAFilterCutOff :
     def __init__(self, setuper):
@@ -28,6 +29,8 @@ class MSAFilterCutOff :
     def prepare_aligned_msa_for_Vae(self, msa):
         '''Prepares MSA for VAE, msa aligned'''
         seqs, keys = self._remove_unexplored_and_covert_aa(msa)
+        dataframe = pd.DataFrame(seqs.tolist(), dtype=int)
+        seqs = np.array(dataframe.fillna(0).values, dtype=int)
         weights = self._weighting_sequences(msa=seqs, gen_pickle=False)
         binary = self._to_binary(seqs, gen_pickle=False)
         return binary, weights, keys
@@ -38,6 +41,7 @@ class MSAFilterCutOff :
         ref_seq = {}
         ref_seq[self.setuper.ref_n] = msa[self.setuper.ref_n]
         ref_seq = self._back_to_amino(ref_seq)
+        print('Saving ref ', ref_seq, len(ref_seq[self.setuper.ref_n]))
         with open(self.pickle + "/reference_seq.pkl", 'wb') as file_handle:
             pickle.dump(ref_seq, file_handle)
 
