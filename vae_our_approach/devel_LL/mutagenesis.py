@@ -1,0 +1,124 @@
+__author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
+__date__ = "2020/09/03 09:36:00"
+
+from analyzer import VAEHandler, Highlighter
+from msa_filter_scorer import MSAFilterCutOff as Convertor
+from msa_prepar import MSA
+from pipeline import StructChecker
+from download_MSA import Downloader
+from random import randrange
+from math import sqrt
+
+import pickle
+
+class MutagenesisGenerator:
+    def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2):
+        self.num_mutations = num_point_mut
+        self.handler = VAEHandler(setuper)
+        self.threshold = distance_threshold
+        self.pickle = setuper.pickles_fld
+        self.setuper = setuper
+        self.anc_seqs = []
+
+        self.msa_obj = MSA(setuper=self.setuper, processMSA=False)
+        self.aa, self.aa_index = self.msa_obj.amino_acid_dict(export=True)
+
+        if ref_dict is None:
+            with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
+                ref_dict = pickle.load(file_handle)
+        self.cur = ref_dict
+        self.cur_name = list(ref_dict.keys())[0]
+
+    def reconstruct_ancestors(self, samples=10):
+        mutants_samples = []
+        ancestors = []
+        anc_names = []
+        anc_n = self.cur_name
+
+        ancestor_dist, ancestor, anc_pos, _ = self._get_ancestor(mutants=self.cur)
+        ancestors.append(anc_pos)
+        anc_names.append(anc_n)
+        while ancestor_dist > self.threshold:
+            self.anc_seqs.append(ancestor)
+            mutant_seqs = self._produce_mutants(ancestor, samples)
+            anc_n = 'anc_{}'.format(len(mutants_samples))
+            ancestor_dist, ancestor, anc_pos, mutants_pos = self._get_ancestor(mutants=mutant_seqs)
+            mutants_samples.append(mutants_pos)
+            ancestors.append(anc_pos)
+            anc_names.append(anc_n)
+        return ancestors, anc_names, mutants_samples
+
+    def _produce_mutants(self, gene, samples):
+        mutant_seqs = {}  # List of dictionaries with fake names
+        # Not automatizated, user has to fing cat residues on his own
+        # Process:
+        #       use create_fasta_file method to generate fasta MSA
+        #       upload it to ConSurf Server and let proceed it
+        cat_positions = [] # Positions of catalytic residues
+
+        def random_mutation(c):
+            m = self.aa[randrange(len(self.aa))]
+            while  m == c:
+                m = self.aa[randrange(len(self.aa))]
+            return m
+
+        for i in range(samples):
+            # Select position for mutations
+            pos = []
+            while len(pos) < self.num_mutations:
+                i_pos = randrange(len(gene))
+                if i not in cat_positions:
+                    pos.append(i_pos)
+            mutant = gene.copy()
+            for p in pos:
+                mutant[p] = random_mutation(mutant[p])
+            mutant_seqs['mut_'+str(i)] = mutant
+
+        return mutant_seqs
+
+    def _mutants_positions(self, seqs):
+        binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(seqs)
+        data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
+        return data
+
+    def create_fasta_file(self):
+        with open(self.pickle + "/training_alignment.pkl", 'rb') as file_handle:
+            seq_dict = pickle.load(file_handle)
+        ## Now transform sequences back to fasta
+        with open(self.pickle + "/training_alignment.fasta", 'w') as file_handle:
+            for seq_name, seq in seq_dict.items():
+                file_handle.write(">" + "".join(seq_name) + "\n" + "".join(seq) + "\n")
+        print('Fasta file generate to ', self.pickle + '/training_alignment.fasta')
+
+    def store_ancestors_in_fasta(self, names):
+        with open(self.pickle + "/generated_ancestors.fasta", 'w') as file_handle:
+            for i, seq in enumerate(self.anc_seqs):
+                file_handle.write(">" + names[i] + "\n" + "".join(seq) + "\n")
+        print('Fasta file generate to ', self.pickle + '/generated_ancestors.fasta')
+
+    def _get_ancestor(self, mutants):
+        mutants_pos = self._mutants_positions(mutants)
+        seqs = list(mutants.values())
+        min_dist = float("inf")
+        ancestor = []
+        anc_pos = []
+        for i, p in enumerate(mutants_pos):
+            dis = sqrt(p[0]**2 + p[1]**2)
+            if dis < min_dist:
+                min_dist = dis
+                ancestor = seqs[i]
+                anc_pos = p
+
+        return min_dist, ancestor, anc_pos, mutants_pos
+
+if __name__ == '__main__':
+    tar_dir = StructChecker()
+    tar_dir.setup_struct()
+    dow = Downloader(tar_dir)
+    mut = MutagenesisGenerator(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
+    ancs, names, muts = mut.reconstruct_ancestors(samples=tar_dir.mutant_samples)
+    h = Highlighter(tar_dir)
+    h.highlight_mutants(ancs, names, muts, file_name='mutans_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples))
+    if tar_dir.focus:
+        h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
+    mut.store_ancestors_in_fasta(names)
