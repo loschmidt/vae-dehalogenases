@@ -26,6 +26,9 @@ class StructChecker:
         self.filter_score = self.args.no_score_filter
         self.paper_pipe = self.args.paper_pipeline
         self.align = self.args.align
+        self.mut_points = self.args.mut_points
+        self.mutant_samples = self.args.mutant_samples
+        self.focus = self.args.focus
 
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
@@ -62,6 +65,8 @@ class StructChecker:
         parser.add_argument('--weight_decay', type=float, default=0.01)
         parser.add_argument('--output_dir', type=str, default=None, help="Option for setup output directory")
         parser.add_argument('--K', type=int, default=5, help="Cross validation iterations setup. Default is 5")
+        parser.add_argument('--mut_points', type=int, default=1, help="Points of mutation. Default 1")
+        parser.add_argument('--mutant_samples', type=int, default=5, help="Count of mutants will be generated for each ancestor. Defa")
         parser.add_argument('--preserve_catalytic', action='store_true', default=False, help="Alternative filtering of MSA. Cooperate with EnzymeMiner,"
                                                                                               " keep cat. residues. Use --ec_num param to setup mine reference sequences.")
         parser.add_argument('--ec_num', type=str, default="3.8.1.5",
@@ -75,6 +80,8 @@ class StructChecker:
         parser.add_argument('--highlight_files', type=str, default=None, help="Files with sequences to be highlighted. Array of files. Should be as"
                                                                               " the last param in case of usage")
         parser.add_argument('--highlight_seqs', type=str, default=None, help="Highlight sequences in dataset")
+        parser.add_argument('--focus', action='store_true', default=False,
+                            help="Generate focus plot")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
