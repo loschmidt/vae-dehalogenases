@@ -26,19 +26,16 @@ class Highlighter:
         self.plt = self._init_plot()
 
     def _init_plot(self):
-        plt.figure(0)
-        plt.clf()
-        plt.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
-        plt.xlim((-6, 6))
-        plt.ylim((-6, 6))
-        plt.xlabel("$Z_1$")
-        plt.ylabel("$Z_2$")
-        #plt.legend(loc="upper left")
-        #plt.tight_layout()
-        return plt
+        self.fig, ax = plt.subplots()
+        ax.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
+        ax.set_xlim([-6, 6])
+        ax.set_ylim([-6, 6])
+        ax.set_xlabel("$Z_1$")
+        ax.set_ylabel("$Z_2$")
+        return ax
 
-    def _highlight(self, name, high_data, one_by_one=False, wait=False):
-        plt = self.plt if self.setuper.align else self._init_plot()
+    def _highlight(self, name, high_data, one_by_one=False, wait=False, no_init=False, color='red', file_name='ancestors', focus=False):
+        plt = self.plt if no_init else self._init_plot()
         alpha = 0.2
         if len(high_data) < len(self.mu) * 0.1:
             alpha = 1 ## When low number of points should be highlighted make them brighter
@@ -46,16 +43,36 @@ class Highlighter:
             for name_idx, data in enumerate(high_data):
                 plt.plot(data[0], data[1], '.', color='black', alpha=1, markersize=3, label=name[name_idx]+'({})'.format(name_idx))
                 plt.annotate(str(name_idx), (data[0], data[1]))
-            name = 'ancestors'
+            name = file_name
         else:
-            plt.plot(high_data[:, 0], high_data[:, 1], '.',color='red', alpha=alpha, markersize=3, label=name)
+            plt.plot(high_data[:, 0], high_data[:, 1], '.',color=color, alpha=alpha, markersize=3, label=name)
         if not wait:
             # Nothing will be appended to plot so generate it
-            plt.legend(loc="upper left")
-            plt.tight_layout()
+            # Put a legend to the right of the current axis
+            #plt.legend(loc='center left', bbox_to_anchor=(1.04, 0.5))
+            if focus:
+                # now later you get a new subplot; change the geometry of the existing
+                x1 = high_data[0][0]
+                x2 = high_data[-1][0]
+                y1 = high_data[0][1]
+                y2 = high_data[-1][1]
+                x1, x2 = (x1, x2) if x1 < x2 else (x2, x1)
+                y1, y2 = (y1, y2) if y1 < y2 else (y2, y1)
+                plt.set_xlim([x1-0.5, x2+0.5])
+                plt.set_ylim([y1-0.5, y2+0.5])
+            else:
+                plt.legend(loc="upper left")
+            #plt.tight_layout()
             save_path = self.out_dir + name.replace('/', '-') + '_' + self.name
             print("Class highlighter saving graph to", save_path)
-            plt.savefig(save_path)
+            self.fig.savefig(save_path)
+
+    def highlight_mutants(self, ancs, names, mutants, file_name='mutants', focus=False):
+        colors = ['salmon', 'tomato', 'coral', 'orangered', 'chocolate', 'sienna']
+        self.plt = self._init_plot()
+        for i, m in enumerate(mutants):
+            self._highlight(name='', high_data=m, wait=True, no_init=True, color=colors[i % len(colors)])
+        self._highlight(name=names, high_data=ancs, no_init=True, file_name=file_name, one_by_one=True, focus=focus)
 
     def highlight_file(self, file_name, wait=False):
         msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=file_name)
@@ -65,7 +82,7 @@ class Highlighter:
             msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
             binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
-            self._highlight(name=names, high_data=data, one_by_one=True, wait=wait)
+            self._highlight(name=names, high_data=data, one_by_one=True, wait=wait, no_init=True)
         else:
             data = self._name_match(names)
             self._highlight(name=name, high_data=data)
