@@ -41,7 +41,6 @@ class MSAFilterCutOff :
         ref_seq = {}
         ref_seq[self.setuper.ref_n] = msa[self.setuper.ref_n]
         ref_seq = self._back_to_amino(ref_seq)
-        print('Saving ref ', ref_seq, len(ref_seq[self.setuper.ref_n]))
         with open(self.pickle + "/reference_seq.pkl", 'wb') as file_handle:
             pickle.dump(ref_seq, file_handle)
 
@@ -172,6 +171,7 @@ class MSAFilterCutOff :
         len_seq = len(ref_seq)
         overlap_seqs = []
         final_keys = []
+        training_alignment = {}
         for key_idx, seq in enumerate(trans_arr):
             overlap = 0
             for i in range(len_seq):
@@ -181,8 +181,12 @@ class MSAFilterCutOff :
             if overlap >= threshold * len_seq:
                 overlap_seqs.append(seq)
                 final_keys.append(key_list[key_idx])
+                training_alignment[key_list[key_idx]] = seq
         with open(self.pickle + "/keys_list.pkl", 'wb') as file_handle:
             pickle.dump(final_keys, file_handle)
+        training_converted = self._back_to_amino(training_alignment)
+        with open(self.pickle + "/training_alignment.pkl", 'wb') as file_handle:
+            pickle.dump(training_converted, file_handle)
         return np.array(overlap_seqs), final_keys
 
     def _remove_unexplored_and_covert_aa(self, msa):
