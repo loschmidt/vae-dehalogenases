@@ -26,6 +26,8 @@ class Highlighter:
         self.plt = self._init_plot()
 
     def _init_plot(self):
+        if self.setuper.dimensionality == 3:
+            self._highlight_3D(name='', high_data=self.mu)
         self.fig, ax = plt.subplots()
         ax.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
         ax.set_xlim([-6, 6])
@@ -36,6 +38,9 @@ class Highlighter:
 
     def _highlight(self, name, high_data, one_by_one=False, wait=False, no_init=False, color='red', file_name='ancestors', focus=False):
         plt = self.plt if no_init else self._init_plot()
+        if self.setuper.dimensionality == 3:
+            self._highlight_3D(name, high_data)
+            return
         alpha = 0.2
         if len(high_data) < len(self.mu) * 0.1:
             alpha = 1 ## When low number of points should be highlighted make them brighter
@@ -121,6 +126,24 @@ class Highlighter:
             print(" Success: ", succ, " Fails: ", fail)
         return self.mu[idx, :]
 
+    def _highlight_3D(self, name, high_data, color='blue'):
+        from mpl_toolkits.mplot3d import Axes3D
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3D')
+        ax.set_xlabel("$Z_1$")
+        ax.set_ylabel("$Z_2$")
+        ax.set_zlabel("$Z_3$")
+        ax.set_xlim(-6, 6)
+        ax.set_ylim(-6, 6)
+        ax.set_zlim(-6, 6)
+        if name == '':
+            ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='blue')
+            return ax
+        ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='red')
+        save_path = self.out_dir + name.replace('/', '-') + '_3D_' + self.name
+        print("Class highlighter saving 3D graph to", save_path)
+        fig.savefig(save_path)
+
 class VAEHandler:
     def __init__(self, setuper):
         self.setuper = setuper
@@ -143,7 +166,7 @@ class VAEHandler:
         msa_binary = msa_binary.astype(np.float32)
 
         ## build a VAE model
-        vae = VAE(num_res_type, 2, len_protein * num_res_type, [100])
+        vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, [100])
         ## move the VAE onto a GPU
         if self.use_cuda:
             vae.cuda()
