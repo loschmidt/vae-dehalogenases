@@ -48,7 +48,7 @@ class Train:
             print("-" * 60)
 
             ## build a VAE model with random parameters
-            vae = VAE(self.num_res_type, 2, self.len_protein * self.num_res_type, [100])
+            vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type, [100])
 
             ## move the VAE onto a GPU
             if self.use_cuda:

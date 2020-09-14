@@ -29,6 +29,7 @@ class StructChecker:
         self.mut_points = self.args.mut_points
         self.mutant_samples = self.args.mutant_samples
         self.focus = self.args.focus
+        self.dimensionality = self.args.dimensionality
 
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
@@ -82,6 +83,7 @@ class StructChecker:
         parser.add_argument('--highlight_seqs', type=str, default=None, help="Highlight sequences in dataset")
         parser.add_argument('--focus', action='store_true', default=False,
                             help="Generate focus plot")
+        parser.add_argument('--dimensionality', type=int, default=2, help="Latent space dimensionality. Default value 2")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
