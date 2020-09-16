@@ -90,11 +90,17 @@ class MutagenesisGenerator:
                 file_handle.write(">" + "".join(seq_name) + "\n" + "".join(seq) + "\n")
         print('Fasta file generate to ', self.pickle + '/training_alignment.fasta')
 
-    def store_ancestors_in_fasta(self, names):
-        with open(self.pickle + "/generated_ancestors.fasta", 'w') as file_handle:
+    def store_ancestors_in_fasta(self, names, file_name='generated_ancestors.fasta'):
+        with open(self.pickle + "/" + file_name, 'w') as file_handle:
             for i, seq in enumerate(self.anc_seqs):
                 file_handle.write(">" + names[i] + "\n" + "".join(seq) + "\n")
         print('Fasta file generate to ', self.pickle + '/generated_ancestors.fasta')
+
+    def _store_in_fasta_file(self, to_store, to_file):
+        names = list(to_store.keys())
+        vals = list(to_store.values())
+        self.anc_seqs = vals
+        self.store_ancestors_in_fasta(names=names, file_name=to_file)
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
@@ -111,6 +117,28 @@ class MutagenesisGenerator:
 
         return min_dist, ancestor, anc_pos, mutants_pos
 
+    def get_straight_ancestors(self, cnt_of_anc=3):
+        '''Method does that the line between a position of reference sequence
+         and the center (0,0) is divided to cnt_of_anc and the borders of the
+         intervals are denoted as ancestors. It can be used as a validation
+         metric that int the randomly initialized weights od encoder has no
+         effect on latent space if the radiuses of differently init models
+         are almost same.
+         '''
+        (x_s, y_s) = self._mutants_positions(list(self.cur.values()))
+        cnt_of_anc += 1
+        x_d = -(x_s / cnt_of_anc)
+        y_d = -(y_s / cnt_of_anc)
+        i = 1
+        to_highlight = [(x_s, y_s)]
+        while i <= cnt_of_anc:
+            cur_x = x_s - (x_d * i)
+            cur_y = y_s - (y_d * i)
+            to_highlight.append((cur_x, cur_y))
+            i += 1
+        ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight)
+        self._store_in_fasta_file(ancestors_to_store, to_file='straight_ancestors.fasta')
+
 if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
@@ -122,3 +150,5 @@ if __name__ == '__main__':
     if tar_dir.focus:
         h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
     mut.store_ancestors_in_fasta(names)
+    # mut.get_straight_ancestors()
+    # h.highlight_mutants(self.anc_seqs)
