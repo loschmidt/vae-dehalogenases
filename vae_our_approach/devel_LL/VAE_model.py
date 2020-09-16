@@ -107,6 +107,20 @@ class VAE(nn.Module):
         
         return log_p
 
+    def decoder_seq(self, z):
+        '''Decode VAE result to protein sequence again. Get max value indice for each position'''
+        h = z
+        for i in range(len(self.decoder_linears) - 1):
+            h = self.decoder_linears[i](h)
+            h = torch.tanh(h)
+        h = self.decoder_linears[-1](h)
+
+        fixed_shape = tuple(h.shape[0:-1])
+        h = torch.unsqueeze(h, -1)
+        h = h.view(fixed_shape + (-1, self.num_aa_type))
+        idxs = (h.max(dim=-1).indices).tolist()
+        return idxs
+
     def compute_weighted_elbo(self, x, weight):
         ## sample z from q(z|x)
         mu, sigma = self.encoder(x)
