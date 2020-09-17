@@ -8,10 +8,12 @@ class GifMaker:
     def __init__(self, fig, ax, path):
         self.fig = fig
         self.ax = ax
+
+        print('Generating visualization of 3d latent space ....')
         # Animate
         anim = animation.FuncAnimation(self.fig, self.animate, init_func=self.init,
                                        frames=360, interval=20, blit=True)
-
+        print('Saving generated gif into ', path)
         writergif = animation.PillowWriter(fps=30)
         anim.save(path, writer=writergif)
 
