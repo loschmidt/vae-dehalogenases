@@ -40,7 +40,7 @@ class MSAFilterCutOff :
             return None
         ref_seq = {}
         ref_seq[self.setuper.ref_n] = msa[self.setuper.ref_n]
-        ref_seq = self._back_to_amino(ref_seq)
+        ref_seq = self.back_to_amino(ref_seq)
         with open(self.pickle + "/reference_seq.pkl", 'wb') as file_handle:
             pickle.dump(ref_seq, file_handle)
 
@@ -184,7 +184,7 @@ class MSAFilterCutOff :
                 training_alignment[key_list[key_idx]] = seq
         with open(self.pickle + "/keys_list.pkl", 'wb') as file_handle:
             pickle.dump(final_keys, file_handle)
-        training_converted = self._back_to_amino(training_alignment)
+        training_converted = self.back_to_amino(training_alignment)
         with open(self.pickle + "/training_alignment.pkl", 'wb') as file_handle:
             pickle.dump(training_converted, file_handle)
         return np.array(overlap_seqs), final_keys
@@ -240,8 +240,9 @@ class MSAFilterCutOff :
                 pickle.dump(seq_msa_binary, file_handle)
         return seq_msa_binary
 
-    def _back_to_amino(self, msa):
+    def back_to_amino(self, msa):
         ## Reverse transformation
+        ## exports function out due to analyzer decode to sequences
         reverse_index = {}
         reverse_index[0] = '-'
         i = 1

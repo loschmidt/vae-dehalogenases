@@ -247,6 +247,19 @@ class VAEHandler:
         sigma = np.vstack(sigma_list)
         return mu, sigma
 
+    def decode_sequences_VAE(self, lat_sp_pos):
+        # check if VAE is already ready from latent space method
+        vae = self.vae
+        if vae is None:
+            vae, msa_binary, num_seq = self._prepare_model()
+        num_seqs = {}
+        for i, z in enumerate(lat_sp_pos, 1):
+            anc_name = 'ancestor_{}'.format(i)
+            num_seqs[anc_name] = vae.decoder_seq(z)
+        # Convert from numbers to amino acid sequence
+        anc_dict = Convertor(self.setuper).back_to_amino(num_seqs)
+        return anc_dict
+
 class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):
         self.sequences = seq_to_align
