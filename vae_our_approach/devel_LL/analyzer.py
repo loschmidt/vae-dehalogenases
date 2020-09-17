@@ -27,7 +27,7 @@ class Highlighter:
 
     def _init_plot(self):
         if self.setuper.dimensionality == 3:
-            self._highlight_3D(name='', high_data=self.mu)
+            return self._highlight_3D(name='', high_data=self.mu)
         self.fig, ax = plt.subplots()
         ax.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
         ax.set_xlim([-6, 6])
@@ -94,7 +94,7 @@ class Highlighter:
 
     def highlight_name(self, name):
         data = self._name_match([name])
-        self._highlight(name=name, high_data=data)
+        self._highlight(name=name, high_data=data, no_init=True)
 
     def _name_match(self, names):
         ## Key to representation of index
@@ -128,21 +128,21 @@ class Highlighter:
 
     def _highlight_3D(self, name, high_data, color='blue'):
         from mpl_toolkits.mplot3d import Axes3D
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3D')
-        ax.set_xlabel("$Z_1$")
-        ax.set_ylabel("$Z_2$")
-        ax.set_zlabel("$Z_3$")
-        ax.set_xlim(-6, 6)
-        ax.set_ylim(-6, 6)
-        ax.set_zlim(-6, 6)
         if name == '':
-            ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='blue')
-            return ax
-        ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='red')
+            self.fig = plt.figure()
+            self.ax = self.fig.add_subplot(111, projection='3d')
+            self.ax.set_xlabel("$Z_1$")
+            self.ax.set_ylabel("$Z_2$")
+            self.ax.set_zlabel("$Z_3$")
+            self.ax.set_xlim(-6, 6)
+            self.ax.set_ylim(-6, 6)
+            self.ax.set_zlim(-6, 6)
+            self.ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='blue')
+            return self.ax
+        self.ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='red')
         save_path = self.out_dir + name.replace('/', '-') + '_3D_' + self.name
         print("Class highlighter saving 3D graph to", save_path)
-        fig.savefig(save_path)
+        self.fig.savefig(save_path)
 
 class VAEHandler:
     def __init__(self, setuper):
