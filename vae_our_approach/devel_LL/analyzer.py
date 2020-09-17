@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 from VAE_model import MSA_Dataset, VAE
 from msa_prepar import MSA
 from msa_filter_scorer import MSAFilterCutOff as Convertor
-from supportscripts.3danimation import GifMaker
+from supportscripts.animator import GifMaker
 
 import matplotlib.pyplot as plt
 import numpy as np
