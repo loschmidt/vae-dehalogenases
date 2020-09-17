@@ -8,6 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 from VAE_model import MSA_Dataset, VAE
 from msa_prepar import MSA
 from msa_filter_scorer import MSAFilterCutOff as Convertor
+from supportscripts.3danimation import GifMaker
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -137,9 +138,11 @@ class Highlighter:
             self.ax.set_xlim(-6, 6)
             self.ax.set_ylim(-6, 6)
             self.ax.set_zlim(-6, 6)
-            self.ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='blue')
+            self.ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='blue', alpha=0.1)
             return self.ax
         self.ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='red')
+        save_path = self.out_dir + name.replace('/', '-') + '_3D_' + self.name + '.gif'
+        GifMaker(self.fig, self.ax, save_path)
         save_path = self.out_dir + name.replace('/', '-') + '_3D_' + self.name
         print("Class highlighter saving 3D graph to", save_path)
         self.fig.savefig(save_path)
