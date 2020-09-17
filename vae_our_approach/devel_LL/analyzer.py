@@ -141,7 +141,8 @@ class Highlighter:
             self.ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='blue', alpha=0.1)
             return self.ax
         self.ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='red')
-        save_path = self.out_dir + name.replace('/', '-') + '_3D_' + self.name + '.gif'
+        gif_name = self.name.replace('.png', '.gif')
+        save_path = self.out_dir + name.replace('/', '-') + '_3D_' + gif_name
         GifMaker(self.fig, self.ax, save_path)
         save_path = self.out_dir + name.replace('/', '-') + '_3D_' + self.name
         print("Class highlighter saving 3D graph to", save_path)

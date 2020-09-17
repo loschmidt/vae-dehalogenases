@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 from mpl_toolkits.mplot3d import Axes3D
 
+
 class GifMaker:
     def __init__(self, fig, ax, path):
         self.fig = fig
@@ -18,7 +19,7 @@ class GifMaker:
         anim.save(path, writer=writergif)
 
     def init(self):
-        #self.ax.scatter([2,3], [4,5], [4,3], marker='o', s=20, c="goldenrod", alpha=0.6)
+        # self.ax.scatter([2,3], [4,5], [4,3], marker='o', s=20, c="goldenrod", alpha=0.6)
         return self.fig,
 
     def animate(self, i):
@@ -26,6 +27,7 @@ class GifMaker:
         return self.fig,
 
 
-fig = plt.figure()
-ax = Axes3D(fig)
-GifMaker(fig, ax, 'uloz.gif')
+if __name__ == '__main__':
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    GifMaker(fig, ax, 'uloz.gif')
