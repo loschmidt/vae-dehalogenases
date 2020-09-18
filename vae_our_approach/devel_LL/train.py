@@ -11,7 +11,7 @@ from download_MSA import Downloader
 from VAE_model import MSA_Dataset, VAE
 
 class Train:
-    def __init__(self, setuper: StructChecker, msa=None):
+    def __init__(self, setuper: StructChecker, msa=None, benchmark=False):
         self.setuper = setuper
         if msa is None:
             ## Run just train script, pickles files should be ready load them
@@ -32,6 +32,20 @@ class Train:
             self.use_cuda = True
         else:
             self.use_cuda = False
+
+        self.benchmark = benchmark
+        self.benchmark_set = []
+        if benchmark:
+            # Take 10 percent from original MSA for further evaluation
+            random_idx = np.random.permutation(range(self.num_seq))
+            for i in range(self.num_seq // 10):
+                self.benchmark_set.append(self.seq_msa_binary[random_idx[i]])
+                self.seq_msa_binary = np.delete(self.seq_msa_binary, random_idx[i], axis=0)
+            self.num_seq = self.seq_msa_binary.shape[0]
+            with open(setuper.pickles_fld + '/positive_control.pkl', 'wb') as file_handle:
+                file_handle.dump(self.benchmark_set, file_handle)
+            with open(setuper.pickles_fld + '/training_set.pkl', 'wb') as file_handle:
+                file_handle.dump(self.seq_msa_binary, file_handle)
 
     def train(self):
         num_seq_subset = self.num_seq // self.K + 1
@@ -137,6 +151,12 @@ class Train:
 
             with open(self.setuper.pickles_fld + "/elbo_all.pkl", 'wb') as file_handle:
                 pickle.dump(elbo_all, file_handle)
+
+            if self.benchmark:
+                gen_fld = self.setuper.high_fld + '/'
+                print('='*60)
+                print('calculation benchmarking and creating plots to {}'.format(gen_fld))
+                ## TODO add benchmark method
 
     def _load_pickles(self):
         with open(self.setuper.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:

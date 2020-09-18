@@ -252,7 +252,7 @@ class VAEHandler:
         sigma = np.vstack(sigma_list)
         return mu, sigma
 
-    def decode_sequences_VAE(self, lat_sp_pos,ref_name):
+    def decode_sequences_VAE(self, lat_sp_pos, ref_name):
         # check if VAE is already ready from latent space method
         vae = self.vae
         if vae is None:
@@ -264,6 +264,15 @@ class VAEHandler:
         # Convert from numbers to amino acid sequence
         anc_dict = Convertor(self.setuper).back_to_amino(num_seqs)
         return anc_dict
+
+    def decode_marginal_prob(self, zs):
+        '''Decode binary representation of z. Method optimilized for
+         marginal probability computation'''
+        vae = self.vae
+        ret_bin = []
+        for z in zs:
+            ret_bin.append(vae.decoder_seq(tensor(z)))
+        return ret_bin
 
 class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):
