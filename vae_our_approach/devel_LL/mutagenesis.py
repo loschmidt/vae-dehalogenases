@@ -125,10 +125,11 @@ class MutagenesisGenerator:
          effect on latent space if the radiuses of differently init models
          are almost same.
          '''
-        (x_s, y_s) = self._mutants_positions(list(self.cur.values()))
+        ref_pos = self._mutants_positions(self.cur)
+        (x_s, y_s) = ref_pos[0]
         cnt_of_anc += 1
-        x_d = -(x_s / cnt_of_anc)
-        y_d = -(y_s / cnt_of_anc)
+        x_d = (x_s / cnt_of_anc)
+        y_d = (y_s / cnt_of_anc)
         i = 1
         to_highlight = [(x_s, y_s)]
         while i <= cnt_of_anc:
@@ -136,8 +137,9 @@ class MutagenesisGenerator:
             cur_y = y_s - (y_d * i)
             to_highlight.append((cur_x, cur_y))
             i += 1
-        ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight)
+        ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
         self._store_in_fasta_file(ancestors_to_store, to_file='straight_ancestors.fasta')
+        return list(ancestors_to_store.keys()), to_highlight
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
@@ -146,9 +148,9 @@ if __name__ == '__main__':
     mut = MutagenesisGenerator(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
     ancs, names, muts = mut.reconstruct_ancestors(samples=tar_dir.mutant_samples)
     h = Highlighter(tar_dir)
-    h.highlight_mutants(ancs, names, muts, file_name='mutans_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples))
-    if tar_dir.focus:
-        h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
-    mut.store_ancestors_in_fasta(names)
-    # mut.get_straight_ancestors()
-    # h.highlight_mutants(self.anc_seqs)
+    # h.highlight_mutants(ancs, names, muts, file_name='mutans_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples))
+    # if tar_dir.focus:
+    #     h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
+    # mut.store_ancestors_in_fasta(names)
+    names, ancestors = mut.get_straight_ancestors()
+    h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)

@@ -9,6 +9,7 @@ from VAE_model import MSA_Dataset, VAE
 from msa_prepar import MSA
 from msa_filter_scorer import MSAFilterCutOff as Convertor
 from supportscripts.animator import GifMaker
+from torch import tensor
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -251,15 +252,15 @@ class VAEHandler:
         sigma = np.vstack(sigma_list)
         return mu, sigma
 
-    def decode_sequences_VAE(self, lat_sp_pos):
+    def decode_sequences_VAE(self, lat_sp_pos,ref_name):
         # check if VAE is already ready from latent space method
         vae = self.vae
         if vae is None:
             vae, msa_binary, num_seq = self._prepare_model()
         num_seqs = {}
         for i, z in enumerate(lat_sp_pos, 1):
-            anc_name = 'ancestor_{}'.format(i)
-            num_seqs[anc_name] = vae.decoder_seq(z)
+            anc_name = 'ancestor_{}'.format(i) if i > 1 else ref_name
+            num_seqs[anc_name] = vae.decoder_seq(tensor(z))
         # Convert from numbers to amino acid sequence
         anc_dict = Convertor(self.setuper).back_to_amino(num_seqs)
         return anc_dict
