@@ -65,27 +65,29 @@ class Benchmarker:
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
         '''
-        N = 10
+        N = 10000
         probs = [] # marginal propabilities
 
         # Lambda for the calculation of the amino sequence decoded from binary
         get_aas = lambda xs: [np.where(aa_bin == 1)[0] for aa_bin in xs]
         # Lambda for p(X,Zi)/q(Zi|X) of generated and original, given as sum of equal positions to length of original sequence
         marginal = lambda gen, orig: sum([1 if g == o else 0 for g,o in zip(gen, orig)]) / len(orig)
+        print('='*60)
+        print('Sampling process is begun...')
+        iteration = 0
 
         for mu, sigma, d in zip(mus, sigmas, data):
+            iteration += 1
+            if iteration % 100 == 0:
+                print(iteration, 'inputs were sampled for', N, 'times')
             # For each mu sample N times and compare with original data
             s = [torch.randn_like(torch.tensor(sigma)) for _ in range(N)]
             zs = [z + mu for z in s]
             seqs = self.vae_handler.decode_marginal_prob(zs)
             original, sum_p_X_Zi = (get_aas(d), 0)
             for vae_res in seqs:
-                gen = get_aas(vae_res)
-                # Sanity check
-                if len(original) == 0 or len(gen) == 0:
-                    continue
                 # SUM(p(X,Zi)/q(Zi|X))
-                sum_p_X_Zi += marginal(gen, original)
+                sum_p_X_Zi += marginal(get_aas(vae_res), original)
             # 1/N * SUM(p(X,Zi)/q(Zi|X))
             marginal_prob = sum_p_X_Zi / N
             probs.append(marginal_prob)
