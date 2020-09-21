@@ -24,8 +24,6 @@ class Train:
         self.num_seq = self.seq_msa_binary.shape[0]
         self.len_protein = self.seq_msa_binary.shape[1]
         self.num_res_type = self.seq_msa_binary.shape[2]
-        self.seq_msa_binary = self.seq_msa_binary.reshape((self.num_seq, -1))
-        self.seq_msa_binary = self.seq_msa_binary.astype(np.float32)
 
         self.K = setuper.K
 
@@ -41,12 +39,14 @@ class Train:
             random_idx = np.random.permutation(range(self.num_seq))
             for i in range(self.num_seq // 10):
                 self.benchmark_set[i] = self.seq_msa_binary[random_idx[i]]
-                self.seq_msa_binary = np.delete(self.seq_msa_binary, random_idx[i], axis=0)
+            self.seq_msa_binary = np.delete(self.seq_msa_binary, random_idx[:(self.num_seq // 10)], axis=0)
             self.num_seq = self.seq_msa_binary.shape[0]
             with open(setuper.pickles_fld + '/positive_control.pkl', 'wb') as file_handle:
-                file_handle.dump(self.benchmark_set, file_handle)
+                pickle.dump(self.benchmark_set, file_handle)
             with open(setuper.pickles_fld + '/training_set.pkl', 'wb') as file_handle:
-                file_handle.dump(self.seq_msa_binary, file_handle)
+                pickle.dump(self.seq_msa_binary, file_handle)
+        self.seq_msa_binary = self.seq_msa_binary.reshape((self.num_seq, -1))
+        self.seq_msa_binary = self.seq_msa_binary.astype(np.float32)
 
     def train(self):
         num_seq_subset = self.num_seq // self.K + 1
@@ -173,4 +173,4 @@ if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     Downloader(tar_dir)
-    Train(tar_dir)
+    Train(tar_dir, benchmark=True).train()
