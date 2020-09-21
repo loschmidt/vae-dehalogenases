@@ -127,7 +127,7 @@ if __name__ == '__main__':
     down_MSA = Downloader(tar_dir)
     msa = MSA(tar_dir)
     msa.proc_msa()
-    Train(tar_dir, msa=msa).train()
+    Train(tar_dir, msa=msa, benchmark=True).train()
     ## Create latent space
     VAEHandler(setuper=tar_dir).latent_space()
     ## Highlight
