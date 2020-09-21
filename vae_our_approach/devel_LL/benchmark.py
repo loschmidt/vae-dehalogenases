@@ -26,9 +26,6 @@ class Benchmarker:
         marginals_train = self._bench(self.train_data)
         marginals_positive = self._bench(self.positive)
         marginals_negative = self._bench(self.negative)
-        marginals_negative.append(0.9)
-        marginals_negative.append(0.9)
-        marginals_positive.append(0.9)
 
         # Normalization process
         tr_w = np.empty(len(marginals_train))
@@ -52,8 +49,7 @@ class Benchmarker:
             print('Benchmark results:')
             print('\tpositive mean: \t', sum(marginals_positive)/len(marginals_positive))
             print('\tnegative mean: \t', sum(marginals_negative)/len(marginals_negative))
-
-        print(marginals_negative, marginals_positive)
+            print('\ttrain data mean: \t', sum(marginals_train)/len(marginals_train))
 
     def _bench(self, data):
         msa_weight = np.ones(data.shape[0]) / data.shape[0]
