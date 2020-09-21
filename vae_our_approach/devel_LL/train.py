@@ -113,6 +113,7 @@ class Train:
             print("-" * 60)
             ## evaluate the trained model
             if self.use_cuda:
+                torch.cuda.empty_cache()
                 vae.cuda()
 
             elbo_on_validation_data_list = []
