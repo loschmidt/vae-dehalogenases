@@ -153,12 +153,12 @@ class Train:
             with open(self.setuper.pickles_fld + "/elbo_all.pkl", 'wb') as file_handle:
                 pickle.dump(elbo_all, file_handle)
 
-            if self.benchmark:
-                gen_fld = self.setuper.high_fld + '/'
-                print('='*60)
-                print('calculation benchmarking and creating plots to {}'.format(gen_fld))
-                b = Benchmarker(self.benchmark_set, self.seq_msa_binary, self.setuper)
-                b.make_bench()
+        if self.benchmark:
+            gen_fld = self.setuper.high_fld + '/'
+            print('='*60)
+            print('calculation benchmarking and creating plots to {}'.format(gen_fld))
+            b = Benchmarker(self.benchmark_set, self.seq_msa_binary, self.setuper)
+            b.make_bench()
 
     def _load_pickles(self):
         with open(self.setuper.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
