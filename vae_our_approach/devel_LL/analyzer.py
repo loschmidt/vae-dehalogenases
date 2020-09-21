@@ -269,9 +269,11 @@ class VAEHandler:
         '''Decode binary representation of z. Method optimilized for
          marginal probability computation'''
         vae = self.vae
+        if vae is None:
+            vae, msa_binary, num_seq = self._prepare_model()
         ret_bin = []
         for z in zs:
-            ret_bin.append(vae.decoder_seq(tensor(z)))
+            ret_bin.append(vae.decoder_seq(z))
         return ret_bin
 
 class AncestorsHandler:

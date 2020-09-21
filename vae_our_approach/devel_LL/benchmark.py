@@ -5,10 +5,11 @@ import numpy as np
 import pickle
 import random
 import torch
+import warnings
 
 from pipeline import StructChecker
-from VAE_model import VAE
-from .analyzer import VAEHandler
+from analyzer import VAEHandler
+from matplotlib import pyplot as plt
 
 class Benchmarker:
     def __init__(self, positive_control, train_data, setuper):
@@ -18,16 +19,49 @@ class Benchmarker:
 
         self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1])
         self.vae_handler = VAEHandler(setuper)
+        # Ignore deprecated errors
+        warnings.filterwarnings(action='ignore', category=DeprecationWarning)
 
     def make_bench(self):
-        self._bench_origin(self.train_data)
-        ## TODO add for others data and draw plot (kind histogram)
+        marginals_train = self._bench(self.train_data)
+        marginals_positive = self._bench(self.positive)
+        marginals_negative = self._bench(self.negative)
+        marginals_negative.append(0.9)
+        marginals_negative.append(0.9)
+        marginals_positive.append(0.9)
+
+        # Normalization process
+        tr_w = np.empty(len(marginals_train))
+        tr_w.fill(1 / len(marginals_train))
+        pos_w = np.empty(len(marginals_positive))
+        pos_w.fill(1 / len(marginals_positive))
+        neg_w = np.empty(len(marginals_negative))
+        neg_w.fill(1 / len(marginals_negative))
+
+        # Plot it
+        plt.style.use('seaborn-deep')
+        fig, ax = plt.subplots()
+        bins = np.linspace(0, 1, 50)
+        ax.hist([marginals_negative, marginals_positive, marginals_train], bins, alpha=1, label=['neg', 'pos'], color=['r', 'g', 'b'], weights=[neg_w, pos_w, marginals_train])
+        ax.legend(loc='upper right')
+        fig.show()
+        save_path = self.setuper.high_fld + '/benchmark.png'
+        print("Class highlighter saving graph to", save_path)
+        fig.savefig(save_path)
+        if self.setuper.stats:
+            print('Benchmark results:')
+            print('\tpositive mean: \t', sum(marginals_positive)/len(marginals_positive))
+            print('\tnegative mean: \t', sum(marginals_negative)/len(marginals_negative))
+
+        print(marginals_negative, marginals_positive)
 
     def _bench(self, data):
         msa_weight = np.ones(data.shape[0]) / data.shape[0]
         msa_weight = msa_weight.astype(np.float32)
+        data = data.astype(np.float32)
         rand_keys = ['k_'.format(i) for i in range(data.shape[0])]
         mus, sigmas = self.vae_handler.propagate_through_VAE(data, weights=msa_weight, keys=rand_keys)
+        return self._sample(mus, sigmas, data)
 
 
     def _sample(self, mus, sigmas, data):
@@ -35,22 +69,39 @@ class Benchmarker:
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
         '''
-        N = 10000
-        probs = [] # propabilities
-        for mu, sigma, d in zip(mus, sigmas, data):
-            s = [torch.randn_like(sigma) for _ in range(N)]
-            zs = [z + mu for z in s]
-            seqs = self.vae_handler.decode_sequences_VAE(zs, ref_name='', )
+        N = 10
+        probs = [] # marginal propabilities
 
-        def seq_diff(gen, orig):
-        ## TODO comparison of sequences in binary form
+        # Lambda for the calculation of the amino sequence decoded from binary
+        get_aas = lambda xs: [np.where(aa_bin == 1)[0] for aa_bin in xs]
+        # Lambda for p(X,Zi)/q(Zi|X) of generated and original, given as sum of equal positions to length of original sequence
+        marginal = lambda gen, orig: sum([1 if g == o else 0 for g,o in zip(gen, orig)]) / len(orig)
+
+        for mu, sigma, d in zip(mus, sigmas, data):
+            # For each mu sample N times and compare with original data
+            s = [torch.randn_like(torch.tensor(sigma)) for _ in range(N)]
+            zs = [z + mu for z in s]
+            seqs = self.vae_handler.decode_marginal_prob(zs)
+            original, sum_p_X_Zi = (get_aas(d), 0)
+            for vae_res in seqs:
+                gen = get_aas(vae_res)
+                # Sanity check
+                if len(original) == 0 or len(gen) == 0:
+                    continue
+                # SUM(p(X,Zi)/q(Zi|X))
+                sum_p_X_Zi += marginal(gen, original)
+            # 1/N * SUM(p(X,Zi)/q(Zi|X))
+            marginal_prob = sum_p_X_Zi / N
+            probs.append(marginal_prob)
+        return probs
 
     def _generate_negative(self, count, s_len):
+        '''Generate random sequences'''
         K = self.positive.shape[2]
         D = np.identity(K)
         rand_seq_binary = np.zeros((count, s_len, K))
         for i in range(count):
-            rand_seq_binary[i, :, :] = D[random.sample(range(0, K), s_len)]
+            rand_seq_binary[i, :, :] = D[[i % K for i in random.sample(range(0, s_len), s_len)]]
         print('Negative control {} samples generated...'.format(count))
         return rand_seq_binary
 
@@ -63,3 +114,13 @@ if __name__ == '__main__':
     with open(tar_dir.pickles_fld + '/training_set.pkl', 'rb') as file_handle:
         train_set = pickle.load(file_handle)
     b = Benchmarker(positive, train_set, tar_dir)
+    b.make_bench()
+    # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:
+    #     train_set = pickle.load(file_handle)
+    # iden = np.identity(train_set.shape[2])
+    # pos = np.zeros((2, train_set.shape[1], train_set.shape[2]))
+    # for p in pos:
+    #     for i in range(len(p)):
+    #         p[i] = iden[i % train_set.shape[2]]
+    # b = Benchmarker(pos, train_set, tar_dir)
+    # b.make_bench()
