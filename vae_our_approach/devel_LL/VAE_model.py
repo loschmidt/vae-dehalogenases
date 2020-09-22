@@ -121,6 +121,30 @@ class VAE(nn.Module):
         idxs = (h.max(dim=-1).indices).tolist()
         return idxs
 
+    def decode_samples(self, mu, sigma, num_samples):
+        with torch.no_grad():
+            store_shape = mu.shape[0]
+            mu = mu.expand(num_samples, mu.shape[0], mu.shape[1])
+            # Expand in specific way, stack same tensor next to each other
+            eps = torch.randn_like(mu)
+            z = mu + sigma * eps
+            # Decode it
+            h = z
+            for i in range(len(self.decoder_linears) - 1):
+                h = self.decoder_linears[i](h)
+                h = torch.tanh(h)
+            h = self.decoder_linears[-1](h)
+            # And now convert to numbers from one hot encoding
+            idxs = []
+            for i in range(store_shape):
+                for h_s in h:
+                    fixed_shape = tuple(h_s.shape[0:-1])
+                    h_s = torch.unsqueeze(h_s, -1)
+                    h_s = h_s.view(fixed_shape + (-1, self.num_aa_type))
+                    idxs.append((h_s.max(dim=-1).indices).tolist()[i])
+            #print(len(idxs), idxs[0], 'to je velikost po samplovani')
+            return idxs
+
     def compute_weighted_elbo(self, x, weight):
         ## sample z from q(z|x)
         mu, sigma = self.encoder(x)

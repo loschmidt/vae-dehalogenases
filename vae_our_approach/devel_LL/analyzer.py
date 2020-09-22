@@ -265,16 +265,15 @@ class VAEHandler:
         anc_dict = Convertor(self.setuper).back_to_amino(num_seqs)
         return anc_dict
 
-    def decode_marginal_prob(self, zs):
+    def decode_for_marginal_prob(self, z, sigma, samples):
         '''Decode binary representation of z. Method optimilized for
          marginal probability computation'''
         vae = self.vae
         if vae is None:
             vae, msa_binary, num_seq = self._prepare_model()
-        ret_bin = []
-        for z in zs:
-            ret_bin.append(vae.decoder_seq(z))
-        return ret_bin
+        with torch.no_grad():
+            ret = vae.decode_samples(z, sigma, samples)
+        return ret
 
 class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):
