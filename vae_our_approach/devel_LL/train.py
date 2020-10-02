@@ -35,9 +35,9 @@ class Train:
         self.benchmark = benchmark
         self.benchmark_set = np.zeros((self.num_seq // 10, self.len_protein, self.num_res_type))
         if benchmark:
-            # Take 10 percent from original MSA for further evaluation
+            # Take 5 percent from original MSA for further evaluation
             random_idx = np.random.permutation(range(self.num_seq))
-            for i in range(self.num_seq // 10):
+            for i in range(self.num_seq // 20):
                 self.benchmark_set[i] = self.seq_msa_binary[random_idx[i]]
             self.seq_msa_binary = np.delete(self.seq_msa_binary, random_idx[:(self.num_seq // 10)], axis=0)
             self.num_seq = self.seq_msa_binary.shape[0]
@@ -154,12 +154,12 @@ class Train:
             with open(self.setuper.pickles_fld + "/elbo_all.pkl", 'wb') as file_handle:
                 pickle.dump(elbo_all, file_handle)
 
-        if self.benchmark:
-            gen_fld = self.setuper.high_fld + '/'
-            print('='*60)
-            print('calculation benchmarking and creating plots to {}'.format(gen_fld))
-            b = Benchmarker(self.benchmark_set, self.seq_msa_binary, self.setuper)
-            b.make_bench()
+        # if self.benchmark:
+        #     gen_fld = self.setuper.high_fld + '/'
+        #     print('='*60)
+        #     print('calculation benchmarking and creating plots to {}'.format(gen_fld))
+        #     b = Benchmarker(self.benchmark_set, self.seq_msa_binary, self.setuper)
+        #     b.make_bench()
 
     def _load_pickles(self):
         with open(self.setuper.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
