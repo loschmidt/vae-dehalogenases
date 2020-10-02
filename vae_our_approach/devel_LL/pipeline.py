@@ -34,6 +34,8 @@ class StructChecker:
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
 
+        self.in_file = self.args.in_file
+
         ## Setup enviroment variable
         os.environ['PIP_CAT'] = str(self.preserve_catalytic)
         os.environ['PIP_PAPER'] = str(self.paper_pipe)
@@ -84,6 +86,7 @@ class StructChecker:
         parser.add_argument('--focus', action='store_true', default=False,
                             help="Generate focus plot")
         parser.add_argument('--dimensionality', type=int, default=2, help="Latent space dimensionality. Default value 2")
+        parser.add_argument('--in_file', type=str, default='', help="Setup input file. Recognize automatically .fasta or .txt for stockholm file format.")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))

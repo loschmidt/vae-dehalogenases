@@ -18,8 +18,12 @@ class Downloader:
         self.down_seq = [setuper.rp]
         if all:
             self.down_seq = ["full", "rp75", "rp55", "rp35", "rp15", "seed"]
-        self._download()
-        setuper.set_msa_file("{0}{1}_{2}.txt".format(self.msa_dir,self.pfam_id, setuper.rp))
+        if setuper.in_file == '':
+            print('Using file provided in run parameter --in_file {}'.format(setuper.in_file))
+            setuper.set_msa_file(setuper.in_file)
+        else:
+            self._download()
+            setuper.set_msa_file("{0}{1}_{2}.txt".format(self.msa_dir,self.pfam_id, setuper.rp))
 
     def _download(self):
         for dow in self.down_seq:

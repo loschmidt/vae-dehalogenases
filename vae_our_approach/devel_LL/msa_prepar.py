@@ -42,7 +42,9 @@ class MSA:
 
     def load_msa(self, file=None):
         seq_dict = {}
-        # Check format of file
+        # Setup file path for each case
+        file = self.msa_file if file is None else file
+        # Check format of file and proceed fasta format here
         if file is not None:
             if file.endswith('.fasta'):
                 print('Loading fasta format file')
@@ -51,7 +53,7 @@ class MSA:
                     name, seq = fasta.id, str(fasta.seq)
                     seq_dict[name] = seq.upper()
                 return seq_dict
-        with open(self.msa_file if file is None else file, 'r') as file_handle:
+        with open(file, 'r') as file_handle:
             for line in file_handle:
                 if line[0] == "#" or line[0] == "/" or line[0] == "":
                     continue
