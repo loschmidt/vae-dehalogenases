@@ -18,7 +18,7 @@ class Downloader:
         self.down_seq = [setuper.rp]
         if all:
             self.down_seq = ["full", "rp75", "rp55", "rp35", "rp15", "seed"]
-        if setuper.in_file == '':
+        if setuper.in_file != '':
             print('Using file provided in run parameter --in_file {}'.format(setuper.in_file))
             setuper.set_msa_file(setuper.in_file)
         else:
