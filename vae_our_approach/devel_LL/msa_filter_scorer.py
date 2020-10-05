@@ -90,7 +90,8 @@ class MSAFilterCutOff :
                     regions.append((start_pos, i-1))
                 prev_pos = gap
             # Correct last one region
-            regions.append((start_pos, offset+len(gaps_arr)-1))
+            if start_pos != 0:
+                regions.append((start_pos, offset+len(gaps_arr)-1))
             return regions
 
         query_seq = msa[self.setuper.ref_n]  ## with gaps
@@ -113,6 +114,9 @@ class MSAFilterCutOff :
             snd_reg = core_protein[regions[idx_max][1]:]
             # Use that region with more information (amino acids)
             begin_end = [offset, regions[idx_max][0]+2] if fst_reg.count(False) > snd_reg.count(False) else [regions[idx_max][1]-2, begin_end[1]]
+            # Core of sequence is modified, modify regions too
+            regions = get_gaps_regions(gaps[begin_end[0]: begin_end[1] + 1], offset=begin_end[0])
+            region_sizes = list(map(lambda e: e[1] - e[0], regions))
         # Amino acid positions in selected region will be hold
         idx = []
         # Get aa and their position get to idx
@@ -121,16 +125,16 @@ class MSAFilterCutOff :
                 idx.append(i)
 
         # Region is selected modify it to shorter version cca. 450 aa
-        regions = get_gaps_regions(gaps[begin_end[0]: begin_end[1] + 1], offset=begin_end[0])
-        actual_size = begin_end[1] - begin_end[0]
-        region_sizes = list(map(lambda e: e[1] - e[0], regions))
         # Remove regions form the biggest until the length is sufficient
-        ## TODO nefunguje tak jak by melo prida se tam nakonec uplne vse a je to jedna rada
+        actual_size = begin_end[1] - begin_end[0]
         while actual_size > 450:
+            # Request for core sequence length is too small, all gap regions were remove break the loop
+            if len(region_sizes) == 0:
+                break
             max_region_i, max_region_value = max(enumerate(region_sizes), key=lambda e: e[1])
             del region_sizes[max_region_i]
             del regions[max_region_i]
-            actual_size -= max_region_value
+            actual_size -= max_region_value+1 # to get correct length of region
         # Include positions of kept gaps into idx
         for r in regions:
             idx.extend(list(range(r[0], r[1]+1)))
