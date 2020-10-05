@@ -172,10 +172,10 @@ class VAEHandler:
 
         ## build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, [100])
+        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0.model"))
         ## move the VAE onto a GPU
         if self.use_cuda:
             vae.cuda()
-        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0.model"))
         return vae, msa_binary, num_seq
 
     def _load_pickles(self):
@@ -228,7 +228,7 @@ class VAEHandler:
         # check if VAE is already ready from latent space method
         vae = self.vae
         if vae is None:
-            vae, msa_binary, num_seq = self._prepare_model()
+            vae, _, _ = self._prepare_model()
 
         binaries = binaries.astype(np.float32)
         binaries = binaries.reshape((binaries.shape[0], -1))
@@ -270,9 +270,15 @@ class VAEHandler:
          marginal probability computation'''
         vae = self.vae
         if vae is None:
-            vae, msa_binary, num_seq = self._prepare_model()
+            vae, _, _ = self._prepare_model()
         with torch.no_grad():
+            if self.use_cuda:
+                z = z.cuda()
+                sigma = sigma.cuda()
+                samples = samples.cuda()
             ret = vae.decode_samples(z, sigma, samples)
+            if self.use_cuda:
+                ret = ret.cpu()
         return ret
 
 class AncestorsHandler:
