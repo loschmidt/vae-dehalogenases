@@ -6,7 +6,7 @@ from msa_filter_scorer import MSAFilterCutOff as Convertor
 from msa_prepar import MSA
 from pipeline import StructChecker
 from download_MSA import Downloader
-from random import randrange
+from random import randrange, sample
 from math import sqrt
 
 import pickle
