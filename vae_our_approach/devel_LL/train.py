@@ -32,14 +32,15 @@ class Train:
         else:
             self.use_cuda = False
 
+        percentage = 20
         self.benchmark = benchmark
-        self.benchmark_set = np.zeros((self.num_seq // 10, self.len_protein, self.num_res_type))
+        self.benchmark_set = np.zeros((self.num_seq // percentage, self.len_protein, self.num_res_type))
         if benchmark:
             # Take 5 percent from original MSA for further evaluation
             random_idx = np.random.permutation(range(self.num_seq))
-            for i in range(self.num_seq // 20):
+            for i in range(self.num_seq // percentage):
                 self.benchmark_set[i] = self.seq_msa_binary[random_idx[i]]
-            self.seq_msa_binary = np.delete(self.seq_msa_binary, random_idx[:(self.num_seq // 10)], axis=0)
+            self.seq_msa_binary = np.delete(self.seq_msa_binary, random_idx[:(self.num_seq // percentage)], axis=0)
             self.num_seq = self.seq_msa_binary.shape[0]
             with open(setuper.pickles_fld + '/positive_control.pkl', 'wb') as file_handle:
                 pickle.dump(self.benchmark_set, file_handle)
