@@ -77,6 +77,13 @@ class MutagenesisGenerator:
 
         return mutant_seqs
 
+    def check_mutant(self,  num_m, gene=['A','A','A','A','A','A','A','A','A','A']):
+        self.num_mutations = num_m
+        muts = self._produce_mutants(gene, samples=1)
+        print(gene)
+        print(muts[list(muts.keys())[0]])
+        print()
+
     def _mutants_positions(self, seqs):
         binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(seqs)
         data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
