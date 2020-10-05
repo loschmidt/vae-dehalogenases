@@ -61,14 +61,15 @@ class MutagenesisGenerator:
             while  m == c:
                 m = self.aa[randrange(len(self.aa))]
             return m
-
+        if self.num_mutations > len(gene):
+            print('Error occured, number of mutations is bigger than length of gene', self.num_mutations, len(gene))
+            exit(1)
         for i in range(samples):
             # Select position for mutations
-            pos = []
-            while len(pos) < self.num_mutations:
-                i_pos = randrange(len(gene))
-                if i not in cat_positions:
-                    pos.append(i_pos)
+            pos = sample(range(len(gene)), self.num_mutations)
+            for ii in range(len(pos)):
+                if pos[ii] in cat_positions:
+                    pos.pop(ii) ## Not robust but catalytic residues wont be used in this case anyway
             mutant = gene.copy()
             for p in pos:
                 mutant[p] = random_mutation(mutant[p])
