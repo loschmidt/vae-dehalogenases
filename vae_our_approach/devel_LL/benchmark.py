@@ -128,28 +128,64 @@ class Benchmarker:
                     probs.append(marginal_prob)
         return probs
 
-    def _generate_negative(self, count, s_len):
-        '''Generate random sequences'''
+    def _generate_negative(self, count, s_len, profile_data):
+        """Generate random sequences"""
+        profile = self._get_profile(profile_data)
         K = self.positive.shape[2]
         D = np.identity(K)
         rand_seq_binary = np.zeros((count, s_len, K))
         for i in range(count):
-            rand_seq_binary[i, :, :] = D[[i % K for i in random.sample(range(0, s_len), s_len)]]
+            # Get profile sequence
+            prof_seq = []
+            for j in range(s_len):
+                r = random.random()
+                ssum = 0
+                for aa, prob in enumerate(profile[:, j]):
+                    ssum += prob
+                    if r < ssum:
+                        prof_seq.append(aa)
+                        break
+            rand_seq_binary[i, :, :] = D[prof_seq]
         print('Negative control {} samples generated...'.format(count))
         return rand_seq_binary
+
+    def _get_profile(self, msa_binary):
+        '''
+            Generate probabilistic profile of the MSA for further generation
+            Profile format:
+                    |-------len(msa)----|
+                    0.2 0.3 0.15 ... 0.4
+            cnt AA  0.4 0.3 0.15 ... 0.4
+                    0.4 0.4 0.7  ... 0.2
+
+                columns sum to one
+        '''
+        print('Benchmark message : Creating the profile of MSA')
+        # Convert MSA from binary to number coding
+        get_aas = lambda xs: [np.where(aa_bin == 1)[0] for aa_bin in xs]
+        msa = []
+        for s in msa_binary:
+            msa.append(get_aas(s))
+        msa = np.array(msa).reshape((msa_binary.shape[0], msa_binary.shape[1]))
+        profile = np.zeros((msa_binary.shape[2], msa.shape[1]))
+        for j in range(msa.shape[1]):
+            aa_type, aa_counts = np.unique(msa[:, j], return_counts=True)
+            aa_sum = sum(aa_counts)
+            for i, aa in enumerate(aa_type):
+                profile[aa, j] = aa_counts[i] / aa_sum
+        with open(self.setuper.pickles_fld + "/msa_profile.pkl", 'wb') as file_handle:
+            pickle.dump(profile, file_handle)
+        return profile
 
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
-    with open(tar_dir.pickles_fld + '/positive_control.pkl', 'rb') as file_handle:
-        positive = pickle.load(file_handle)
-
-    with open(tar_dir.pickles_fld + '/training_set.pkl', 'rb') as file_handle:
-        train_set = pickle.load(file_handle)
-    b = Benchmarker(positive, train_set, tar_dir)
-    b.make_bench()
-    # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:
+    down_MSA = Downloader(tar_dir)
+    # with open(tar_dir.pickles_fld + '/positive_control.pkl', 'rb') as file_handle:
+    #     positive = pickle.load(file_handle)
+    #
+    # with open(tar_dir.pickles_fld + '/training_set.pkl', 'rb') as file_handle:
     #     train_set = pickle.load(file_handle)
     # iden = np.identity(train_set.shape[2])
     # pos = np.zeros((2, train_set.shape[1], train_set.shape[2]))
