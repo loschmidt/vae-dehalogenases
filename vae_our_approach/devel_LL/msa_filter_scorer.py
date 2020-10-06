@@ -19,7 +19,7 @@ class MSAFilterCutOff :
     def proc_msa(self):
         msa = self.msa_obj.load_msa()
         msa_col_num = self._remove_cols_with_gaps(msa, keep_ref=True) ## converted to numbers
-        msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num, threshold=0.72)
+        msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num, threshold=0.4)
         msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_no_gaps)
         self._save_reference_sequence(msa_no_gaps)
         self.seq_weight = self._weighting_sequences(msa_overlap)
@@ -51,7 +51,7 @@ class MSAFilterCutOff :
         pos_idx = []
         ref_pos = []
         if keep_ref:
-            ref_pos = self._get_ref_pos(msa)
+            ref_pos = self._get_ref_pos(msa, search_for_regions=False)
         np_msa, key_list = self._remove_unexplored_and_covert_aa(msa)
         for i in range(np_msa.shape[1]):
             # Hold all position as in reference sequence
@@ -68,12 +68,15 @@ class MSAFilterCutOff :
             msa_dict[key_list[i]] = np_msa[i] ## without columns with many gaps
         return msa_dict
 
-    def _get_ref_pos(self, msa):
+    def _get_ref_pos(self, msa, search_for_regions=True):
         """Returns position of reference sequence with no gaps
            Cut gaps at the beginning and at the end. Gaps inside keep
            -----------[--AAAAA-AA-A-A-A---A--]------------
                     begin    keep this      end
-                     of core of sequence"""
+                     of core of sequence
+            Search for regions makes the reduction of width of the core
+            by iterative run through regions in the core
+        """
         if not self.setuper.ref_seq:
             return []
 
@@ -96,8 +99,15 @@ class MSAFilterCutOff :
 
         query_seq = msa[self.setuper.ref_n]  ## with gaps
         gaps = [s == "-" or s == "." for s in query_seq]
-        ## first and last position of AA. Keep 2 gaps on each side.
+        # first and last position of AA. Keep 2 gaps on each side.
         begin_end = [[i for i, gap in enumerate(gaps) if not gap][ii]-2-(4*ii) for ii in (0, -1)]
+        # Just find the core sequence and make column reduction by threshold process
+        if not search_for_regions:
+            print('MSA_filter message : Do not search for regions in the core')
+            return list(range(begin_end[0], begin_end[1]))
+
+        # Now search for regions in the core and reduce them
+        print('MSA_filter message : Do search for regions in the core')
         core_protein = gaps[begin_end[0]: begin_end[1]+1]
         # Search for big gap regions in the core
         max_region_size = len(core_protein)*0.4
