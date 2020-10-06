@@ -104,7 +104,11 @@ class MSAFilterCutOff :
         # Just find the core sequence and make column reduction by threshold process
         if not search_for_regions:
             print('MSA_filter message : Do not search for regions in the core')
-            return list(range(begin_end[0], begin_end[1]))
+            idx = []
+            for i, gap in enumerate(gaps[begin_end[0]: begin_end[1] + 1], begin_end[0]):
+                if not gap:
+                    idx.append(i)
+            return idx
 
         # Now search for regions in the core and reduce them
         print('MSA_filter message : Do search for regions in the core')
