@@ -7,9 +7,11 @@ import random
 import torch
 import warnings
 
+from download_MSA import Downloader
 from pipeline import StructChecker
 from analyzer import VAEHandler
 from matplotlib import pyplot as plt
+from msa_prepar import MSA
 import seaborn as sns
 
 class Benchmarker:
@@ -18,7 +20,11 @@ class Benchmarker:
         self.positive = positive_control
         self.train_data = train_data[random.sample(range(0, train_data.shape[0]), positive_control.shape[0])] # Same amount of samples
 
-        self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1])
+        # Get amino acids coding
+        self.msa_obj = MSA(setuper=self.setuper, processMSA=False)
+        self.aa, self.aa_index = self.msa_obj.amino_acid_dict(export=True)
+
+        self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
         self.vae_handler = VAEHandler(setuper)
         # Ignore deprecated errors
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
