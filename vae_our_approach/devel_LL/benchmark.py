@@ -182,10 +182,14 @@ if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     down_MSA = Downloader(tar_dir)
-    # with open(tar_dir.pickles_fld + '/positive_control.pkl', 'rb') as file_handle:
-    #     positive = pickle.load(file_handle)
-    #
-    # with open(tar_dir.pickles_fld + '/training_set.pkl', 'rb') as file_handle:
+    with open(tar_dir.pickles_fld + '/positive_control.pkl', 'rb') as file_handle:
+        positive = pickle.load(file_handle)
+
+    with open(tar_dir.pickles_fld + '/training_set.pkl', 'rb') as file_handle:
+        train_set = pickle.load(file_handle)
+    b = Benchmarker(positive, train_set, tar_dir)
+    b.make_bench()
+    # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:
     #     train_set = pickle.load(file_handle)
     # iden = np.identity(train_set.shape[2])
     # pos = np.zeros((2, train_set.shape[1], train_set.shape[2]))
