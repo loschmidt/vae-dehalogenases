@@ -51,7 +51,7 @@ class MSAFilterCutOff :
         pos_idx = []
         ref_pos = []
         if keep_ref:
-            ref_pos = self._get_ref_pos(msa, search_for_regions=False)
+            ref_pos = self._get_ref_pos(msa, search_for_regions=True)
         np_msa, key_list = self._remove_unexplored_and_covert_aa(msa)
         for i in range(np_msa.shape[1]):
             # Hold all position as in reference sequence
@@ -92,8 +92,8 @@ class MSAFilterCutOff :
                     # End of gap region, modify end index
                     regions.append((start_pos, i-1))
                 prev_pos = gap
-            # Correct last one region
-            if start_pos != 0:
+            # Correct last one region, only if the last position is not amino acid
+            if start_pos != 0 and gaps_arr[-1]:
                 regions.append((start_pos, offset+len(gaps_arr)-1))
             return regions
 
@@ -101,6 +101,7 @@ class MSAFilterCutOff :
         gaps = [s == "-" or s == "." for s in query_seq]
         # first and last position of AA. Keep 2 gaps on each side.
         begin_end = [[i for i, gap in enumerate(gaps) if not gap][ii]-2-(4*ii) for ii in (0, -1)]
+        begin_end = (max(begin_end[0], 0), min(begin_end[1], len(query_seq)-1))
         # Just find the core sequence and make column reduction by threshold process
         if not search_for_regions:
             print('MSA_filter message : Do not search for regions in the core')
@@ -140,15 +141,17 @@ class MSAFilterCutOff :
 
         # Region is selected modify it to shorter version cca. 450 aa
         # Remove regions form the biggest until the length is sufficient
-        actual_size = begin_end[1] - begin_end[0]
-        while actual_size > 450:
+        actual_size = begin_end[1] + 1 - begin_end[0]
+        target_seq_size = 315
+        print('MSA_filter message : Target size of sequence is', target_seq_size)
+        while actual_size > target_seq_size:
             # Request for core sequence length is too small, all gap regions were remove break the loop
             if len(region_sizes) == 0:
                 break
             max_region_i, max_region_value = max(enumerate(region_sizes), key=lambda e: e[1])
             del region_sizes[max_region_i]
             del regions[max_region_i]
-            actual_size -= max_region_value+1 # to get correct length of region
+            actual_size -= max_region_value + 1 # Correct count removed positions
         # Include positions of kept gaps into idx
         for r in regions:
             idx.extend(list(range(r[0], r[1]+1)))
