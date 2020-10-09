@@ -98,6 +98,16 @@ class Highlighter:
         data = self._name_match([name])
         self._highlight(name=name, high_data=data, no_init=True)
 
+    def plot_probabilities(self, probs):
+        fig, ax = plt.subplots()
+        ax.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
+        ax.plot(list(range(len(probs))), probs, 'bo', list(range(len(probs))), probs, 'k')
+        ax.set_xlabel("$Sequence number$")
+        ax.set_ylabel("$Probability$")
+        save_path = self.out_dir + 'probability_graph.png'
+        print("Class highlighter saving probability plot to", save_path)
+        fig.savefig(save_path)
+
     def _name_match(self, names):
         ## Key to representation of index
         key2idx = {}

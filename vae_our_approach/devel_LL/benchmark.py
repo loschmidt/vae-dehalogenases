@@ -12,20 +12,24 @@ from pipeline import StructChecker
 from analyzer import VAEHandler
 from matplotlib import pyplot as plt
 from msa_prepar import MSA
+from msa_filter_scorer import MSAFilterCutOff as BinaryCovertor
 import seaborn as sns
 
 class Benchmarker:
-    def __init__(self, positive_control, train_data, setuper):
+    def __init__(self, positive_control, train_data, setuper, generate_negative=True):
         self.setuper = setuper
         self.positive = positive_control
-        self.train_data = train_data[random.sample(range(0, train_data.shape[0]), positive_control.shape[0])] # Same amount of samples
+        if train_data is not None:
+            self.train_data = train_data[random.sample(range(0, train_data.shape[0]), positive_control.shape[0])] # Same amount of samples
 
         # Get amino acids coding
         self.msa_obj = MSA(setuper=self.setuper, processMSA=False)
         self.aa, self.aa_index = self.msa_obj.amino_acid_dict(export=True)
 
-        self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
+        if generate_negative:
+            self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
         self.vae_handler = VAEHandler(setuper)
+        self.binaryConv = BinaryCovertor(self.setuper)
         # Ignore deprecated errors
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
 
@@ -79,6 +83,14 @@ class Benchmarker:
         file.write(s)
         file.close()
 
+    def measure_seq_probability(self, seqs_dict):
+        '''Method measures the marginal probability of
+        observation of the sequence on the output of network'''
+        # Encode sequence to binary
+        binary, _, _ = self.binaryConv.prepare_aligned_msa_for_Vae(seqs_dict)
+        probs = self._bench(binary)
+        return probs
+
     def _bench(self, data):
         msa_weight = np.ones(data.shape[0]) / data.shape[0]
         msa_weight = msa_weight.astype(np.float32)
@@ -92,7 +104,7 @@ class Benchmarker:
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
         '''
-        N = 10
+        N = 10000
         probs = []  # marginal propabilities
 
         # Lambda for the calculation of the amino sequence decoded from binary

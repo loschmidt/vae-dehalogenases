@@ -8,8 +8,10 @@ from pipeline import StructChecker
 from download_MSA import Downloader
 from random import randrange, sample
 from math import sqrt
+from benchmark import Benchmarker as ProbabilityMaker
 
 import pickle
+import csv
 
 class MutagenesisGenerator:
     def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2):
@@ -104,11 +106,17 @@ class MutagenesisGenerator:
                 file_handle.write(">" + names[i] + "\n" + "".join(seq) + "\n")
         print('Fasta file generate to ', self.pickle + '/generated_ancestors.fasta')
 
-    def _store_in_fasta_file(self, to_store, to_file):
+    def _store_in_fasta_csv(self, to_store, probs, to_file):
         names = list(to_store.keys())
         vals = list(to_store.values())
         self.anc_seqs = vals
         self.store_ancestors_in_fasta(names=names, file_name=to_file)
+        # Store in csv file
+        with open(self.setuper.high_fld + 'probabilities_ancs.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation"])
+            for i, (name, seq, prob) in enumerate(zip(names, vals, probs)):
+                writer.writerow([i, name, seq, prob])
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
@@ -125,7 +133,7 @@ class MutagenesisGenerator:
 
         return min_dist, ancestor, anc_pos, mutants_pos
 
-    def get_straight_ancestors(self, cnt_of_anc=3):
+    def get_straight_ancestors(self, cnt_of_anc=100):
         '''Method does that the line between a position of reference sequence
          and the center (0,0) is divided to cnt_of_anc and the borders of the
          intervals are denoted as ancestors. It can be used as a validation
@@ -146,19 +154,25 @@ class MutagenesisGenerator:
             to_highlight.append((cur_x, cur_y))
             i += 1
         ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
-        self._store_in_fasta_file(ancestors_to_store, to_file='straight_ancestors.fasta')
-        return list(ancestors_to_store.keys()), to_highlight
+        seqs_dict = {}
+        for i, s in ancestors_to_store:
+            seqs_dict['prob_{}'.format(i)] = s
+        probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(seqs_dict)
+        self._store_in_fasta_csv(ancestors_to_store, to_file='straight_ancestors.fasta', probs=probs)
+        return list(ancestors_to_store.keys()), to_highlight, probs
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     dow = Downloader(tar_dir)
     mut = MutagenesisGenerator(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
-    ancs, names, muts = mut.reconstruct_ancestors(samples=tar_dir.mutant_samples)
+    # ancs, names, muts = mut.reconstruct_ancestors(samples=tar_dir.mutant_samples)
     h = Highlighter(tar_dir)
     # h.highlight_mutants(ancs, names, muts, file_name='mutans_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples))
     # if tar_dir.focus:
     #     h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
     # mut.store_ancestors_in_fasta(names)
-    names, ancestors = mut.get_straight_ancestors()
+    names, ancestors, probs = mut.get_straight_ancestors()
     h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
+    h = Highlighter(tar_dir)
+    h.plot_probabilities(probs)
