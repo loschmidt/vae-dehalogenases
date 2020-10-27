@@ -300,13 +300,25 @@ class AncestorsHandler:
             ref = pickle.load(file_handle)
         ref_name = list(ref.keys())[0]
         ref_seq = "".join(ref[ref_name])
-        aligned = {}
+        aligned, ref_len = {}, len(ref_seq)
         i = 0
         for k in self.sequences.keys():
             i += 1
             seq = self.sequences[k]
             alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
-            aligned[k] = alignments[0][1]
+            best_align = alignments[0][1]
+            if len(seq) > ref_len:
+                # length of sequence is bigger than ref query, cut sequence on reference query gap positions
+                print('AncestorHandler message: Len of seq is {0}, length of reference is {1}. Sequence amino position at reference gaps will be removed'.format(len(seq), ref_len))
+                tmp = ''
+                aligned[k] = tmp.join([best_align[i] for i in range(ref_len) if ref_seq[i] != '-'])
+            else:
+                # try 3 iteration to fit ref query
+                while len(best_align) > ref_len and gap_pen > -4:
+                    open_gap_pen, gap_pen = open_gap_pen-1, gap_pen-1
+                    alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
+                    best_align = alignments[0][1]
+                aligned[k] = alignments[0][1]
             if self.setuper.stats:
                 print(k, ':', alignments[0][2])
         return aligned
