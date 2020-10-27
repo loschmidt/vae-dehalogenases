@@ -6,6 +6,7 @@ import pickle
 import random
 import torch
 import warnings
+import os
 
 from download_MSA import Downloader
 from pipeline import StructChecker
@@ -113,6 +114,7 @@ class Benchmarker:
         marginal = lambda gen, orig: sum([1 if g == o else 0 for g, o in zip(gen, orig)]) / len(orig)
         print('=' * 60)
         print('Sampling process has begun...')
+        print('=' * 60)
 
         # Sample for mus and sigmas for N times
         batch_size = 32
@@ -172,6 +174,13 @@ class Benchmarker:
 
                 columns sum to one
         '''
+        msa_prof_file = self.setuper.pickles_fld + "/msa_profile.pkl"
+        # check if msa_profile exists
+        if os.path.exists(msa_prof_file) and os.path.getsize(msa_prof_file) > 0:
+            print('Benchmark message : Profile file exists in {}. Loading that file.'.format(msa_prof_file))
+            with open(msa_prof_file, 'rb') as file_handle:
+                profile = pickle.load(file_handle)
+            return profile
         print('Benchmark message : Creating the profile of MSA')
         # Convert MSA from binary to number coding
         get_aas = lambda xs: [np.where(aa_bin == 1)[0] for aa_bin in xs]
@@ -185,7 +194,7 @@ class Benchmarker:
             aa_sum = sum(aa_counts)
             for i, aa in enumerate(aa_type):
                 profile[aa, j] = aa_counts[i] / aa_sum
-        with open(self.setuper.pickles_fld + "/msa_profile.pkl", 'wb') as file_handle:
+        with open(msa_prof_file, 'wb') as file_handle:
             pickle.dump(profile, file_handle)
         return profile
 
