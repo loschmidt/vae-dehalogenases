@@ -270,7 +270,10 @@ class VAEHandler:
         num_seqs = {}
         for i, z in enumerate(lat_sp_pos, 1):
             anc_name = 'ancestor_{}'.format(i) if i > 1 else ref_name
-            num_seqs[anc_name] = vae.decoder_seq(tensor(z))
+            z = tensor(z)
+            if self.use_cuda:
+                z = z.cuda()
+            num_seqs[anc_name] = vae.decoder_seq(z)
         # Convert from numbers to amino acid sequence
         anc_dict = Convertor(self.setuper).back_to_amino(num_seqs)
         return anc_dict
