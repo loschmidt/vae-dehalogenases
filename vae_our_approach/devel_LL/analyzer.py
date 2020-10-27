@@ -285,9 +285,8 @@ class VAEHandler:
             if self.use_cuda:
                 z = z.cuda()
                 sigma = sigma.cuda()
+            # indices already on cpu(not tensor)
             ret = vae.decode_samples(z, sigma, samples)
-            if self.use_cuda:
-                ret = ret.cpu()
         return ret
 
 class AncestorsHandler:
