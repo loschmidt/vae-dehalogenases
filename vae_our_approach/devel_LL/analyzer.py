@@ -285,7 +285,6 @@ class VAEHandler:
             if self.use_cuda:
                 z = z.cuda()
                 sigma = sigma.cuda()
-                samples = samples.cuda()
             ret = vae.decode_samples(z, sigma, samples)
             if self.use_cuda:
                 ret = ret.cpu()
