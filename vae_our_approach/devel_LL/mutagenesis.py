@@ -154,10 +154,7 @@ class MutagenesisGenerator:
             to_highlight.append((cur_x, cur_y))
             i += 1
         ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
-        seqs_dict = {}
-        for i, s in enumerate(ancestors_to_store):
-            seqs_dict['prob_{}'.format(i)] = s
-        probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(seqs_dict)
+        probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors_to_store)
         self._store_in_fasta_csv(ancestors_to_store, to_file='straight_ancestors.fasta', probs=probs)
         return list(ancestors_to_store.keys()), to_highlight, probs
 
