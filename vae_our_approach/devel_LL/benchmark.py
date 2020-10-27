@@ -1,6 +1,7 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/09/18 13:49:00"
 
+import csv
 import numpy as np
 import pickle
 import random
@@ -38,6 +39,7 @@ class Benchmarker:
         marginals_train = self._bench(self.train_data)
         marginals_positive = self._bench(self.positive)
         marginals_negative = self._bench(self.negative)
+        self._store_marginals(marginals_train, marginals_positive, marginals_negative)
 
         # Normalization process
         tr_w = np.empty(len(marginals_train))
@@ -120,7 +122,7 @@ class Benchmarker:
         batch_size = 32
         num_batches = mus.shape[0] // batch_size + 1
         for idx_batch in range(num_batches):
-            if (idx_batch + 1) % 50 == 0:
+            if (idx_batch + 1) % 10 == 0:
                 print("idx_batch: {} out of {}".format(idx_batch, num_batches))
             mus_b = mus[idx_batch * batch_size:(idx_batch + 1) * batch_size]
             sigmas_b = sigmas[idx_batch * batch_size:(idx_batch + 1) * batch_size]
@@ -197,6 +199,16 @@ class Benchmarker:
         with open(msa_prof_file, 'wb') as file_handle:
             pickle.dump(profile, file_handle)
         return profile
+
+    def _store_marginals(self, marginal_t, marginal_p, marginal_n):
+        filename = self.setuper.high_fld + 'marginals_benchmark.csv'
+        print('Benchmark message: Storing marginals probabilities in {}'.format(filename))
+        with open(filename, 'w', newline='') as file:
+            # Store in csv file
+            writer = csv.writer(file)
+            writer.writerow(["Number", "Train", "Positive", "Negative"])
+            for i, (name, seq, prob) in enumerate(zip(marginal_t, marginal_p, marginal_n)):
+                writer.writerow([i, name, seq, prob])
 
 
 if __name__ == '__main__':
