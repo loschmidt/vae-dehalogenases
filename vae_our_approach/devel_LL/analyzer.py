@@ -99,7 +99,7 @@ class Highlighter:
         self._highlight(name=name, high_data=data, no_init=True)
 
     def plot_probabilities(self, probs, ancestors):
-        fig, ax = plt.subplots(2)
+        fig, ax = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1]})
         ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
         ax[0].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0], [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
         for i in range(len(ancestors)):
@@ -110,8 +110,7 @@ class Highlighter:
         ax[1].set_ylabel("$Probability$")
 
         # Keep ratio
-        ax[0].gca().set_aspect('equal', adjustable='box')
-        ax[1].gca().set_aspect('equal', adjustable='box')
+        ax[0].set(adjustable='box', aspect='equal')
 
         save_path = self.out_dir + 'probability_graph.png'
         print("Class highlighter saving probability plot to", save_path)
