@@ -98,12 +98,13 @@ class Highlighter:
         data = self._name_match([name])
         self._highlight(name=name, high_data=data, no_init=True)
 
-    def plot_probabilities(self, probs):
-        fig, ax = plt.subplots()
-        ax.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
-        ax.plot(list(range(len(probs))), probs, 'bo', list(range(len(probs))), probs, 'k')
-        ax.set_xlabel("$Sequence number$")
-        ax.set_ylabel("$Probability$")
+    def plot_probabilities(self, probs, ancestors, anc_name):
+        fig, ax = plt.subplots(2)
+        ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
+        ax[0].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0], [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.', label=[anc_name[i] for i in range(anc_name) if i % 10 == 0])
+        ax[1].plot(list(range(len(probs))), probs, 'bo', list(range(len(probs))), probs, 'k')
+        ax[1].set_xlabel("$Sequence number$")
+        ax[1].set_ylabel("$Probability$")
         save_path = self.out_dir + 'probability_graph.png'
         print("Class highlighter saving probability plot to", save_path)
         fig.savefig(save_path)

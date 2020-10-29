@@ -172,4 +172,4 @@ if __name__ == '__main__':
     names, ancestors, probs = mut.get_straight_ancestors()
     h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
     h = Highlighter(tar_dir)
-    h.plot_probabilities(probs)
+    h.plot_probabilities(probs, ancestors, names)
