@@ -158,6 +158,17 @@ class MutagenesisGenerator:
         self._store_in_fasta_csv(ancestors_to_store, to_file='straight_ancestors.fasta', probs=probs, coords=to_highlight)
         return list(ancestors_to_store.keys()), to_highlight, probs
 
+    def dynamic_system(self):
+        """Ancestor reconstruction is made not straightly
+         but by dynamic system described by formula:
+            x(t+1) = beta(-sgn(x(t)) + alpha_x)
+            y(t+1) = beta(-sgn(y(t)) + alpha_y)
+
+            alpha - stands for weighted values of x/y coordinates
+                    in the gaussian space around current point
+            beta  - the size of step
+         """
+
 if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
@@ -172,4 +183,4 @@ if __name__ == '__main__':
     names, ancestors, probs = mut.get_straight_ancestors()
     h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
     h = Highlighter(tar_dir)
-    h.plot_probabilities(probs, ancestors, names)
+    h.plot_probabilities(probs, ancestors)
