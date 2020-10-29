@@ -106,7 +106,7 @@ class MutagenesisGenerator:
                 file_handle.write(">" + names[i] + "\n" + "".join(seq) + "\n")
         print('Fasta file generate to ', self.pickle + '/generated_ancestors.fasta')
 
-    def _store_in_fasta_csv(self, to_store, probs, to_file):
+    def _store_in_fasta_csv(self, to_store, probs, to_file, coords):
         names = list(to_store.keys())
         vals = list(to_store.values())
         self.anc_seqs = vals
@@ -114,9 +114,9 @@ class MutagenesisGenerator:
         # Store in csv file
         with open(self.setuper.high_fld + 'probabilities_ancs.csv', 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation"])
-            for i, (name, seq, prob) in enumerate(zip(names, vals, probs)):
-                writer.writerow([i, name, seq, prob])
+            writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x", "Coordinate y"])
+            for i, (name, seq, prob, c) in enumerate(zip(names, vals, probs, coords)):
+                writer.writerow([i, name, seq, prob, c[0], c[1]])
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
@@ -155,7 +155,7 @@ class MutagenesisGenerator:
             i += 1
         ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
         probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors_to_store)
-        self._store_in_fasta_csv(ancestors_to_store, to_file='straight_ancestors.fasta', probs=probs)
+        self._store_in_fasta_csv(ancestors_to_store, to_file='straight_ancestors.fasta', probs=probs, coords=to_highlight)
         return list(ancestors_to_store.keys()), to_highlight, probs
 
 if __name__ == '__main__':

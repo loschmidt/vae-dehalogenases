@@ -102,7 +102,7 @@ class Highlighter:
         fig, ax = plt.subplots(2)
         ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
         ax[0].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0], [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
-        for i in range(anc_name):
+        for i in range(len(ancestors)):
             if i % 10 == 0:
                 ax[0].annotate(anc_name[i], (ancestors[i][0], ancestors[i][1]))
         ax[1].plot(list(range(len(probs))), probs, 'bo', list(range(len(probs))), probs, 'k')
