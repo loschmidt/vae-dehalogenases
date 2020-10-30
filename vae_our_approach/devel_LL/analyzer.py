@@ -325,6 +325,7 @@ class AncestorsHandler:
                 aligned[k] = tmp.join([best_align[i] for i in range(ref_len) if ref_seq[i] != '-'])
             else:
                 # try 3 iteration to fit ref query
+                open_gap_pen, gap_pen = -7, -1
                 while len(best_align) > ref_len and gap_pen > -4:
                     open_gap_pen, gap_pen = open_gap_pen-1, gap_pen-1
                     alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
