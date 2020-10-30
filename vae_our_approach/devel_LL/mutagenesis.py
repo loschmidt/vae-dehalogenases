@@ -156,7 +156,7 @@ class MutagenesisGenerator:
         y_d = (y_s / cnt_of_anc)
         z_d = (z_s / cnt_of_anc)
         i = 1
-        to_highlight = [(x_s, y_s)] if lat_dim == 3 else [(x_s, y_s, z_s)]
+        to_highlight = [(x_s, y_s, z_s)] if lat_dim == 3 else [(x_s, y_s)]
         while i <= cnt_of_anc:
             cur_x = x_s - (x_d * i)
             cur_y = y_s - (y_d * i)
