@@ -115,7 +115,7 @@ class MutagenesisGenerator:
         self.anc_seqs = vals
         self.store_ancestors_in_fasta(names=names, file_name=to_file)
         # Store in csv file
-        with open(self.setuper.high_fld + '{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:
+        with open(self.setuper.high_fld + '/{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x", "Coordinate y"])
             for i, (name, seq, prob, c) in enumerate(zip(names, vals, probs, coords)):
@@ -175,8 +175,8 @@ class MutagenesisGenerator:
     def dynamic_system(self):
         """Ancestor reconstruction is made not straightly
          but by dynamic system described by formula:
-            x(t+1) = beta(-sgn(x(t)) + alpha_x)
-            y(t+1) = beta(-sgn(y(t)) + alpha_y)
+            x(t+1) = x(t) + beta(-sgn(x(t)) + alpha_x)
+            y(t+1) = y(t) + beta(-sgn(y(t)) + alpha_y)
 
             alpha - stands for weighted values of x/y coordinates
                     in the gaussian space around current point
@@ -199,6 +199,7 @@ class MutagenesisGenerator:
         if self.setuper.dimensionality != 2:
             print('Mutagenesis message: Latent space dimensionality is bigger than 2.  Unsupported option for dynamic system analysis')
             return ancestors
+        print('Dynamic process has begun with BETA', BETA)
         # sort Mus by individual coordinates
         mus = latent_space['mu']
         mus_x_sort = sorted(mus, key=lambda i: i[0])
@@ -211,26 +212,27 @@ class MutagenesisGenerator:
         dist_to_center = sqrt(mean[0]**2 + mean[1]**2)
         iterations = 1
         ancestors.append(mean.copy())
-        while dist_to_center > CENTER_THRESHOLD and iterations < 4:
+        while dist_to_center > CENTER_THRESHOLD and iterations < 300:
             # select for weighting points from reasonable surroundings
-            start, end = next((x for x, val in enumerate(mus_x_sort) if val[0] > mean[0]-1), default=0), \
-                             next((x for x, val in enumerate(mus_x_sort) if val[0] > mean[0]+1), default=(len(mus_x_sort)))
+            start, end = next((x for x, val in enumerate(mus_x_sort) if val[0] > mean[0]-1), 0), \
+                             next((x for x, val in enumerate(mus_x_sort) if val[0] > mean[0]+1), len(mus_x_sort))
             # Now sort by second coordinate and select appropriated slice
-            selected = sorted(mus_x_sort[start: end, :], key=lambda i: i[1])
-            start, end = next((x for x, val in enumerate(selected) if val[1] > mean[1] - 1), default=0), \
-                         next((x for x, val in enumerate(selected) if val[1] > mean[1] + 1),default=(len(mus_x_sort)))
+            selected = sorted(mus_x_sort[start: end], key=lambda i: i[1])
+            start, end = next((x for x, val in enumerate(selected) if val[1] > mean[1] - 1), 0), \
+                         next((x for x, val in enumerate(selected) if val[1] > mean[1] + 1), len(mus_x_sort))
             # Now selected array obtains just points in the 1 x 1 square around mean
-            selected = selected[:, start: end]
+            selected = selected[start: end]
             # Weighted coordinates influence
             alpha_x, alpha_y = 0, 0
             for x, y in selected:
                 p_prob = weightor.pdf([x, y])
                 alpha_x += x * p_prob
                 alpha_y += y * p_prob
+            ## TODO diky normalizaci nemaji jine body vliv a sgn ma vliv solve it 
             alpha_x, alpha_y = alpha_x / len(selected), alpha_y / len(selected)
             # apply formulas for dynamic system x(t+1) = beta(-sgn(x(t)) + alpha_x)
-            mean[0] = BETA * (-np.sign(mean[0]) + alpha_x)
-            mean[1] = BETA * (-np.sign(mean[1]) + alpha_y)
+            mean[0] += BETA * (-np.sign(mean[0]) + alpha_x)
+            mean[1] += BETA * (-np.sign(mean[1]) + alpha_y)
             # update probabilistic density function according actual mean
             weightor = norm(mean=mean, cov=cov)
             dist_to_center = sqrt(mean[0] ** 2 + mean[1] ** 2)

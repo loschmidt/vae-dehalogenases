@@ -102,7 +102,7 @@ class Highlighter:
         fig, ax = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1]})
         ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
         if dynamic:
-            ax[0].plot(ancestors, '-o', markersize=1)
+            ax[0].plot([a[0] for a in ancestors], [a[1] for a in ancestors], '-o', markersize=1)
         else:
             ax[0].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0], [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
         for i in range(len(ancestors)):
