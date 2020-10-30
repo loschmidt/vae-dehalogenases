@@ -119,7 +119,8 @@ class MutagenesisGenerator:
             writer = csv.writer(file)
             writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x", "Coordinate y"])
             for i, (name, seq, prob, c) in enumerate(zip(names, vals, probs, coords)):
-                writer.writerow([i, name, seq, prob, c[0], c[1]])
+                seq_str = ''
+                writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1]])
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
@@ -210,7 +211,7 @@ class MutagenesisGenerator:
         dist_to_center = sqrt(mean[0]**2 + mean[1]**2)
         iterations = 1
         ancestors.append(mean.copy())
-        while dist_to_center < CENTER_THRESHOLD and iterations < 4:
+        while dist_to_center > CENTER_THRESHOLD and iterations < 4:
             # select for weighting points from reasonable surroundings
             start, end = next((x for x, val in enumerate(mus_x_sort) if val[0] > mean[0]-1), default=0), \
                              next((x for x, val in enumerate(mus_x_sort) if val[0] > mean[0]+1), default=(len(mus_x_sort)))
