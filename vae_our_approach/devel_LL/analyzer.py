@@ -98,10 +98,13 @@ class Highlighter:
         data = self._name_match([name])
         self._highlight(name=name, high_data=data, no_init=True)
 
-    def plot_probabilities(self, probs, ancestors):
+    def plot_probabilities(self, probs, ancestors, dynamic=False):
         fig, ax = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1]})
         ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
-        ax[0].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0], [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
+        if dynamic:
+            ax[0].plot(ancestors, '-o')
+        else:
+            ax[0].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0], [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
         for i in range(len(ancestors)):
             if i % 10 == 0:
                 ax[0].annotate(i, (ancestors[i][0], ancestors[i][1]))
@@ -112,7 +115,7 @@ class Highlighter:
         # Keep ratio
         ax[0].set(adjustable='box', aspect='equal')
 
-        save_path = self.out_dir + 'probability_graph.png'
+        save_path = self.out_dir + '{}probability_graph.png'.format('dynamic_' if dynamic else '')
         print("Class highlighter saving probability plot to", save_path)
         fig.savefig(save_path)
 

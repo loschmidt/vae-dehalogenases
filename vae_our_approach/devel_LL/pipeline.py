@@ -30,6 +30,7 @@ class StructChecker:
         self.mutant_samples = self.args.mutant_samples
         self.focus = self.args.focus
         self.dimensionality = self.args.dimensionality
+        self.dyn_beta = self.args.dyn_beta
 
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
@@ -87,6 +88,8 @@ class StructChecker:
                             help="Generate focus plot")
         parser.add_argument('--dimensionality', type=int, default=2, help="Latent space dimensionality. Default value 2")
         parser.add_argument('--in_file', type=str, default='', help="Setup input file. Recognize automatically .fasta or .txt for stockholm file format.")
+        parser.add_argument('--dyn_beta', type=float, default=0.25,
+                            help="Mutagenesis dynamic system step size parameter. Default value is 0.25")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
