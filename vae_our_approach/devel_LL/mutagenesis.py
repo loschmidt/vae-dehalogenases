@@ -226,6 +226,7 @@ class MutagenesisGenerator:
                 p_prob = weightor.pdf([x, y])
                 alpha_x += x * p_prob
                 alpha_y += y * p_prob
+            alpha_x, alpha_y = alpha_x / len(selected), alpha_y / len(selected)
             # apply formulas for dynamic system x(t+1) = beta(-sgn(x(t)) + alpha_x)
             mean[0] = BETA * (-np.sign(mean[0]) + alpha_x)
             mean[1] = BETA * (-np.sign(mean[1]) + alpha_y)
