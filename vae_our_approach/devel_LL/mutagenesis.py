@@ -141,17 +141,27 @@ class MutagenesisGenerator:
          effect on latent space if the radiuses of differently init models
          are almost same.
          '''
+        lat_dim = self.setuper.dimensionality
         ref_pos = self._mutants_positions(self.cur)
-        (x_s, y_s) = ref_pos[0]
+        if lat_dim == 3:
+            (x_s, y_s, z_s) = ref_pos[0]
+        else:
+            (x_s, y_s) = ref_pos[0]
+            z_s = 0
         cnt_of_anc += 1
         x_d = (x_s / cnt_of_anc)
         y_d = (y_s / cnt_of_anc)
+        z_d = (z_s / cnt_of_anc)
         i = 1
-        to_highlight = [(x_s, y_s)]
+        to_highlight = [(x_s, y_s)] if lat_dim == 3 else [(x_s, y_s, z_s)]
         while i <= cnt_of_anc:
             cur_x = x_s - (x_d * i)
             cur_y = y_s - (y_d * i)
-            to_highlight.append((cur_x, cur_y))
+            cur_z = z_s - (z_d * i)
+            if lat_dim == 3:
+                to_highlight.append((cur_x, cur_y, cur_z))
+            else:
+                to_highlight.append((cur_x, cur_y))
             i += 1
         ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
         probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors_to_store)
