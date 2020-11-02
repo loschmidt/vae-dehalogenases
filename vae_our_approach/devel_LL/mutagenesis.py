@@ -207,8 +207,8 @@ class MutagenesisGenerator:
         # Get starting point for dynamic system
         mean = self._mutants_positions(self.cur)[0]
         cov = [[1, 0], [0, 1]]
-
-        weightor = norm(mean=mean, cov=cov)
+        # Normal distribution is loacated on 0, 0 coordinates
+        weightor = norm(mean=[0,0], cov=cov)
         dist_to_center = sqrt(mean[0]**2 + mean[1]**2)
         iterations = 1
         ancestors.append(mean.copy())
@@ -225,16 +225,16 @@ class MutagenesisGenerator:
             # Weighted coordinates influence
             alpha_x, alpha_y = 0, 0
             for x, y in selected:
+                # Transform points to 0, 0 mean normal distribution
+                x, y = x - mean[0], y - mean[1]
                 p_prob = weightor.pdf([x, y])
                 alpha_x += x * p_prob
                 alpha_y += y * p_prob
             ## TODO diky normalizaci nemaji jine body vliv a sgn ma vliv solve it 
-            alpha_x, alpha_y = alpha_x / len(selected), alpha_y / len(selected)
+            #alpha_x, alpha_y = alpha_x / len(selected), alpha_y / len(selected)
             # apply formulas for dynamic system x(t+1) = beta(-sgn(x(t)) + alpha_x)
             mean[0] += BETA * (-np.sign(mean[0]) + alpha_x)
             mean[1] += BETA * (-np.sign(mean[1]) + alpha_y)
-            # update probabilistic density function according actual mean
-            weightor = norm(mean=mean, cov=cov)
             dist_to_center = sqrt(mean[0] ** 2 + mean[1] ** 2)
             iterations += 1
             ancestors.append(mean.copy())
