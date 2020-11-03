@@ -172,7 +172,7 @@ class MutagenesisGenerator:
         self._store_in_fasta_csv(ancestors_to_store, to_file='straight_ancestors.fasta', probs=probs, coords=to_highlight)
         return list(ancestors_to_store.keys()), to_highlight, probs
 
-    def dynamic_system(self):
+    def dynamic_system(self, beta=None):
         """Ancestor reconstruction is made not straightly
          but by dynamic system described by formula:
             x(t+1) = x(t) + beta(-sgn(x(t)) + alpha_x)
@@ -183,7 +183,7 @@ class MutagenesisGenerator:
             beta  - the size of step
         """
         CENTER_THRESHOLD = 0.01
-        BETA = self.setuper.dyn_beta
+        BETA = beta if beta is not None else self.setuper.dyn_beta
 
         ancestors = []
         # Load the trained latent space representation
@@ -240,7 +240,7 @@ class MutagenesisGenerator:
             ancestors.append(mean.copy())
         ancestors_to_store = self.handler.decode_sequences_VAE(ancestors, self.cur_name)
         probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors_to_store)
-        self._store_in_fasta_csv(ancestors_to_store, to_file='dynamic_system.fasta', probs=probs,coords=ancestors)
+        self._store_in_fasta_csv(ancestors_to_store, to_file='dynamic_system_{}.fasta'.format(str(BETA)), probs=probs,coords=ancestors)
         return ancestors, probs
 
 if __name__ == '__main__':
@@ -258,5 +258,7 @@ if __name__ == '__main__':
     h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
     h = Highlighter(tar_dir)
     h.plot_probabilities(probs, ancestors)
-    ancestors, probs = mut.dynamic_system()
-    h.plot_probabilities(probs, ancestors, dynamic=True)
+    betas = [0.20, 0.15, 0.1, 0.05, 0.08, 0.03]
+    for beta in betas:
+        ancestors, probs = mut.dynamic_system(beta=beta)
+        h.plot_probabilities(probs, ancestors, dynamic=True, file_notion='_beta_{}'.format(str(beta)))
