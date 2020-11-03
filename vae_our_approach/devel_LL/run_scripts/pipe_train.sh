@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -N latentSpaceJob
-#PBS -q gpu -l select=1:ngpus=1:mem=8gb:scratch_local=500mb
+#PBS -N 3D_bench
+#PBS -q gpu -l select=1:ngpus=1:mem=32gb:scratch_local=500mb
 #PBS -l walltime=24:00:00
 #PBS -m ae
 
@@ -24,7 +24,19 @@ conda activate #vae-env
 echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 ## Run pipeline
 cd $DATADIR
-python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats --highlight_seqs ${QUERY}
+## python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats --highlight_seqs ${QUERY}
+
+echo "========================================================================"
+echo "Training 3D pipeline is running - with positive control"
+python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir 3D_benchmark --stats --highlight_seqs ${QUERY} --highlight_files results/PF00561/MSA/ancestors.fasta --align --in_file results/PF00561/MSA/identified_targets_msa.fa --dimensionality 3
+
+echo "========================================================================"
+echo "Benchmark is processing"
+python3 benchmark.py --Pfam_id $PFAMSEQ --output_dir 3D_benchmark --dimensionality 3 
+
+echo "========================================================================"
+echo "Mutagenesis analyse has begun"
+python3 mutagenesis.py --Pfam_id $PFAMSEQ --output_dir 3D_benchmark --dimensionality 3
 
 ##python3 ./script/analyze_model1.py --Pfam_id $PFAMSEQ --RPgroup ${RPgroup}
 echo "Training process is finished" >> $LOGDIR/jobs_info.txt
