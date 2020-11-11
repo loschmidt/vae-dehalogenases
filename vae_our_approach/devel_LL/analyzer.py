@@ -99,8 +99,40 @@ class Highlighter:
         self._highlight(name=name, high_data=data, no_init=True)
 
     def plot_probabilities(self, probs, ancestors, dynamic=False, file_notion=''):
-        fig, ax = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1]})
+        ratios = [9, 3, 5] if self.setuper.align else [6, 1]
+        cnt_plot = 3 if self.setuper.align else 2
+        fig, ax = plt.subplots(cnt_plot, 1, gridspec_kw={'height_ratios': ratios})
         ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
+        if self.setuper.align:
+            msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=self.setuper.highlight_files)
+            msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
+            binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(msa)
+            data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
+            ## Plot data into both graphs and focus on the area
+            ax[2].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3)
+            for i, d in enumerate(data):
+                ax[0].plot(d[0], d[1], '.', alpha=1, markersize=4, label='{0} {1}'.format(i+1, keys[i]), color='red')
+                ax[2].plot(d[0], d[1], '.', alpha=1, markersize=4, label='{0} {1}'.format(i+1, keys[i]), color='red')
+            for i, k in enumerate(keys):
+                ax[0].annotate(i+1, data[i])
+                ax[2].annotate(i+1, data[i])
+            x1 = data[0][0]
+            x2 = data[-1][0]
+            y1 = data[0][1]
+            y2 = data[-1][1]
+            x1, x2 = (x1, x2) if x1 < x2 else (x2, x1)
+            y1, y2 = (y1, y2) if y1 < y2 else (y2, y1)
+            # Plot ancestors
+            ax[2].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0],
+                       [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
+            for i, a in enumerate(ancestors):
+                if i % 10 == 0:
+                    ax[2].annotate(i, a)
+            ax[2].set_xlim([x1 - 0.5, x2 + 0.5])
+            ax[2].set_ylim([y1 - 0.5, y2 + 0.5])
+            ax[2].legend(title='Babkova seqs', bbox_to_anchor=(1.05, 1), loc='upper left')
+            # Keep ratio
+            ax[2].set(adjustable='box', aspect='equal')
         if dynamic:
             ax[0].plot([a[0] for a in ancestors], [a[1] for a in ancestors], '-o', markersize=1)
         else:
@@ -114,8 +146,8 @@ class Highlighter:
 
         # Keep ratio
         ax[0].set(adjustable='box', aspect='equal')
-
-        save_path = self.out_dir + '{0}probability_graph{1}.png'.format('dynamic_' if dynamic else '', file_notion)
+        # plt.show(
+        save_path = self.out_dir + '{0}probability_graph{1}.png'.format('dynamic_' if dynamic else 'aligned_', file_notion)
         print("Class highlighter saving probability plot to", save_path)
         fig.savefig(save_path)
 
@@ -285,6 +317,9 @@ class VAEHandler:
             if self.use_cuda:
                 z = z.cuda()
             num_seqs[anc_name] = vae.decoder_seq(z)
+        if len(num_seqs.keys()) == 1:
+            # Special case for leangth 1
+            num_seqs[anc_name] = num_seqs[anc_name][0]
         # Convert from numbers to amino acid sequence
         anc_dict = Convertor(self.setuper).back_to_amino(num_seqs)
         return anc_dict
@@ -329,13 +364,13 @@ class AncestorsHandler:
             else:
                 # try 3 iteration to fit ref query
                 open_gap_pen, gap_pen = -7, -1
-                while len(best_align) > ref_len and gap_pen > -4:
+                while len(best_align) > ref_len and gap_pen > -7:
                     open_gap_pen, gap_pen = open_gap_pen-1, gap_pen-1
                     alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
                     best_align = alignments[0][1]
                 aligned[k] = alignments[0][1]
             if self.setuper.stats:
-                print(k, ':', alignments[0][2])
+                print(k, ':', alignments[0][2], len(aligned[k]))
         return aligned
 
 if __name__ == '__main__':
