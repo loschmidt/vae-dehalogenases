@@ -114,10 +114,10 @@ class VAE(nn.Module):
             h = self.decoder_linears[i](h)
             h = torch.tanh(h)
         h = self.decoder_linears[-1](h)
-
         fixed_shape = tuple(h.shape[0:-1])
         h = torch.unsqueeze(h, -1)
         h = h.view(fixed_shape + (-1, self.num_aa_type))
+        h = F.softmax(h, dim=-1)
         idxs = (h.max(dim=-1).indices).tolist()
         return idxs
 
@@ -145,7 +145,7 @@ class VAE(nn.Module):
             #print(len(idxs), idxs[0], 'to je velikost po samplovani')
             return idxs
 
-    def compute_weighted_elbo(self, x, weight):
+    def compute_weighted_elbo(self, x, weight, c_fx_x=2):
         ## sample z from q(z|x)
         mu, sigma = self.encoder(x)
         eps = torch.randn_like(sigma)
@@ -155,8 +155,12 @@ class VAE(nn.Module):
         log_p = self.decoder(z)
         log_PxGz = torch.sum(x*log_p, -1)
 
+        ## Setup the influence of reconstruction or KL divergence to latent space
+        ## c_fx_x stands for influence of reconstruction error bigger more accurate reconstruncion is requiered
+        c = 1/c_fx_x
+
         ## compute elbo
-        elbo = log_PxGz - torch.sum(0.5*(sigma**2 + mu**2 - 2*torch.log(sigma) - 1), -1)
+        elbo = log_PxGz - torch.sum(c*(sigma**2 + mu**2 - 2*torch.log(sigma) - 1), -1)
         weight = weight / torch.sum(weight)
         elbo = torch.sum(elbo*weight)
         

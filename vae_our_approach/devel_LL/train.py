@@ -9,7 +9,6 @@ import torch.optim as optim
 from pipeline import StructChecker
 from download_MSA import Downloader
 from VAE_model import MSA_Dataset, VAE
-from benchmark import Benchmarker
 
 class Train:
     def __init__(self, setuper: StructChecker, msa=None, benchmark=False):
@@ -92,7 +91,7 @@ class Train:
 
             train_loss_list = []
             for epoch in range(self.setuper.epochs):
-                loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight)
+                loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight, self.setuper.C)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -104,7 +103,7 @@ class Train:
             ## cope trained model to cpu and save it
             if self.use_cuda:
                 vae.cpu()
-            torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}.model".format(str(self.setuper.decay), k))
+            torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}.model".format(str(self.setuper.decay), k, str(self.setuper.C)))
 
             print("Finish the {}th fold training".format(k))
             print("=" * 60)
@@ -154,13 +153,6 @@ class Train:
 
             with open(self.setuper.pickles_fld + "/elbo_all.pkl", 'wb') as file_handle:
                 pickle.dump(elbo_all, file_handle)
-
-        # if self.benchmark:
-        #     gen_fld = self.setuper.high_fld + '/'
-        #     print('='*60)
-        #     print('calculation benchmarking and creating plots to {}'.format(gen_fld))
-        #     b = Benchmarker(self.benchmark_set, self.seq_msa_binary, self.setuper)
-        #     b.make_bench()
 
     def _load_pickles(self):
         with open(self.setuper.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:

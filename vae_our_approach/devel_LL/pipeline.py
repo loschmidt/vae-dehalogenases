@@ -20,6 +20,7 @@ class StructChecker:
         self.epochs = self.args.num_epoch
         self.decay = self.args.weight_decay
         self.K = self.args.K # cross validation counts
+        self.C = self.args.C
         ## MSA processing handling
         self.preserve_catalytic = self.args.preserve_catalytic
         self.ec = self.args.ec_num
@@ -90,6 +91,13 @@ class StructChecker:
         parser.add_argument('--in_file', type=str, default='', help="Setup input file. Recognize automatically .fasta or .txt for stockholm file format.")
         parser.add_argument('--dyn_beta', type=float, default=0.25,
                             help="Mutagenesis dynamic system step size parameter. Default value is 0.25")
+        parser.add_argument('--C', type=float, default=2.0,
+                            help="Set parameter for training\n"
+                                 "\tloss = (x - f(x)) - (1/C * KL(qZ, pZ)\n"
+                                 "\t     reconstruction    normalization\n"
+                                 "\t        parameter        parameter\n\n"
+                                 "The bigger C is more accurate the reconstruction will be\n"
+                                 "default value is 2.0")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
