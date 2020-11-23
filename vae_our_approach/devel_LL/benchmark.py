@@ -224,7 +224,18 @@ class Benchmarker:
             binary = d.reshape((d.shape[0], -1))
             binary = torch.from_numpy(binary)
             probs.append(self.vae_handler.get_marginal_probability(binary))
-        print(sum(probs)/num_batches)
+        print("="*60)
+        print("Model generative ability value:", sum(probs)/num_batches)
+
+        filename = self.setuper.high_fld + 'generative.txt'
+        if os.path.exists(filename):
+            append_write = 'a'  # append if already exists
+        else:
+            append_write = 'w'  # make a new file if not
+
+        hs = open(filename, append_write)
+        hs.write("Model with C = {0}, generative value = {1}\n".format(self.setuper.C, sum(probs)/num_batches))
+        hs.close()
 
 
 if __name__ == '__main__':
