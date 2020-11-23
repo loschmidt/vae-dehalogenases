@@ -225,7 +225,7 @@ class VAEHandler:
 
         ## build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, [100])
-        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0.model"))
+        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}.model".format(self.setuper.C)))
         ## move the VAE onto a GPU
         if self.use_cuda:
             vae.cuda()
@@ -336,6 +336,19 @@ class VAEHandler:
                 sigma = sigma.cuda()
             # indices already on cpu(not tensor)
             ret = vae.decode_samples(z, sigma, samples)
+        return ret
+
+    def get_marginal_probability(self, x):
+        '''This method returns the exact probability
+         as it is obtained by VAE'''
+        vae = self.vae
+        if vae is None:
+            vae, _, _ = self._prepare_model()
+        with torch.no_grad():
+            if self.use_cuda:
+                x = x.cuda()
+            # indices already on cpu(not tensor)
+            ret = vae.marginal_sequence(x)
         return ret
 
 class AncestorsHandler:

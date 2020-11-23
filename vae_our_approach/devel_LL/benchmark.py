@@ -210,6 +210,22 @@ class Benchmarker:
             for i, (name, seq, prob) in enumerate(zip(marginal_t, marginal_p, marginal_n)):
                 writer.writerow([i, name, seq, prob])
 
+    def model_generative_ability(self, data):
+        '''For whole training data set check how data
+         points are biased by neighbouring data points'''
+        data = data.astype(np.float32)
+        batch_size = 64
+        num_batches = data.shape[0] // batch_size + 1
+        probs = []
+        for idx_batch in range(num_batches):
+            if (idx_batch + 1) % 10 == 0:
+                print("idx_batch: {} out of {}".format(idx_batch, num_batches))
+            d = data[idx_batch * batch_size:(idx_batch + 1) * batch_size]
+            binary = d.reshape((d.shape[0], -1))
+            binary = torch.from_numpy(binary)
+            probs.append(self.vae_handler.get_marginal_probability(binary))
+        print(sum(probs)/num_batches)
+
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
@@ -220,8 +236,9 @@ if __name__ == '__main__':
 
     with open(tar_dir.pickles_fld + '/training_set.pkl', 'rb') as file_handle:
         train_set = pickle.load(file_handle)
-    b = Benchmarker(positive, train_set, tar_dir)
-    b.make_bench()
+    b = Benchmarker(positive, train_set, tar_dir, generate_negative=False)
+    b.model_generative_ability(train_set)
+    # b.make_bench()
     # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:
     #     train_set = pickle.load(file_handle)
     # iden = np.identity(train_set.shape[2])
