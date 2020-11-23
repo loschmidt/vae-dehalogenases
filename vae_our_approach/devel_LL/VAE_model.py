@@ -155,8 +155,12 @@ class VAE(nn.Module):
         log_p = self.decoder(z)
         log_PxGz = torch.sum(x*log_p, -1)
 
-        ## Setup the influence of reconstruction or KL divergence to latent space
-        ## c_fx_x stands for influence of reconstruction error bigger more accurate reconstruncion is requiered
+        # Set parameter for training
+        # loss = (x - f(x)) - (1/C * KL(qZ, pZ)
+        #      reconstruction    normalization
+        #         parameter        parameter
+        # The bigger C is more accurate the reconstruction will be
+        # default value is 2.0
         c = 1/c_fx_x
 
         ## compute elbo

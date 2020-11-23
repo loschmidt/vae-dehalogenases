@@ -92,12 +92,12 @@ class StructChecker:
         parser.add_argument('--dyn_beta', type=float, default=0.25,
                             help="Mutagenesis dynamic system step size parameter. Default value is 0.25")
         parser.add_argument('--C', type=float, default=2.0,
-                            help="Set parameter for training\n"
-                                 "\tloss = (x - f(x)) - (1/C * KL(qZ, pZ)\n"
-                                 "\t     reconstruction    normalization\n"
-                                 "\t        parameter        parameter\n\n"
-                                 "The bigger C is more accurate the reconstruction will be\n"
-                                 "default value is 2.0")
+                            help="Set parameter for training "
+                                 "loss = (x - f(x)) - (1/C * KL(qZ, pZ)."
+                                 "Reconstruction parameter "
+                                 "and normalization parameter. "
+                                 "The bigger C is more accurate the reconstruction will be."
+                                 "Default value is 2.0")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
