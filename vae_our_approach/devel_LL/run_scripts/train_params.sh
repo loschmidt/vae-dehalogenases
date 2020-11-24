@@ -21,9 +21,14 @@ else
   echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 
   cd $PYTHONSCRIPTS
-  python3 msa_filter_scorer.py --Pfam_id PF00561 --ref P59336_S14 --output_dir generativeAbility --stats --in_file results/PF00561/MSA/identified_targets_msa.fa
+  # python3 msa_filter_scorer.py --Pfam_id PF00561 --ref P59336_S14 --output_dir generativeAbility --stats --in_file results/PF00561/MSA/identified_targets_msa.fa
 
-  cd $ROOT_SCR
+  cd run_scripts
+  echo $PWD
+  for f in *; do
+    echo "File -> $f"
+  done
+  #exit 0
   # Run in parallel for multiple nodes, for each query sequence
   for c; do
     # Run qsub with desired param
