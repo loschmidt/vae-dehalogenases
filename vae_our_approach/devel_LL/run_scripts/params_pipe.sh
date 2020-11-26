@@ -1,6 +1,7 @@
 #!/bin/bash
 #PBS -N Generative
-#PBS -q gpu -l select=1:ngpus=1:mem=8gb:scratch_local=500mb
+# -q gpu -l select=1:ngpus=1:mem=8gb:scratch_local=500mb
+#PBS -l select=1:ncpus=1:mem=8gb:scratch_local=500mb
 #PBS -l walltime=24:00:00
 #PBS -m ae
 
@@ -25,9 +26,9 @@ echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 cd $DATADIR
 ## python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats --highlight_seqs ${QUERY}
 
-echo "========================================================================"
-echo "Training model for given param c = ${C}"
-python3 train.py --Pfam_id PF00561 --output_dir generativeAbility --stats --in_file results/PF00561/MSA/identified_targets_msa.fa --C $C
+#echo "========================================================================"
+#echo "Training model for given param c = ${C}"
+#python3 train.py --Pfam_id PF00561 --output_dir generativeAbility --stats --in_file results/PF00561/MSA/identified_targets_msa.fa --C $C
 
 echo "========================================================================"
 echo "Measurement of generative process has begun"

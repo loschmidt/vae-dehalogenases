@@ -147,25 +147,19 @@ class VAE(nn.Module):
 
     def marginal_sequence(self, x, num_samples=1000):
         with torch.no_grad():
-            # x = x.expand(num_samples, x.shape[0], x.shape[1])
-            results = []
-            for i in range(x.shape[0]):
-                expanded_x = x[i].expand(num_samples, x[i].shape[0])
-                ## sample z from q(z|x)
-                mu, sigma = self.encoder(expanded_x)
-                eps = torch.randn_like(sigma)
-                z = mu + sigma * eps
+            ## Decode exact point in the latent space
+            mu, sigma = self.encoder(x)
+            z = mu
 
-                h = self.decoder(z)
-                fixed_shape = tuple(h.shape[0:-1])
-                h = torch.unsqueeze(h, -1)
-                h = h.view(fixed_shape + (-1, self.num_aa_type))
-                h = F.log_softmax(h, dim=-1)
-                ## Same shape for x
-                origin = x[i].view((-1, self.num_aa_type))
-                ## Get probability of observing sequence
-                results.append(torch.sum(origin * h) / num_samples)
-            return sum(results)
+            ## log p(x|z)
+            log_p = self.decoder(z)
+            log_PxGz = torch.sum(x * log_p, -1)
+            # fixed_shape = tuple(h.shape[0:-1])
+            # h = torch.unsqueeze(h, -1)
+            # h = h.view(fixed_shape + (-1, self.num_aa_type))
+            # h = F.log_softmax(h, dim=-1)
+            ## Return simple sum saying it is log probability of seeing our sequences
+            return torch.sum(log_PxGz).double()
 
     def compute_weighted_elbo(self, x, weight, c_fx_x=2):
         ## sample z from q(z|x)
