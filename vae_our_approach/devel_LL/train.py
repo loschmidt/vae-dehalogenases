@@ -103,7 +103,7 @@ class Train:
             ## cope trained model to cpu and save it
             if self.use_cuda:
                 vae.cpu()
-            torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}.model".format(str(self.setuper.decay), k, str(self.setuper.C)))
+            torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}.model".format(str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality)))
 
             print("Finish the {}th fold training".format(k))
             print("=" * 60)

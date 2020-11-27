@@ -225,7 +225,7 @@ class VAEHandler:
 
         ## build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, [100])
-        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}.model".format(self.setuper.C)))
+        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}_D_{}.model".format(self.setuper.C, self.setuper.dimensionality)))
         ## move the VAE onto a GPU
         if self.use_cuda:
             vae.cuda()
