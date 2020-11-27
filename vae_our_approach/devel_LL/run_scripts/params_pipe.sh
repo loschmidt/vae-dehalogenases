@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N Generative
-# -q gpu -l select=1:ngpus=1:mem=8gb:scratch_local=500mb
-#PBS -l select=1:ncpus=1:mem=8gb:scratch_local=1gb
+#PBS -q gpu -l select=1:ngpus=1:mem=8gb:scratch_local=500mb
+# -l select=1:ncpus=1:mem=8gb:scratch_local=1gb
 #PBS -l walltime=24:00:00
 #PBS -m ae
 
