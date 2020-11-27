@@ -234,7 +234,9 @@ class Benchmarker:
             append_write = 'w'  # make a new file if not
 
         hs = open(filename, append_write)
-        hs.write("Model with C = {0}, generative value = {1}\n".format(self.setuper.C, sum(probs)/num_batches))
+        hs.write("Model with C = {0}, D = {1} generative value = {2}\n".format(self.setuper.C,
+                                                                               self.setuper.dimensionality,
+                                                                               (sum(probs)/num_batches)))
         hs.close()
 
 
