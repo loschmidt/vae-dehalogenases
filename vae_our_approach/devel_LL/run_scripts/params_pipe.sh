@@ -26,13 +26,13 @@ echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 cd $DATADIR
 ## python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats --highlight_seqs ${QUERY}
 
-#echo "========================================================================"
-#echo "Training model for given param c = ${C}"
-#python3 train.py --Pfam_id PF00561 --output_dir generativeAbility --stats --in_file results/PF00561/MSA/identified_targets_msa.fa --C $C
+echo "========================================================================"
+echo "Training model for given param c = ${C}"
+python3 train.py --Pfam_id PF00561 --output_dir dimensionalityTest --stats --in_file results/PF00561/MSA/identified_targets_msa.fa --dimensionality C
 
 echo "========================================================================"
 echo "Measurement of generative process has begun"
-python3 benchmark.py --Pfam_id PF00561 --output_dir generativeAbility --C $C
+python3 benchmark.py --Pfam_id PF00561 --output_dir dimensionalityTest --dimensionality C
 
 ##python3 ./script/analyze_model1.py --Pfam_id $PFAMSEQ --RPgroup ${RPgroup}
 echo "Training process is finished" >> $LOGDIR/jobs_info.txt
