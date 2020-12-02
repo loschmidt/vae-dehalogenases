@@ -28,11 +28,11 @@ cd $DATADIR
 
 echo "========================================================================"
 echo "Training model for given dimensionality = ${C}"
-python3 train.py --Pfam_id PF00561 --output_dir dimensionalityTest --stats --in_file results/PF00561/MSA/identified_targets_msa.fa --dimensionality ${C}
+python3 train.py --Pfam_id PF00561 --output_dir generativeAbility --stats --in_file results/PF00561/MSA/identified_targets_msa.fa --dimensionality ${C}
 
 echo "========================================================================"
 echo "Measurement of generative process has begun"
-python3 benchmark.py --Pfam_id PF00561 --output_dir dimensionalityTest --dimensionality ${C}
+python3 benchmark.py --Pfam_id PF00561 --output_dir generativeAbility --dimensionality ${C}
 
 ##python3 ./script/analyze_model1.py --Pfam_id $PFAMSEQ --RPgroup ${RPgroup}
 echo "Training process is finished" >> $LOGDIR/jobs_info.txt
