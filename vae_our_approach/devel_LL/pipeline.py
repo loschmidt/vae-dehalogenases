@@ -41,9 +41,13 @@ class StructChecker:
         # Layer string for distinguishing model
         s_layers = 'L'
         self.layers = []
-        for l in self.args.layers:
-            self.layers.append(l)
-            s_layers += '_{}'.format(l)
+        try:
+            for l in self.args.layers:
+                self.layers.append(l)
+                s_layers += '_{}'.format(l)
+        except:
+            self.layers = [self.args.layers]
+            s_layers = '_{}'.format(self.args.layers)
         self.layersString = s_layers
 
         ## Setup enviroment variable
