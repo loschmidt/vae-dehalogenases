@@ -225,7 +225,9 @@ class VAEHandler:
 
         ## build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, [100])
-        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}_D_{}.model".format(self.setuper.C, self.setuper.dimensionality)))
+        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}_D_{}_{}.model"
+                                       .format(self.setuper.C, self.setuper.dimensionality, self.setuper.layersString)))
+        # vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0.model"))
         ## move the VAE onto a GPU
         if self.use_cuda:
             vae.cuda()
@@ -375,7 +377,8 @@ class AncestorsHandler:
             best_align = alignments[0][1]
             if len(seq) > ref_len:
                 # length of sequence is bigger than ref query, cut sequence on reference query gap positions
-                print('AncestorHandler message: Len of seq is {0}, length of reference is {1}. Sequence amino position at reference gaps will be removed'.format(len(seq), ref_len))
+                print('AncestorHandler message: Len of seq is {0}, length of reference is {1}. Sequence amino position'
+                      ' at reference gaps will be removed'.format(len(seq), ref_len))
                 tmp = ''
                 aligned[k] = tmp.join([best_align[i] for i in range(ref_len) if ref_seq[i] != '-'])
             else:

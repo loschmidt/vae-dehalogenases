@@ -21,6 +21,7 @@ class StructChecker:
         self.decay = self.args.weight_decay
         self.K = self.args.K # cross validation counts
         self.C = self.args.C
+        self.layers = self.args.layers
         ## MSA processing handling
         self.preserve_catalytic = self.args.preserve_catalytic
         self.ec = self.args.ec_num
@@ -37,6 +38,12 @@ class StructChecker:
         self.highlight_seqs = self.args.highlight_seqs
 
         self.in_file = self.args.in_file
+
+        # Layer string for distinguishing model
+        s_layers = 'L'
+        for l in self.layers:
+            s_layers += '_{}'.format(l)
+        self.layersString = s_layers
 
         ## Setup enviroment variable
         os.environ['PIP_CAT'] = str(self.preserve_catalytic)
@@ -72,17 +79,21 @@ class StructChecker:
         parser.add_argument('--K', type=int, default=5, help="Cross validation iterations setup. Default is 5")
         parser.add_argument('--mut_points', type=int, default=1, help="Points of mutation. Default 1")
         parser.add_argument('--mutant_samples', type=int, default=5, help="Count of mutants will be generated for each ancestor. Defa")
-        parser.add_argument('--preserve_catalytic', action='store_true', default=False, help="Alternative filtering of MSA. Cooperate with EnzymeMiner,"
-                                                                                              " keep cat. residues. Use --ec_num param to setup mine reference sequences.")
+        parser.add_argument('--preserve_catalytic', action='store_true', default=False,
+                            help="Alternative filtering of MSA. Cooperate with EnzymeMiner,"
+                                 " keep cat. residues. Use --ec_num param to setup mine reference sequences.")
         parser.add_argument('--ec_num', type=str, default="3.8.1.5",
                             help="EC number for EnzymeMiner. Will pick up sequences from table and select with the most "
                                  "catalytic residues to further processing.")
-        parser.add_argument('--no_score_filter', action='store_false', default=True, help="Default. Loschmidt Labs pipeline for processing MSA.")
+        parser.add_argument('--no_score_filter', action='store_false', default=True, help="Default. Loschmidt Labs "
+                                                                                          "pipeline for processing MSA.")
         parser.add_argument('--paper_pipeline', action='store_true', default=False,
                             help="Original paper pipeline. Exclusive use score_filter and preserve_catalytics.")
         parser.add_argument('--align', action='store_true', default=False,
-                            help="For highlighting. Align with reference sequence and then highlight in latent space. Sequences are passed through highlight_files param in file")
-        parser.add_argument('--highlight_files', type=str, default=None, help="Files with sequences to be highlighted. Array of files. Should be as"
+                            help="For highlighting. Align with reference sequence and then highlight in latent space. "
+                                 "Sequences are passed through highlight_files param in file")
+        parser.add_argument('--highlight_files', type=str, default=None, help="Files with sequences to be highlighted. "
+                                                                              "Array of files. Should be as"
                                                                               " the last param in case of usage")
         parser.add_argument('--highlight_seqs', type=str, default=None, help="Highlight sequences in dataset")
         parser.add_argument('--focus', action='store_true', default=False,
@@ -98,6 +109,10 @@ class StructChecker:
                                  "and normalization parameter. "
                                  "The bigger C is more accurate the reconstruction will be."
                                  "Default value is 2.0")
+        parser.add_argument('--layers', type=list, default=[100], help="List determining count of hidden layers and "
+                                                                       "neurons within. Default [100]. The "
+                                                                       "dimensionality of latent space is se over"
+                                                                       " dimensionality argument")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))

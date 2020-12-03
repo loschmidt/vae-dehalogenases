@@ -63,7 +63,7 @@ class Train:
             print("-" * 60)
 
             ## build a VAE model with random parameters
-            vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type, [100])
+            vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type, self.setuper.layers)
 
             ## move the VAE onto a GPU
             if self.use_cuda:
@@ -103,7 +103,9 @@ class Train:
             ## cope trained model to cpu and save it
             if self.use_cuda:
                 vae.cpu()
-            torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}.model".format(str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality)))
+            torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}_{}.model".format(
+                str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality),
+                self.setuper.layersString))
 
             print("Finish the {}th fold training".format(k))
             print("=" * 60)
