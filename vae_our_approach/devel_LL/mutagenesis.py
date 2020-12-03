@@ -244,6 +244,49 @@ class MutagenesisGenerator:
         self._store_in_fasta_csv(ancestors_to_store, to_file='dynamic_system_{}.fasta'.format(str(BETA)), probs=probs,coords=ancestors)
         return ancestors, probs
 
+    def test_generative(self):
+        tmp_str = ''
+        to_highlight = []
+
+        self.cur[self.cur_name] = [a for a in '---ISAEFPFESKY--VLGSRMHYVDEG---GDP-VLFLHGNPTSSYLWRNIIPHVS--GRCIAPDLIGMGKSDK-PDIDYRFADHARYLDAFIDALGL--ITLVGHDWGSALGFDYAARHPDRVRGIAFMEAILP--P--SW-EFP--ARELFQRFRTP-VGEKMILE-NIFVERVLP--V-VR-PL-TEE-EM-AHYRA-PFPT-PESR-KPL-L-RWP-R-EIPIAG-PADVAEI-VEAYNAWLAA--D-IPKLLFYAEPGVIV-P---V-AWC-AENLPNLEV--DLGPGLHFIQ-EDHPHAIGQA-IADWLRRL-']
+        # self.cur[self.cur_name].extend(['K' for _ in range(160)])
+        ref_pos = self._mutants_positions(self.cur)
+        to_highlight.append(ref_pos)
+        print('Ref name', self.cur_name, 'coordinates in the latent space', ref_pos[0])
+        print('Reference sequence\n', tmp_str.join(self.cur[self.cur_name]))
+        # ancestors_to_store = Convertor(self.setuper).back_to_amino({'first_exam' : idxs[0]})
+        ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
+        tmp_str = ''
+        print('Reference sequence\n', tmp_str.join(ancestors_to_store[list(ancestors_to_store.keys())[0]]))
+
+    @staticmethod
+    def binary_to_seq(setuper, seq_key=None, binary=None, return_binary=False):
+        '''If seq_keys set the search mode is applied'''
+        get_aas = lambda xs: [np.where(aa_bin==1)[0][0] for aa_bin in xs]
+
+        if seq_key is not None:
+            print('Searching for given sequence {} .....'.format(seq_key))
+            with open(setuper.pickles_fld + "/keys_list.pkl", 'rb') as file_handle:
+                keys_list = pickle.load(file_handle)
+            with open(setuper.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
+                msa_original_binary = pickle.load(file_handle)
+            key_index = -1
+            for i, k in enumerate(keys_list):
+                if k == seq_key:
+                    key_index = i
+                    break
+            if key_index == -1:
+                print('Key', seq_key, ' not found in list')
+                exit(0)
+            binary = msa_original_binary[key_index]
+        else:
+            seq_key = 'default_search_seq'
+
+        nn_aa = get_aas(binary)
+        anc_dict = Convertor(setuper).back_to_amino({seq_key : nn_aa})
+        return binary if return_binary else anc_dict
+
+
 if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
