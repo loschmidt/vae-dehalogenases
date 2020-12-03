@@ -21,7 +21,6 @@ class StructChecker:
         self.decay = self.args.weight_decay
         self.K = self.args.K # cross validation counts
         self.C = self.args.C
-        self.layers = self.args.layers
         ## MSA processing handling
         self.preserve_catalytic = self.args.preserve_catalytic
         self.ec = self.args.ec_num
@@ -41,7 +40,9 @@ class StructChecker:
 
         # Layer string for distinguishing model
         s_layers = 'L'
-        for l in self.layers:
+        self.layers = []
+        for l in self.args.layers:
+            self.layers.append(l)
             s_layers += '_{}'.format(l)
         self.layersString = s_layers
 
@@ -109,10 +110,10 @@ class StructChecker:
                                  "and normalization parameter. "
                                  "The bigger C is more accurate the reconstruction will be."
                                  "Default value is 2.0")
-        parser.add_argument('--layers', type=list, default=[100], help="List determining count of hidden layers and "
-                                                                       "neurons within. Default [100]. The "
+        parser.add_argument('--layers', nargs='+', type=int, default=100, help="List determining count of hidden layers"
+                                                                               " and neurons within. Default 100. The "
                                                                        "dimensionality of latent space is se over"
-                                                                       " dimensionality argument")
+                                                                       " dimensionality argument. Example 2 3 ")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
