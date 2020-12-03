@@ -154,10 +154,6 @@ class VAE(nn.Module):
             ## log p(x|z)
             log_p = self.decoder(z)
             log_PxGz = torch.sum(x * log_p, -1)
-            # fixed_shape = tuple(h.shape[0:-1])
-            # h = torch.unsqueeze(h, -1)
-            # h = h.view(fixed_shape + (-1, self.num_aa_type))
-            # h = F.log_softmax(h, dim=-1)
             ## Return simple sum saying it is log probability of seeing our sequences
             return torch.sum(log_PxGz).double()
 
