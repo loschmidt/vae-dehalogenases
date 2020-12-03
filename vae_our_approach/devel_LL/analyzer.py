@@ -319,7 +319,7 @@ class VAEHandler:
             num_seqs[anc_name] = vae.decoder_seq(z)
         if len(num_seqs.keys()) == 1:
             # Special case for leangth 1
-            num_seqs[anc_name] = num_seqs[anc_name][0]
+            num_seqs[anc_name] = num_seqs[anc_name]
         # Convert from numbers to amino acid sequence
         anc_dict = Convertor(self.setuper).back_to_amino(num_seqs)
         return anc_dict
@@ -335,7 +335,11 @@ class VAEHandler:
                 z = z.cuda()
                 sigma = sigma.cuda()
             # indices already on cpu(not tensor)
-            ret = vae.decode_samples(z, sigma, samples)
+            if samples == -1:
+                # Decode exact value of z
+                ret = vae.decoder_seq(z)
+            else:
+                ret = vae.decode_samples(z, sigma, samples)
         return ret
 
     def get_marginal_probability(self, x):

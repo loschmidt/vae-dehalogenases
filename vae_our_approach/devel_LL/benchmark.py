@@ -17,6 +17,12 @@ from msa_prepar import MSA
 from msa_filter_scorer import MSAFilterCutOff as BinaryCovertor
 import seaborn as sns
 
+## LAMBDAS FUNCTIONS FOR CONVERSION AND PAIRWWISE COMPARISON OF SEQUENCES
+# Lambda for the calculation of the amino sequence decoded from binary
+get_aas = lambda xs: [np.where(aa_bin == 1)[0] for aa_bin in xs]
+# Lambda for p(X,Zi)/q(Zi|X) of generated and original, given as sum of equal positions to length of original sequence
+marginal = lambda gen, orig: sum([1 if g == o else 0 for g, o in zip(gen, orig)]) / len(orig)
+
 class Benchmarker:
     def __init__(self, positive_control, train_data, setuper, generate_negative=True):
         self.setuper = setuper
@@ -94,12 +100,16 @@ class Benchmarker:
         probs = self._bench(binary)
         return probs
 
-    def _bench(self, data):
+    def prepareMusSigmas(self, data):
         msa_weight = np.ones(data.shape[0]) / data.shape[0]
         msa_weight = msa_weight.astype(np.float32)
         data_t = data.astype(np.float32)
         rand_keys = ['k_'.format(i) for i in range(data.shape[0])]
         mus, sigmas = self.vae_handler.propagate_through_VAE(data_t, weights=msa_weight, keys=rand_keys)
+        return mus, sigmas
+
+    def _bench(self, data):
+        mus, sigmas = self.prepareMusSigmas(data)
         return self._sample(mus, sigmas, data)
 
     def _sample(self, mus, sigmas, data):
@@ -110,10 +120,6 @@ class Benchmarker:
         N = 10000
         probs = []  # marginal propabilities
 
-        # Lambda for the calculation of the amino sequence decoded from binary
-        get_aas = lambda xs: [np.where(aa_bin == 1)[0] for aa_bin in xs]
-        # Lambda for p(X,Zi)/q(Zi|X) of generated and original, given as sum of equal positions to length of original sequence
-        marginal = lambda gen, orig: sum([1 if g == o else 0 for g, o in zip(gen, orig)]) / len(orig)
         print('=' * 60)
         print('Sampling process has begun...')
         print('=' * 60)
@@ -217,28 +223,60 @@ class Benchmarker:
         batch_size = 64
         num_batches = data.shape[0] // batch_size + 1
         probs = []
+        pairwise_score = []
         for idx_batch in range(num_batches):
             if (idx_batch + 1) % 10 == 0:
                 print("idx_batch: {} out of {}".format(idx_batch, num_batches))
             d = data[idx_batch * batch_size:(idx_batch + 1) * batch_size]
+            # Get marginal probability to see sequence
             binary = d.reshape((d.shape[0], -1))
             binary = torch.from_numpy(binary)
             probs.append(self.vae_handler.get_marginal_probability(binary))
+            # Count pairwise generative ability of sequences
+            originals = get_aas(d)
+            mus_b, sigmas_b = self.prepareMusSigmas(d)
+            mus_b, sigmas_b = torch.from_numpy(mus_b), torch.from_numpy(sigmas_b)
+            generated = self.vae_handler.decode_for_marginal_prob(mus_b, sigmas_b, -1)
+            for orig, gen in zip(originals, generated):
+                pairwise_score.append(marginal(gen, orig))
+        # Get pairwise score for query
+        ref_binary = Mutagenesis.binary_to_seq(self.setuper, seq_key='P59336_S14', return_binary=True)
+        orig_query = get_aas(list(ref_binary))
+        mu, sigma = self.prepareMusSigmas(list(orig_query))
+        mu, sigma = torch.from_numpy(mu), torch.from_numpy(sigma)
+        gen_query = self.vae_handler.decode_for_marginal_prob(mu, sigma, -1)
+        query_score = marginal(gen_query, orig_query)
+
         print("="*60)
         print("Model generative ability value:", sum(probs)/num_batches)
 
-        filename = self.setuper.high_fld + 'generative.txt'
+        filename = self.setuper.high_fld + '/generative.txt'
         if os.path.exists(filename):
             append_write = 'a'  # append if already exists
         else:
             append_write = 'w'  # make a new file if not
 
         hs = open(filename, append_write)
-        hs.write("Model with C = {0}, D = {1} generative value = {2}\n".format(self.setuper.C,
-                                                                               self.setuper.dimensionality,
-                                                                               (sum(probs)/num_batches)))
+        hs.write("Model with C = {0}, D = {1}, generative value = {2} "
+                 "pairwise = {3}, DHAA pairwise score = {4}\n".format(self.setuper.C,
+                                                               self.setuper.dimensionality,
+                                                               (sum(probs)/num_batches),
+                                                               (sum(pairwise_score)/data.shape[0]),
+                                                                query_score))
         hs.close()
 
+    def test_loglikelihood(self):
+        """Just pick point from the latent space and then generate sequence and compare loglikelihood"""
+        seq = self.vae_handler.decode_sequences_VAE([(float(-66), float(-66))], "testing")
+        binary, _, _ = self.binaryConv.prepare_aligned_msa_for_Vae(seq)
+        binary = binary.astype(np.float32)
+        binary = binary.reshape((binary.shape[0], -1))
+        binary = torch.from_numpy(binary)
+        print("Marginal probs for test is: ", self.vae_handler.get_marginal_probability(binary))
+        marginal = lambda gen, orig: sum([1 if g == o else 0 for g, o in zip(gen, orig)]) / len(orig)
+        s = seq['testing'].copy()
+        s[2] = 'X'
+        print("Normal comparison", marginal(s, seq['testing']))
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
@@ -249,7 +287,10 @@ if __name__ == '__main__':
 
     with open(tar_dir.pickles_fld + '/training_set.pkl', 'rb') as file_handle:
         train_set = pickle.load(file_handle)
+
+    from mutagenesis import MutagenesisGenerator as Mutagenesis
     b = Benchmarker(positive, train_set, tar_dir, generate_negative=False)
+    #b.test_loglikelihood()
     b.model_generative_ability(train_set)
     # b.make_bench()
     # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:

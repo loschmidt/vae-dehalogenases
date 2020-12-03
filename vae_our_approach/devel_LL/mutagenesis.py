@@ -15,6 +15,7 @@ import pickle
 import csv
 import os.path as path
 from scipy.stats import multivariate_normal as norm
+from torch import tensor
 
 class MutagenesisGenerator:
     def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2):
