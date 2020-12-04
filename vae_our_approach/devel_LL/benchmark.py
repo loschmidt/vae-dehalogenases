@@ -242,7 +242,7 @@ class Benchmarker:
         # Get pairwise score for query
         ref_binary = Mutagenesis.binary_to_seq(self.setuper, seq_key='P59336_S14', return_binary=True)
         orig_query = get_aas(list(ref_binary))
-        mu, sigma = self.prepareMusSigmas(list(orig_query))
+        mu, sigma = self.prepareMusSigmas(ref_binary[np.newaxis, :, :])
         mu, sigma = torch.from_numpy(mu), torch.from_numpy(sigma)
         gen_query = self.vae_handler.decode_for_marginal_prob(mu, sigma, -1)
         query_score = marginal(gen_query, orig_query)
