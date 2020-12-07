@@ -19,7 +19,8 @@ import seaborn as sns
 
 ## LAMBDAS FUNCTIONS FOR CONVERSION AND PAIRWWISE COMPARISON OF SEQUENCES
 # Lambda for the calculation of the amino sequence decoded from binary
-get_aas = lambda xs: [np.where(aa_bin == 1)[0][0] for aa_bin in xs]
+get_aas = lambda xs: [np.where(aa_bin == 1)[0] for aa_bin in xs]
+get_aasR = lambda xs: [np.where(aa_bin == 1)[0][0] for aa_bin in xs]
 # Lambda for p(X,Zi)/q(Zi|X) of generated and original, given as sum of equal positions to length of original sequence
 marginal = lambda gen, orig: sum([1 if g == o else 0 for g, o in zip(gen, orig)]) / len(orig)
 
@@ -241,7 +242,7 @@ class Benchmarker:
                 pairwise_score.append(marginal(gen, orig))
         # Get pairwise score for query
         ref_binary = Mutagenesis.binary_to_seq(self.setuper, seq_key='P59336_S14', return_binary=True)
-        orig_query = get_aas(list(ref_binary))
+        orig_query = get_aasR(list(ref_binary))
         mu, sigma = self.prepareMusSigmas(ref_binary[np.newaxis, :, :])
         mu, sigma = torch.from_numpy(mu), torch.from_numpy(sigma)
         gen_query = self.vae_handler.decode_for_marginal_prob(mu, sigma, -1)
