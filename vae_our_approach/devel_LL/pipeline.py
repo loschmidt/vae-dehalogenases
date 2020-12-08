@@ -47,7 +47,7 @@ class StructChecker:
                 s_layers += '_{}'.format(l)
         except:
             self.layers = [self.args.layers]
-            s_layers = '_{}'.format(self.args.layers)
+            s_layers += '_{}'.format(self.args.layers)
         self.layersString = s_layers
 
         ## Setup enviroment variable
