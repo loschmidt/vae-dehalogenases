@@ -120,7 +120,7 @@ class Train:
                 with torch.no_grad():
                     if self.use_cuda:
                         validation_msa = validation_msa.cuda()
-                    elbo = (-1) * vae.compute_elbo_with_multiple_samples(validation_msa, 5)
+                    elbo = (-1) * vae.compute_elbo_with_multiple_samples(validation_msa, 5000)
                     elbo_on_validation_data_list.append(elbo.cpu().data.numpy())
 
             elbo_on_validation_data = np.concatenate(elbo_on_validation_data_list)
@@ -136,7 +136,7 @@ class Train:
             epoch += 1
             val_deviation, last_progress_elbo = (True, last_progress_elbo) if elbo_mean > last_progress_elbo \
                                                                                 else (False, elbo_mean)
-            epoch_cond_list.append(True)
+            epoch_cond_list.append(val_deviation)
 
         ## cope trained model to cpu and save it
         if self.use_cuda:
