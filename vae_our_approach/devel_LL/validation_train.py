@@ -101,9 +101,10 @@ class Train:
         epoch = 0
         epoch_cond_list = [False, False, False]
         last_progress_elbo = -float("inf")
+        errors_accepted = 3
 
         ## Last 3 validations has to have worse value than last one in progress
-        while not all(epoch_cond_list[-3:]):
+        while not all(epoch_cond_list[-errors_accepted:]):
             loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight, self.setuper.C)
             optimizer.zero_grad()
             loss.backward()
@@ -146,7 +147,7 @@ class Train:
             self.setuper.layersString))
 
         ## Plot graph
-        save_path = self.setuper.high_fld + '/trainingValidation_epochs_{}.png'.format(epoch)
+        save_path = self.setuper.high_fld + '/trainingValidation_epochs_{}-{}.png'.format(epoch, errors_accepted)
 
         plt.plot(train_loss_list)
         plt.plot(validation_loss_list)
