@@ -2,7 +2,9 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/08/24 11:30:00"
 
 from download_MSA import Downloader
+from copy import deepcopy
 from msa_prepar import MSA
+from random import randint
 from pipeline import StructChecker
 
 import numpy as np
@@ -20,7 +22,8 @@ class MSAFilterCutOff :
         msa = self.msa_obj.load_msa()
         msa_col_num = self._remove_cols_with_gaps(msa, keep_ref=True) ## converted to numbers
         msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num, threshold=0.4)
-        msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_no_gaps)
+        msa_filtered = self.identity_filtering(msa_no_gaps)
+        msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_filtered)
         self._save_reference_sequence(msa_no_gaps)
         self.seq_weight = self._weighting_sequences(msa_overlap)
         self.seq_msa_binary = self._to_binary(msa_overlap)
@@ -260,6 +263,48 @@ class MSAFilterCutOff :
             with open(self.pickle + "/seq_msa_binary.pkl", 'wb') as file_handle:
                 pickle.dump(seq_msa_binary, file_handle)
         return seq_msa_binary
+
+    def identity_filtering(self, msa):
+        nclusters, clusters, sampled_dict = self.phylo_clustering(msa)
+
+        for cluster in clusters:
+            key, k_len = list(cluster.keys()), len(list(cluster.keys()))-1
+            random_key = key[randint(0,k_len)]
+            sampled_dict[random_key] = cluster[random_key]
+        if self.setuper.stats:
+            print("="*60)
+            print("Statistics for clustering")
+            print("\t Cluster: {}".format(nclusters))
+
+        return sampled_dict
+
+    def phylo_clustering(self, msa):
+        '''If query sequence is given hold it in dataset'''
+        identity = lambda seq1, seq2: sum([1 if g == o else 0 for g, o in zip(seq1, seq2)]) / len(seq2)
+
+        seed, ini_dict = (list(msa.values())[0], {}) if not self.setuper.ref_seq \
+                                    else (msa[self.setuper.ref_n], {self.setuper.ref_n: msa[self.setuper.ref_n]})
+        clusters = []
+
+        while len(seed) != 0:
+            print("Cluster from {}".format(len(msa.keys())), flush=True)
+            cluster = {}
+            prev_seed = []
+            del_keys = []
+            for k in msa.keys():
+                if identity(msa[k], seed) > 0.9:
+                    del_keys.append(k)
+                    cluster[k] = msa[k]
+                else:
+                    if len(prev_seed) == 0: ## First one without identity left for another iteration
+                        prev_seed = msa[k]
+            seed = prev_seed
+            clusters.append(deepcopy(cluster))
+            for k in del_keys:
+                del msa[k]
+
+        return len(clusters), clusters, ini_dict
+
 
     def back_to_amino(self, msa):
         ## Reverse transformation
