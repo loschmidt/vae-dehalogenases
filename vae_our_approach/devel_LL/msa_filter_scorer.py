@@ -22,9 +22,9 @@ class MSAFilterCutOff :
         msa = self.msa_obj.load_msa()
         msa_col_num = self._remove_cols_with_gaps(msa, keep_ref=True) ## converted to numbers
         msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num, threshold=0.4)
+        self._save_reference_sequence(msa_no_gaps)
         msa_filtered = self.identity_filtering(msa_no_gaps)
         msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_filtered)
-        self._save_reference_sequence(msa_no_gaps)
         self.seq_weight = self._weighting_sequences(msa_overlap)
         self.seq_msa_binary = self._to_binary(msa_overlap)
         self._stats(msa_overlap)
