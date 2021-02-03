@@ -110,34 +110,36 @@ class Train:
             loss.backward()
             optimizer.step()
 
-            train_loss_list.append(loss.item())
+            if (epoch + 1) % 10 == 0:
+                train_loss_list.append(loss.item())
 
-            for idx_batch in range(num_batches):
-                if (idx_batch + 1) % 50 == 0:
-                    print("idx_batch: {} out of {}".format(idx_batch, num_batches))
-                validation_msa = self.seq_msa_binary[
-                    validation_idx[idx_batch * batch_size:(idx_batch + 1) * batch_size]]
-                validation_msa = torch.from_numpy(validation_msa)
-                with torch.no_grad():
-                    if self.use_cuda:
-                        validation_msa = validation_msa.cuda()
-                    elbo = (-1) * vae.compute_elbo_with_multiple_samples(validation_msa, 5000)
-                    elbo_on_validation_data_list.append(elbo.cpu().data.numpy())
+                for idx_batch in range(num_batches):
+                    if (idx_batch + 1) % 50 == 0:
+                        print("idx_batch: {} out of {}".format(idx_batch, num_batches))
+                    validation_msa = self.seq_msa_binary[
+                        validation_idx[idx_batch * batch_size:(idx_batch + 1) * batch_size]]
+                    validation_msa = torch.from_numpy(validation_msa)
+                    with torch.no_grad():
+                        if self.use_cuda:
+                            validation_msa = validation_msa.cuda()
+                        elbo = (-1) * vae.compute_elbo_with_multiple_samples(validation_msa, 3000)
+                        elbo_on_validation_data_list.append(elbo.cpu().data.numpy())
 
-            elbo_on_validation_data = np.concatenate(elbo_on_validation_data_list)
-            elbo_all_list.append(elbo_on_validation_data)
+                elbo_on_validation_data = np.concatenate(elbo_on_validation_data_list)
+                elbo_all_list.append(elbo_on_validation_data)
 
-            elbo_all = np.concatenate(elbo_all_list)
-            elbo_mean = np.mean(elbo_all)
+                elbo_all = np.concatenate(elbo_all_list)
+                elbo_mean = np.mean(elbo_all)
 
-            validation_loss_list.append(elbo_mean)
+                validation_loss_list.append(elbo_mean)
 
-            if (epoch + 1) % 50 == 0:
-                print("Epoch: {:>4}, loss: {:>4.2f}, validation loss: {:>4.2f}".format(epoch, loss.item(), elbo_mean), flush=True)
+                if (epoch + 1) % 50 == 0:
+                    print("Epoch: {:>4}, loss: {:>4.2f}, validation loss: {:>4.2f}".format(epoch, loss.item(), elbo_mean), flush=True)
+
+                val_deviation, last_progress_elbo = (True, last_progress_elbo) if elbo_mean > last_progress_elbo \
+                                                                                    else (False, elbo_mean)
+                epoch_cond_list.append(val_deviation)
             epoch += 1
-            val_deviation, last_progress_elbo = (True, last_progress_elbo) if elbo_mean > last_progress_elbo \
-                                                                                else (False, elbo_mean)
-            epoch_cond_list.append(val_deviation)
 
         ## cope trained model to cpu and save it
         if self.use_cuda:
