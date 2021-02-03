@@ -100,7 +100,7 @@ class Train:
 
         epoch = 0
         epoch_cond_list = [False, False, False]
-        last_progress_elbo = -float("inf")
+        last_progress_elbo = float("inf")
         errors_accepted = 3
 
         ## Last 3 validations has to have worse value than last one in progress
