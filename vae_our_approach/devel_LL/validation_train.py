@@ -101,7 +101,7 @@ class Train:
         epoch = 0
         epoch_cond_list = [False, False, False]
         last_progress_elbo = float("inf")
-        errors_accepted = 3
+        errors_accepted = 10
 
         ## Last 3 validations has to have worse value than last one in progress
         while not all(epoch_cond_list[-errors_accepted:]):
@@ -110,11 +110,11 @@ class Train:
             loss.backward()
             optimizer.step()
 
-            if (epoch + 1) % 10 == 0:
+            if (epoch + 1) % 50 == 0:
                 train_loss_list.append(loss.item())
 
                 for idx_batch in range(num_batches):
-                    if (idx_batch + 1) % 50 == 0:
+                    if ((idx_batch + 1) % 50 == 0) and ((epoch + 1) % 50 == 0):
                         print("idx_batch: {} out of {}".format(idx_batch, num_batches))
                     validation_msa = self.seq_msa_binary[
                         validation_idx[idx_batch * batch_size:(idx_batch + 1) * batch_size]]
