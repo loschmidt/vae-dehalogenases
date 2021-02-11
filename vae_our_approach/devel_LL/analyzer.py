@@ -38,25 +38,27 @@ class Highlighter:
         ax.set_ylabel("$Z_2$")
         return ax
 
-    def _highlight(self, name, high_data, one_by_one=False, wait=False, no_init=False, color='red', file_name='ancestors', focus=False):
+    def _highlight(self, name, high_data, one_by_one=False, wait=False, no_init=False, color='red',
+                   file_name='ancestors', focus=False):
         plt = self.plt if no_init else self._init_plot()
         if self.setuper.dimensionality == 3:
             self._highlight_3D(name, high_data)
             return
         alpha = 0.2
         if len(high_data) < len(self.mu) * 0.1:
-            alpha = 1 ## When low number of points should be highlighted make them brighter
+            alpha = 1  ## When low number of points should be highlighted make them brighter
         if one_by_one:
             for name_idx, data in enumerate(high_data):
-                plt.plot(data[0], data[1], '.', color='black', alpha=1, markersize=3, label=name[name_idx]+'({})'.format(name_idx))
+                plt.plot(data[0], data[1], '.', color='black', alpha=1, markersize=3,
+                         label=name[name_idx] + '({})'.format(name_idx))
                 plt.annotate(str(name_idx), (data[0], data[1]))
             name = file_name
         else:
-            plt.plot(high_data[:, 0], high_data[:, 1], '.',color=color, alpha=alpha, markersize=3, label=name)
+            plt.plot(high_data[:, 0], high_data[:, 1], '.', color=color, alpha=alpha, markersize=3, label=name)
         if not wait:
             # Nothing will be appended to plot so generate it
             # Put a legend to the right of the current axis
-            #plt.legend(loc='center left', bbox_to_anchor=(1.04, 0.5))
+            # plt.legend(loc='center left', bbox_to_anchor=(1.04, 0.5))
             if focus:
                 # now later you get a new subplot; change the geometry of the existing
                 x1 = high_data[0][0]
@@ -65,12 +67,13 @@ class Highlighter:
                 y2 = high_data[-1][1]
                 x1, x2 = (x1, x2) if x1 < x2 else (x2, x1)
                 y1, y2 = (y1, y2) if y1 < y2 else (y2, y1)
-                plt.set_xlim([x1-0.5, x2+0.5])
-                plt.set_ylim([y1-0.5, y2+0.5])
+                plt.set_xlim([x1 - 0.5, x2 + 0.5])
+                plt.set_ylim([y1 - 0.5, y2 + 0.5])
             else:
-                plt.legend(loc="upper left")
-            #plt.tight_layout()
-            save_path = self.out_dir + name.replace('/', '-') + '_' + self.name
+                plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            # plt.tight_layout()
+            plt.title('Filtered Dataset, Weight = {}'.format(self.setuper.decay))
+            save_path = self.out_dir + name.replace('/', '-') + '_' + 'decay_{}_'.format(self.setuper.decay) + self.name
             print("Class highlighter saving graph to", save_path)
             self.fig.savefig(save_path)
 
@@ -111,11 +114,11 @@ class Highlighter:
             ## Plot data into both graphs and focus on the area
             ax[2].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3)
             for i, d in enumerate(data):
-                ax[0].plot(d[0], d[1], '.', alpha=1, markersize=4, label='{0} {1}'.format(i+1, keys[i]), color='red')
-                ax[2].plot(d[0], d[1], '.', alpha=1, markersize=4, label='{0} {1}'.format(i+1, keys[i]), color='red')
+                ax[0].plot(d[0], d[1], '.', alpha=1, markersize=4, label='{0} {1}'.format(i + 1, keys[i]), color='red')
+                ax[2].plot(d[0], d[1], '.', alpha=1, markersize=4, label='{0} {1}'.format(i + 1, keys[i]), color='red')
             for i, k in enumerate(keys):
-                ax[0].annotate(i+1, data[i])
-                ax[2].annotate(i+1, data[i])
+                ax[0].annotate(i + 1, data[i])
+                ax[2].annotate(i + 1, data[i])
             x1 = data[0][0]
             x2 = data[-1][0]
             y1 = data[0][1]
@@ -136,10 +139,11 @@ class Highlighter:
         if dynamic:
             ax[0].plot([a[0] for a in ancestors], [a[1] for a in ancestors], '-o', markersize=1)
         else:
-            ax[0].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0], [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
-        for i in range(len(ancestors)):
-            if i % 10 == 0:
-                ax[0].annotate(i, (ancestors[i][0], ancestors[i][1]))
+            ax[0].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0],
+                       [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
+        # for i in range(len(ancestors)):
+        #     if i % 10 == 0:
+        #         ax[0].annotate(i, (ancestors[i][0], ancestors[i][1]))
         ax[1].plot(list(range(len(probs))), probs, 'bo', list(range(len(probs))), probs, 'k')
         ax[1].set_xlabel("$Sequence number$")
         ax[1].set_ylabel("$Probability$")
@@ -147,7 +151,8 @@ class Highlighter:
         # Keep ratio
         ax[0].set(adjustable='box', aspect='equal')
         # plt.show(
-        save_path = self.out_dir + '{0}probability_graph{1}.png'.format('dynamic_' if dynamic else 'aligned_', file_notion)
+        save_path = self.out_dir + '{0}probability_graph{1}.png'.format('dynamic_' if dynamic else 'aligned_',
+                                                                        file_notion)
         print("Class highlighter saving probability plot to", save_path)
         fig.savefig(save_path)
 
@@ -158,7 +163,8 @@ class Highlighter:
         for i in range(len(self.latent_keys)):
             key2idx[self.latent_keys[i]] = i
             key2idx_reducted[self.latent_keys[i].split('/')[0]] = i
-        reducted_names = [name.split('/')[0] for name in names] ## Remove number after gene name PIP_BREDN/{233-455} <- remove this
+        reducted_names = [name.split('/')[0] for name in
+                          names]  ## Remove number after gene name PIP_BREDN/{233-455} <- remove this
         idx = []
         succ = 0
         fail = 0
@@ -202,6 +208,7 @@ class Highlighter:
         print("Class highlighter saving 3D graph to", save_path)
         self.fig.savefig(save_path)
 
+
 class VAEHandler:
     def __init__(self, setuper):
         self.setuper = setuper
@@ -225,8 +232,9 @@ class VAEHandler:
 
         ## build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
-        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}_D_{}_{}.model"
-                                        .format(self.setuper.C, self.setuper.dimensionality, self.setuper.layersString)))
+        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_{}_fold_0_C_{}_D_{}_{}.model"
+                                       .format(str(self.setuper.decay), self.setuper.C, self.setuper.dimensionality,
+                                               self.setuper.layersString)))
         # vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}_D_{}.model"
         #                               .format(self.setuper.C, self.setuper.dimensionality)))
         # vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0.model"))
@@ -359,6 +367,7 @@ class VAEHandler:
             ret = vae.marginal_sequence(x)
         return ret
 
+
 class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):
         self.sequences = seq_to_align
@@ -387,13 +396,14 @@ class AncestorsHandler:
                 # try 3 iteration to fit ref query
                 open_gap_pen, gap_pen = -7, -1
                 while len(best_align) > ref_len and gap_pen > -7:
-                    open_gap_pen, gap_pen = open_gap_pen-1, gap_pen-1
+                    open_gap_pen, gap_pen = open_gap_pen - 1, gap_pen - 1
                     alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
                     best_align = alignments[0][1]
                 aligned[k] = alignments[0][1]
             if self.setuper.stats:
                 print(k, ':', alignments[0][2], len(aligned[k]))
         return aligned
+
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
