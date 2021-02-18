@@ -57,14 +57,14 @@ class Train:
 
         ## the following list holds the elbo values on validation data
         elbo_all_list = []
-
+        
         for k in range(self.K):
             print("Start the {}th fold training".format(k))
             print("-" * 60)
 
             ## build a VAE model with random parameters
             vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type, self.setuper.layers)
-
+            
             ## move the VAE onto a GPU
             if self.use_cuda:
                 vae.cuda()

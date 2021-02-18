@@ -72,10 +72,10 @@ class Highlighter:
             else:
                 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             # plt.tight_layout()
-            plt.title('Filtered Dataset, Weight = {}'.format(self.setuper.decay))
+            #plt.title(label='Filtered Dataset, Weight = {}'.format(self.setuper.decay))
             save_path = self.out_dir + name.replace('/', '-') + '_' + 'decay_{}_'.format(self.setuper.decay) + self.name
             print("Class highlighter saving graph to", save_path)
-            self.fig.savefig(save_path)
+            self.fig.savefig(save_path, bbox_inches='tight')
 
     def highlight_mutants(self, ancs, names, mutants, file_name='mutants', focus=False):
         colors = ['salmon', 'tomato', 'coral', 'orangered', 'chocolate', 'sienna']
