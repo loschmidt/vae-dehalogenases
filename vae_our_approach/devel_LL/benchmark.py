@@ -229,12 +229,13 @@ class Benchmarker:
             if (idx_batch + 1) % 10 == 0:
                 print("idx_batch: {} out of {}".format(idx_batch, num_batches))
             d = data[idx_batch * batch_size:(idx_batch + 1) * batch_size]
+            # Convert original binary to AA for pairwise analyse
+            originals = [get_aasR(it) for it in d]
             # Get marginal probability to see sequence
             binary = d.reshape((d.shape[0], -1))
             binary = torch.from_numpy(binary)
             probs.append(self.vae_handler.get_marginal_probability(binary))
             # Count pairwise generative ability of sequences
-            originals = get_aas(d)
             mus_b, sigmas_b = self.prepareMusSigmas(d)
             mus_b, sigmas_b = torch.from_numpy(mus_b), torch.from_numpy(sigmas_b)
             generated = self.vae_handler.decode_for_marginal_prob(mus_b, sigmas_b, -1)
