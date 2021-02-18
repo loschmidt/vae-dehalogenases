@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -N Generative
-#PBS -q gpu -l select=1:ngpus=1:mem=8gb:scratch_local=500mb
+#PBS -N Decay_Train
+#PBS -q gpu -l select=1:ngpus=1:mem=16gb:scratch_local=500mb
 # -l select=1:ncpus=1:mem=8gb:scratch_local=1gb
 #PBS -l walltime=24:00:00
 #PBS -m ae
@@ -12,6 +12,8 @@ LOGDIR=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/devel_L
 
 # Parse passed sequence code throught param
 C=${c}
+
+TARGET=filterCluster
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
 # this information helps to find a scratch directory in case the job fails and you need to remove the scratch directory manually
@@ -27,12 +29,16 @@ cd $DATADIR
 ## python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats --highlight_seqs ${QUERY}
 
 echo "========================================================================"
-echo "Training model for given dimensionality = ${C}"
-python3 train.py --Pfam_id PF00561 --output_dir layersTest --stats --in_file results/PF00561/MSA/identified_targets_msa.fa --layers ${C}
+echo "Training model for given decay factor = ${C}"
+python3 train.py --Pfam_id PF00561 --output_dir ${TARGET} --stats --in_file results/PF00561/MSA/identified_targets_msa.fa --num_epoch 59000 --ref P59336_S14 --weight_decay ${C} #--dimensionality 20
 
 echo "========================================================================"
 echo "Measurement of generative process has begun"
-python3 benchmark.py --Pfam_id PF00561 --output_dir layersTest --layers ${C}
+python3 benchmark.py --Pfam_id PF00561 --output_dir ${TARGET} --ref P59336_S14 --weight_decay ${C} # --dimensionality 20
+
+echo "========================================================================"
+echo "Highlighting reference sequence and Babkovas ancestrals"
+python3 analyzer.py --Pfam_id PF00561 --output_dir ${TARGET} --ref P59336_S14 --highlight_seqs P59336_S14 --highlight_files ./results/PF00561/MSA/ancestors.fasta --stats --align --weight_decay ${C}
 
 ##python3 ./script/analyze_model1.py --Pfam_id $PFAMSEQ --RPgroup ${RPgroup}
 echo "Training process is finished" >> $LOGDIR/jobs_info.txt
