@@ -155,7 +155,7 @@ class VAE(nn.Module):
             log_p = self.decoder(z)
             log_PxGz = torch.sum(x * log_p, -1)
             ## Return simple sum saying it is log probability of seeing our sequences
-            return torch.sum(log_PxGz).double()
+            return torch.sum(log_PxGz).double() / log_PxGz.shape[0]
 
     def compute_weighted_elbo(self, x, weight, c_fx_x=2):
         ## sample z from q(z|x)
