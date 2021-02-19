@@ -260,11 +260,12 @@ class Benchmarker:
 
         hs = open(filename, append_write)
         hs.write("Model with C = {0}, D = {1}, generative value = {2} "
-                 "pairwise = {3}, DHAA pairwise score = {4}, layers: {5}\n".format(self.setuper.C,
+                 "pairwise = {3}, DHAA pairwise score = {4}, layers: {5}, Decay = {6}\n".format(self.setuper.C,
                                                                self.setuper.dimensionality,
                                                                (sum(probs)/num_batches),
                                                                (sum(pairwise_score)/data.shape[0]),
-                                                                query_score, self.setuper.layersString))
+                                                                query_score, self.setuper.layersString,
+                                                                self.setuper.decay))
         hs.close()
 
     def test_loglikelihood(self):
