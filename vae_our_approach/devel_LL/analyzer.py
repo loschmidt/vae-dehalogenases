@@ -129,7 +129,7 @@ class Highlighter:
             ax[2].plot([a[0] for i, a in enumerate(ancestors) if i % 10 == 0],
                        [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
             for i, a in enumerate(ancestors):
-                if i % 10 == 0:
+                if i % 50 == 0:
                     ax[2].annotate(i, a)
             ax[2].set_xlim([x1 - 0.7, x2 + 0.7])
             ax[2].set_ylim([y1 - 0.7, y2 + 0.7])
