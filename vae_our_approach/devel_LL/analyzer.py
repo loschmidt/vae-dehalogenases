@@ -131,8 +131,8 @@ class Highlighter:
             for i, a in enumerate(ancestors):
                 if i % 10 == 0:
                     ax[2].annotate(i, a)
-            ax[2].set_xlim([x1 - 0.5, x2 + 0.5])
-            ax[2].set_ylim([y1 - 0.5, y2 + 0.5])
+            ax[2].set_xlim([x1 - 0.7, x2 + 0.7])
+            ax[2].set_ylim([y1 - 0.7, y2 + 0.7])
             ax[2].legend(title='Babkova seqs', bbox_to_anchor=(1.05, 1), loc='upper left')
             # Keep ratio
             ax[2].set(adjustable='box', aspect='equal')
