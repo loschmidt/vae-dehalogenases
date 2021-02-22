@@ -148,25 +148,35 @@ class MutagenesisGenerator:
          '''
         lat_dim = self.setuper.dimensionality
         ref_pos = self._mutants_positions(self.cur)
-        if lat_dim == 3:
-            (x_s, y_s, z_s) = ref_pos[0]
-        else:
-            (x_s, y_s) = ref_pos[0]
-            z_s = 0
-        cnt_of_anc += 1
-        x_d = (x_s / cnt_of_anc)
-        y_d = (y_s / cnt_of_anc)
-        z_d = (z_s / cnt_of_anc)
+        coor_tuple = tuple(ref_pos[0])
+        tuple_dim = range(len(ref_pos[0]))
+        step_list = [0.0 for _ in tuple_dim]
+        for i in tuple_dim:
+            step_list[i] = (coor_tuple[i] / cnt_of_anc)
+        # if lat_dim == 3:
+        #     (x_s, y_s, z_s) = ref_pos[0]
+        # else:
+        #     (x_s, y_s) = ref_pos[0]
+        #     z_s = 0
+        # cnt_of_anc += 1
+        # x_d = (x_s / cnt_of_anc)
+        # y_d = (y_s / cnt_of_anc)
+        # z_d = (z_s / cnt_of_anc)
         i = 1
-        to_highlight = [(x_s, y_s, z_s)] if lat_dim == 3 else [(x_s, y_s)]
+        # to_highlight = [(x_s, y_s, z_s)] if lat_dim == 3 else [(x_s, y_s)]
+        to_highlight = [coor_tuple]
         while i <= cnt_of_anc:
-            cur_x = x_s - (x_d * i)
-            cur_y = y_s - (y_d * i)
-            cur_z = z_s - (z_d * i)
-            if lat_dim == 3:
-                to_highlight.append((cur_x, cur_y, cur_z))
-            else:
-                to_highlight.append((cur_x, cur_y))
+            cur_coor = [0.0 for _ in tuple_dim]
+            for s_i in tuple_dim:
+                cur_coor[s_i] = coor_tuple[s_i] - (step_list[s_i] * i)
+            # cur_x = x_s - (x_d * i)
+            # cur_y = y_s - (y_d * i)
+            # cur_z = z_s - (z_d * i)
+            # if lat_dim == 3:
+            #     to_highlight.append((cur_x, cur_y, cur_z))
+            # else:
+            #     to_highlight.append((cur_x, cur_y))
+            to_highlight.append(tuple(cur_coor))
             i += 1
         ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
         probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors_to_store)
@@ -291,18 +301,23 @@ if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     dow = Downloader(tar_dir)
+
+    # ref = MutagenesisGenerator.binary_to_seq(tar_dir,seq_key='P27652.1')
+    ref_binary = MutagenesisGenerator.binary_to_seq(tar_dir, seq_key='P59336_S14', return_binary=True)
     mut = MutagenesisGenerator(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
     # ancs, names, muts = mut.reconstruct_ancestors(samples=tar_dir.mutant_samples)
-    h = Highlighter(tar_dir)
+    #h = Highlighter(tar_dir)
     # h.highlight_mutants(ancs, names, muts, file_name='mutans_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples))
     # if tar_dir.focus:
     #     h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
     # mut.store_ancestors_in_fasta(names)
     names, ancestors, probs = mut.get_straight_ancestors()
-    h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
+    #h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
     h = Highlighter(tar_dir)
     h.plot_probabilities(probs, ancestors)
-    betas = [0.20, 0.15, 0.1, 0.05, 0.08, 0.03]
-    for beta in betas:
-        ancestors, probs = mut.dynamic_system(beta=beta)
-        h.plot_probabilities(probs, ancestors, dynamic=True, file_notion='_beta_{}'.format(str(beta)))
+    # betas = [0.20, 0.15, 0.1, 0.05, 0.08, 0.03]
+    # betas = [0.25]
+    # for beta in betas:
+    #     ancestors, probs = mut.dynamic_system(beta=beta)
+    #     h.plot_probabilities(probs, ancestors, dynamic=True, file_notion='_beta_{}'.format(str(beta)))
+    # mut.test_generative()
