@@ -119,10 +119,10 @@ class Highlighter:
             for i, k in enumerate(keys):
                 ax[0].annotate(i + 1, data[i])
                 ax[2].annotate(i + 1, data[i])
-            x1 = data[0][0]
-            x2 = data[-1][0]
-            y1 = data[0][1]
-            y2 = data[-1][1]
+            x1 = min(data[:,0])
+            x2 = max(data[:,0])
+            y1 = min(data[:,1])
+            y2 = max(data[:,1])
             x1, x2 = (x1, x2) if x1 < x2 else (x2, x1)
             y1, y2 = (y1, y2) if y1 < y2 else (y2, y1)
             # Plot ancestors
