@@ -208,6 +208,20 @@ class Highlighter:
         print("Class highlighter saving 3D graph to", save_path)
         self.fig.savefig(save_path)
 
+    def plot_instrict_dimensions(self, mus):
+        '''Plot histograms for individual dimensions to check collapsed one'''
+        dim = mus.shape[0]
+        bins = np.linspace(-6, 6, 30)
+
+        save_path = self.out_dir + "Instrict_dim_"
+        for d in range(0, dim+1, 2):
+            plt.hist(mus[d], bins, alpha=0.5, label='dim_{}'.format(d))
+            if d+1 != dim:
+                plt.hist(mus[d+1], bins, alpha=0.5, label='dim_{}'.format(d+1))
+            plt.legend(loc='upper right')
+            save_to = save_path + '{}_{}.png'.format(d, d+1)
+            print("Class highlighter saving graph to", save_to)
+            plt.savefig(save_to)
 
 class VAEHandler:
     def __init__(self, setuper):
