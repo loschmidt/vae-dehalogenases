@@ -424,7 +424,7 @@ if __name__ == '__main__':
     tar_dir.setup_struct()
     down_MSA = Downloader(tar_dir)
     ## Create latent space
-    VAEHandler(setuper=tar_dir).latent_space()
+    mus, _, _ = VAEHandler(setuper=tar_dir).latent_space()
     ## Highlight
     highlighter = Highlighter(tar_dir)
     if tar_dir.highlight_files is not None:
@@ -436,3 +436,5 @@ if __name__ == '__main__':
         names = tar_dir.highlight_seqs.split()
         for n in names:
             highlighter.highlight_name(name=n)
+    if tar_dir.highlight_instricts is not None:
+        highlighter.plot_instrict_dimensions(mus)
