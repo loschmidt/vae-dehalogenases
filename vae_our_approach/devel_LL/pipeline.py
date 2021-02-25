@@ -102,7 +102,7 @@ class StructChecker:
                                                                               "Array of files. Should be as"
                                                                               " the last param in case of usage")
         parser.add_argument('--highlight_seqs', type=str, default=None, help="Highlight sequences in dataset")
-        parser.add_argument('--highlight_dim', type=str, default=None, help="Inspect latent dimensions to see if they collapsed")
+        parser.add_argument('--highlight_dim', action='store_true', default=False, help="Inspect latent dimensions to see if they collapsed")
         parser.add_argument('--focus', action='store_true', default=False,
                             help="Generate focus plot")
         parser.add_argument('--dimensionality', type=int, default=2, help="Latent space dimensionality. Default value 2")
