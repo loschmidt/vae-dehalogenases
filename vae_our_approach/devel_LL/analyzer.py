@@ -211,15 +211,15 @@ class Highlighter:
     def plot_instrict_dimensions(self, mus):
         '''Plot histograms for individual dimensions to check collapsed one'''
         dim = mus.shape[-1]
-        fig, axs = plt.subplots((dim//2)+1, 3)
+        fig, axs = plt.subplots((dim//6)+1, 3)
         bins = np.linspace(-6, 6, 30)
 
         save_path = self.out_dir + "Instrict_dim_"
         for d in range(0, dim, 2):
-            axs[((d // 2) // 6), d // 2].hist(mus[:, d], bins, alpha=0.5, label='dim_{}'.format(d))
+            axs[(d // 6), (d // 2) % 3].hist(mus[:, d], bins, alpha=0.5, label='dim_{}'.format(d))
             if d+1 != dim:
-                axs[((d // 2) // 6), d // 2].hist(mus[:, d+1], bins, alpha=0.5, label='dim_{}'.format(d+1))
-            axs[((d // 2) // 6), d // 2].legend(loc='upper right')
+                axs[(d // 6), (d // 2) % 3].hist(mus[:, d+1], bins, alpha=0.5, label='dim_{}'.format(d+1))
+            axs[(d // 6), (d // 2) % 3].legend(loc='upper right')
         save_to = save_path + 'combined.png'
         print("Class highlighter saving graph to", save_to)
         fig.savefig(save_to)
