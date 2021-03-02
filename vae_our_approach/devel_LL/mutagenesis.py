@@ -153,36 +153,18 @@ class MutagenesisGenerator:
          effect on latent space if the radiuses of differently init models
          are almost same.
          '''
-        lat_dim = self.setuper.dimensionality
         ref_pos = self._mutants_positions(self.cur)
         coor_tuple = tuple(ref_pos[0])
         tuple_dim = range(len(ref_pos[0]))
         step_list = [0.0 for _ in tuple_dim]
         for i in tuple_dim:
             step_list[i] = (coor_tuple[i] / cnt_of_anc)
-        # if lat_dim == 3:
-        #     (x_s, y_s, z_s) = ref_pos[0]
-        # else:
-        #     (x_s, y_s) = ref_pos[0]
-        #     z_s = 0
-        # cnt_of_anc += 1
-        # x_d = (x_s / cnt_of_anc)
-        # y_d = (y_s / cnt_of_anc)
-        # z_d = (z_s / cnt_of_anc)
         i = 1
-        # to_highlight = [(x_s, y_s, z_s)] if lat_dim == 3 else [(x_s, y_s)]
         to_highlight = [coor_tuple]
         while i <= cnt_of_anc:
             cur_coor = [0.0 for _ in tuple_dim]
             for s_i in tuple_dim:
                 cur_coor[s_i] = coor_tuple[s_i] - (step_list[s_i] * i)
-            # cur_x = x_s - (x_d * i)
-            # cur_y = y_s - (y_d * i)
-            # cur_z = z_s - (z_d * i)
-            # if lat_dim == 3:
-            #     to_highlight.append((cur_x, cur_y, cur_z))
-            # else:
-            #     to_highlight.append((cur_x, cur_y))
             to_highlight.append(tuple(cur_coor))
             i += 1
         ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
