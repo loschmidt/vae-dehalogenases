@@ -154,7 +154,7 @@ class Highlighter:
         save_path = self.out_dir + '{0}probability_graph{1}.png'.format('dynamic_' if dynamic else 'aligned_',
                                                                         file_notion)
         print("Class highlighter saving probability plot to", save_path)
-        fig.savefig(save_path)
+        fig.savefig(save_path, bbox_inches='tight')
 
     def _name_match(self, names):
         ## Key to representation of index
