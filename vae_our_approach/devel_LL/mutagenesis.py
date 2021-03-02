@@ -169,7 +169,8 @@ class MutagenesisGenerator:
             i += 1
         ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
         probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors_to_store)
-        self._store_in_fasta_csv(ancestors_to_store, to_file='straight_ancestors.fasta', probs=probs, coords=to_highlight)
+        file_name = 'D{}L{}straight_ancestors.fasta'.format(self.setuper.dimensionality, self.setuper.layersString)
+        self._store_in_fasta_csv(ancestors_to_store, to_file=file_name, probs=probs, coords=to_highlight)
         return list(ancestors_to_store.keys()), to_highlight, probs
 
     def dynamic_system(self, beta=None):
