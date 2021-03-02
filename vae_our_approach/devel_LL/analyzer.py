@@ -151,8 +151,10 @@ class Highlighter:
         # Keep ratio
         ax[0].set(adjustable='box', aspect='equal')
         # plt.show(
-        save_path = self.out_dir + '{0}probability_graph{1}.png'.format('dynamic_' if dynamic else 'aligned_',
-                                                                        file_notion)
+        save_path = self.out_dir + '{0}probability_graph{1}D{2}L{3}.png'.format('dynamic_' if dynamic else 'aligned_',
+                                                                                file_notion,
+                                                                                self.setuper.dimensionality,
+                                                                                self.setuper.layersString)
         print("Class highlighter saving probability plot to", save_path)
         fig.savefig(save_path, bbox_inches='tight')
 
