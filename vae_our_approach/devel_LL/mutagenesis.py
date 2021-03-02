@@ -119,7 +119,7 @@ class MutagenesisGenerator:
         query_name = self.setuper.ref_n
         query_dict = MutagenesisGenerator.binary_to_seq(self.setuper, seq_key=query_name, return_binary=False)
         query_seq = query_dict[query_name]
-        identity = lambda x, query: sum([1 if i==j else 0 for i,j in zip(x,query)])/len(query)
+        identity = lambda x, query: (sum([1 if i==j else 0 for i,j in zip(x,query)])/len(query))*100
         # Store in csv file
         with open(self.setuper.high_fld + '/{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:
             writer = csv.writer(file)
