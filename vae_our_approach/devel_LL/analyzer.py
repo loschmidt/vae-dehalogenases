@@ -117,8 +117,8 @@ class Highlighter:
                 ax[0].plot(d[0], d[1], '.', alpha=1, markersize=4, label='{0} {1}'.format(i + 1, keys[i]), color='red')
                 ax[2].plot(d[0], d[1], '.', alpha=1, markersize=4, label='{0} {1}'.format(i + 1, keys[i]), color='red')
             for i, k in enumerate(keys):
-                ax[0].annotate(i + 1, data[i])
-                ax[2].annotate(i + 1, data[i])
+                ax[0].annotate(i + 1, data[i, :2])
+                ax[2].annotate(i + 1, data[i, :2])
             x1 = min(data[:,0])
             x2 = max(data[:,0])
             y1 = min(data[:,1])
@@ -130,7 +130,7 @@ class Highlighter:
                        [a[1] for i, a in enumerate(ancestors) if i % 10 == 0], '.')
             for i, a in enumerate(ancestors):
                 if i % 50 == 0:
-                    ax[2].annotate(i, a)
+                    ax[2].annotate(i, a[:2])
             ax[2].set_xlim([x1 - 0.7, x2 + 0.7])
             ax[2].set_ylim([y1 - 0.7, y2 + 0.7])
             ax[2].legend(title='Babkova seqs', bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -151,10 +151,12 @@ class Highlighter:
         # Keep ratio
         ax[0].set(adjustable='box', aspect='equal')
         # plt.show(
-        save_path = self.out_dir + '{0}probability_graph{1}D{2}L{3}.png'.format('dynamic_' if dynamic else 'aligned_',
+        save_path = self.out_dir + '{0}probability_graph{1}D{2}L{3}C{4}.png'.format('dynamic_' if dynamic
+                                                                                    else 'aligned_',
                                                                                 file_notion,
                                                                                 self.setuper.dimensionality,
-                                                                                self.setuper.layersString)
+                                                                                self.setuper.layersString,
+                                                                                self.setuper.C)
         print("Class highlighter saving probability plot to", save_path)
         fig.savefig(save_path, bbox_inches='tight')
 
