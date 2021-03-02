@@ -115,13 +115,20 @@ class MutagenesisGenerator:
         vals = list(to_store.values())
         self.anc_seqs = vals
         self.store_ancestors_in_fasta(names=names, file_name=to_file)
+        # Measuring the identity
+        query_name = self.setuper.ref_n
+        query_dict = MutagenesisGenerator.binary_to_seq(self.setuper, seq_key=query_name, return_binary=False)
+        query_seq = query_dict[query_name]
+        identity = lambda x, query: sum([1 if i==j else 0 for i,j in zip(x,query)])/len(query)
         # Store in csv file
         with open(self.setuper.high_fld + '/{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x", "Coordinate y"])
+            writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x",
+                             "Coordinate y", "Query identity [%]"])
             for i, (name, seq, prob, c) in enumerate(zip(names, vals, probs, coords)):
                 seq_str = ''
-                writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1]])
+                query_iden = identity(seq, query_seq)
+                writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1], query_iden])
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
