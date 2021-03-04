@@ -3,6 +3,7 @@ __date__ = "2020/09/18 13:49:00"
 
 import csv
 import numpy as np
+import pandas as pd
 import pickle
 import random
 import torch
@@ -25,7 +26,7 @@ get_aasR = lambda xs: [np.where(aa_bin == 1)[0][0] for aa_bin in xs]
 marginal = lambda gen, orig: sum([1 if g == o else 0 for g, o in zip(gen, orig)]) / len(orig)
 
 class Benchmarker:
-    def __init__(self, positive_control, train_data, setuper, generate_negative=True):
+    def __init__(self, positive_control, train_data, setuper, generate_negative=True, ancestor_probs=[]):
         self.setuper = setuper
         self.positive = positive_control
         if train_data is not None:
@@ -39,6 +40,8 @@ class Benchmarker:
             self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
         self.vae_handler = VAEHandler(setuper)
         self.binaryConv = BinaryCovertor(self.setuper)
+
+        self.ancestors_probs = ancestor_probs
         # Ignore deprecated errors
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
 
@@ -55,41 +58,56 @@ class Benchmarker:
         pos_w.fill(1 / len(marginals_positive))
         neg_w = np.empty(len(marginals_negative))
         neg_w.fill(1 / len(marginals_negative))
+        anc_w = np.empty(len(self.ancestors_probs))
+        anc_w.fill(1 / len(marginals_negative))
 
         mean_p = sum(marginals_positive) / len(marginals_positive)
         mean_n = sum(marginals_negative) / len(marginals_negative)
         mean_t = sum(marginals_train) / len(marginals_train)
+        mean_a = sum(self.ancestors_probs) / len(self.ancestors_probs)
         # Plot it
         plt.style.use('seaborn-deep')
         fig, ax = plt.subplots()
         bins = np.linspace(0, 1, 50)
-        ax.hist([marginals_negative, marginals_positive, marginals_train], bins,
-                label=['neg', 'pos', 'train_data'], color=['red', 'b', 'k'], weights=[neg_w, pos_w, tr_w])#, histtype='step', stacked=True, fill=False, density=True)
+        ax.hist([marginals_negative, marginals_positive, marginals_train, self.ancestors_probs], bins,
+                label=['neg', 'pos', 'train_data', 'ancestors'], color=['red', 'b', 'k', 'g'], weights=[neg_w, pos_w, tr_w, anc_w])#, histtype='step', stacked=True, fill=False, density=True)
         fig2, aa = plt.subplots()
-        aa = sns.distplot(marginals_negative, hist=False, kde=True,
-                     kde_kws={'shade': True, 'linewidth': 3})
-        sns.kdeplot(marginals_positive, ax=aa)
-        sns.kdeplot(marginals_train, ax=aa)
+        #aa = sns.distplot(marginals_negative, hist=False, kde=True,
+        #              kde_kws={'shade': True, 'linewidth': 3})
+        # sns.kdeplot(marginals_positive, ax=aa)
+        # sns.kdeplot(marginals_train, ax=aa)
+        # sns.kdeplot(self.ancestors_probs, ax=aa)
+        # Prepare dataframe
+        datasets = []
+        probabilities = []
+        for dataset, probs in [("Positive", marginals_positive), ("Negative", marginals_negative), ("Training", marginals_train), ("Ancestors", self.ancestors_probs)]:
+            for p in probs:
+                datasets.append(dataset)
+                probabilities.append(p)
+        data_dict = {"Dataset": datasets, "Probabilities": probabilities}
+        dataFrame = pd.DataFrame.from_dict(data_dict)
+        sns_plot = sns.displot(dataFrame, x="Probabilities", hue="Dataset", kind="kde", fill=True)
         ax.legend(loc='upper right')
         plt.xlabel('% of similarity [%/100]')
-        plt.ylabel('Quantity')
-        plt.title('Benchmark histogram')
+        plt.ylabel('Probability')
+        plt.title(r'Benchmark histogram $\mu={0:.2f},{1:.2f},{2:.2f},{3:.2f}$'.format(mean_n, mean_p, mean_t, mean_a))
         ax.text(6, 2, r'$\mu={0},{1},{2}$'.format(mean_n, mean_p, mean_t))
         save_path = self.setuper.high_fld + '/benchmark.png'
-        print("Class highlighter saving graph to", save_path)
+        print("Benchmark message : Class highlighter saving graph to", save_path)
         fig.savefig(save_path)
         save_path = self.setuper.high_fld + '/benchmark_density.png'
-        print("Class highlighter saving graph to", save_path)
-        fig2.savefig(save_path)
+        print("Benchmark message : Class highlighter saving graph to", save_path)
+        sns_plot.savefig(save_path)
         if self.setuper.stats:
-            print('Benchmark results:')
+            print('Benchmark message : Benchmark results:')
             print('\tpositive mean: \t', mean_p)
             print('\tnegative mean: \t', mean_n)
             print('\ttrain data mean: \t', mean_t)
+            print('\tStraight ancestors mean: \t', mean_a)
 
         file = open(self.setuper.high_fld + '/benchmark_stats.txt', 'w')
         print('Benchmark stats saved in', self.setuper.high_fld + '/benchmark_stats.txt')
-        s = 'train: '+ str(mean_t) + ' positive: ' + str(mean_p) + ' negative: ' + str(mean_n)
+        s = 'train: '+ str(mean_t) + ' positive: ' + str(mean_p) + ' negative: ' + str(mean_n) +'ancestors'+ str(mean_a)
         file.write(s)
         file.close()
 
@@ -118,11 +136,11 @@ class Benchmarker:
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
         '''
-        N = 10000
+        N = 10
         probs = []  # marginal propabilities
 
         print('=' * 60)
-        print('Sampling process has begun...')
+        print('Benchmark message : Sampling process has begun...')
         print('=' * 60)
 
         # Sample for mus and sigmas for N times
@@ -130,7 +148,7 @@ class Benchmarker:
         num_batches = mus.shape[0] // batch_size + 1
         for idx_batch in range(num_batches):
             if (idx_batch + 1) % 10 == 0:
-                print("idx_batch: {} out of {}".format(idx_batch, num_batches))
+                print("\tidx_batch: {} out of {}".format(idx_batch, num_batches))
             mus_b = mus[idx_batch * batch_size:(idx_batch + 1) * batch_size]
             sigmas_b = sigmas[idx_batch * batch_size:(idx_batch + 1) * batch_size]
             mus_b = torch.from_numpy(mus_b)
@@ -152,7 +170,7 @@ class Benchmarker:
         return probs
 
     def _generate_negative(self, count, s_len, profile_data):
-        """Generate random sequences"""
+        """Generate random sequences by the profile of family"""
         profile = self._get_profile(profile_data)
         K = self.positive.shape[2]
         D = np.identity(K)
@@ -169,7 +187,7 @@ class Benchmarker:
                         prof_seq.append(aa)
                         break
             rand_seq_binary[i, :, :] = D[prof_seq]
-        print('Negative control {} samples generated...'.format(count))
+        print('Benchmark message : Negative control {} samples generated...'.format(count))
         return rand_seq_binary
 
     def _get_profile(self, msa_binary):
@@ -213,13 +231,17 @@ class Benchmarker:
         with open(filename, 'w', newline='') as file:
             # Store in csv file
             writer = csv.writer(file)
-            writer.writerow(["Number", "Train", "Positive", "Negative"])
+            writer.writerow(["Number", "Train", "Positive", "Negative", "Straight ancestors"])
             for i, (name, seq, prob) in enumerate(zip(marginal_t, marginal_p, marginal_n)):
-                writer.writerow([i, name, seq, prob])
+                if i < len(self.ancestors_probs):
+                    writer.writerow([i, name, seq, prob, self.ancestors_probs[i]])
+                else:
+                    writer.writerow([i, name, seq, prob])
 
     def model_generative_ability(self, data):
         '''For whole training data set check how data
          points are biased by neighbouring data points'''
+        print('Benchmark message : Measuring of model generative ability has started')
         data = data.astype(np.float32)
         batch_size = 64
         num_batches = data.shape[0] // batch_size + 1
@@ -249,8 +271,7 @@ class Benchmarker:
         gen_query = self.vae_handler.decode_for_marginal_prob(mu, sigma, -1)
         query_score = marginal(gen_query[0], orig_query)
 
-        print("="*60)
-        print("Model generative ability value:", sum(probs)/num_batches)
+        print("\tModel generative ability value:", sum(probs)/num_batches)
 
         filename = self.setuper.high_fld + '/generative.txt'
         if os.path.exists(filename):
@@ -291,11 +312,15 @@ if __name__ == '__main__':
     with open(tar_dir.pickles_fld + '/training_set.pkl', 'rb') as file_handle:
         train_set = pickle.load(file_handle)
 
+    # Prepare straight ancestors for making its distribution
     from mutagenesis import MutagenesisGenerator as Mutagenesis
-    b = Benchmarker(positive, train_set, tar_dir, generate_negative=False)
+    mut = Mutagenesis(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
+    _, _, probs = mut.get_straight_ancestors()
+
+    b = Benchmarker(positive, train_set, tar_dir, generate_negative=True, ancestor_probs=probs)
     #b.test_loglikelihood()
-    b.model_generative_ability(train_set)
-    # b.make_bench()
+    #b.model_generative_ability(train_set)
+    b.make_bench()
     # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:
     #     train_set = pickle.load(file_handle)
     # iden = np.identity(train_set.shape[2])
