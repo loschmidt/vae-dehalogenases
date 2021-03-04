@@ -56,7 +56,7 @@ class MSAFilterCutOff :
         pos_idx = []
         ref_pos = []
         if keep_ref:
-            ref_pos = self._get_ref_pos(msa, search_for_regions=not(self.setuper.filter_not_regions))
+            ref_pos = self._get_ref_pos(msa, search_for_regions=self.setuper.filter_regions)
         np_msa, key_list = self._remove_unexplored_and_covert_aa(msa)
         for i in range(np_msa.shape[1]):
             # Hold all position as in reference sequence
@@ -64,8 +64,8 @@ class MSAFilterCutOff :
                 pos_idx.append(i)
             elif np.sum(np_msa[:, i] == 0) <= np_msa.shape[0] * threshold:
                 pos_idx.append(i)
-        print('MSA_filter message : The MSA is cleared by gaps columns. Width: {}, '
-              'added gaps columns by threshold: {}'.format(len(pos_idx), len(pos_idx)-len(ref_pos)))
+        print('MSA_filter message : The MSA is cleared by gaps columns. Width: {}, \n'
+              '                     added gaps columns by threshold: {}'.format(len(pos_idx), len(pos_idx)-len(ref_pos)))
         with open(self.pickle + "/seq_pos_idx.pkl", 'wb') as file_handle:
             pickle.dump(pos_idx, file_handle)
         np_msa = np_msa[:, np.array(pos_idx)]
@@ -272,7 +272,23 @@ class MSAFilterCutOff :
         return seq_msa_binary
 
     def identity_filtering(self, msa):
-        nclusters, clusters, sampled_dict = self.phylo_clustering(msa)
+        ''' Cluster sequences by the 90 % identity'''
+        thresholds = [0.2, 0.4, 0.6, 0.8, 0.9]
+        clusters = []
+        inputs = [msa]
+        # Secure that query will stay in clustered MSA
+        sampled_dict = {} if not self.setuper.ref_seq \
+                            else {self.setuper.ref_n: msa[self.setuper.ref_n]}
+
+        # Run through threshold to decrease computational cost
+        for th in thresholds:
+            clusters = []
+            for i, input in enumerate(inputs):
+                ret_clusters = self.phylo_clustering(input, threshold=th)
+                clusters.extend(ret_clusters)
+                print("\tClusters proceeded {}/{}".format(i+1, len(inputs)), flush=True)
+            inputs = clusters
+            print('MSA_filter message : Clustering with identity {} done, number of clusters {}'.format(th, len(clusters)))
 
         for cluster in clusters:
             key, k_len = list(cluster.keys()), len(list(cluster.keys()))-1
@@ -281,25 +297,29 @@ class MSAFilterCutOff :
         if self.setuper.stats:
             print("="*60)
             print("Statistics for clustering")
-            print("\t Cluster: {}".format(nclusters))
+            print("\t Cluster: {}".format(len(clusters)))
 
         return sampled_dict
 
-    def phylo_clustering(self, msa):
-        '''If query sequence is given hold it in dataset'''
+    def phylo_clustering(self, msa, threshold=0.9):
+        '''If query sequence is given hold it in dataset and filter it by threshold identity'''
         identity = lambda seq1, seq2: sum([1 if g == o else 0 for g, o in zip(seq1, seq2)]) / len(seq2)
 
-        seed, ini_dict = (list(msa.values())[0], {}) if not self.setuper.ref_seq \
-                                    else (msa[self.setuper.ref_n], {self.setuper.ref_n: msa[self.setuper.ref_n]})
+        if self.setuper.ref_seq:
+            try:
+                seed = msa[self.setuper.ref_n]
+            except KeyError:
+                seed = (list(msa.values())[0])
+        else:
+            seed = (list(msa.values())[0])
         clusters = []
 
         while len(seed) != 0:
-            print("Cluster from {}".format(len(msa.keys())), flush=True)
             cluster = {}
             prev_seed = []
             del_keys = []
             for k in msa.keys():
-                if identity(msa[k], seed) > 0.9:
+                if identity(msa[k], seed) > threshold:
                     del_keys.append(k)
                     cluster[k] = msa[k]
                 else:
@@ -310,7 +330,7 @@ class MSAFilterCutOff :
             for k in del_keys:
                 del msa[k]
 
-        return len(clusters), clusters, ini_dict
+        return clusters
 
 
     def back_to_amino(self, msa):

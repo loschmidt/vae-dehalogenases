@@ -32,7 +32,7 @@ class StructChecker:
         self.focus = self.args.focus
         self.dimensionality = self.args.dimensionality
         self.dyn_beta = self.args.dyn_beta
-        self.filter_not_regions = self.args.no_gap_regions
+        self.filter_regions = self.args.gap_regions
 
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
@@ -94,8 +94,8 @@ class StructChecker:
                                  "catalytic residues to further processing.")
         parser.add_argument('--no_score_filter', action='store_false', default=True, help="Default. Loschmidt Labs "
                                                                                           "pipeline for processing MSA.")
-        parser.add_argument('--no_gap_regions', action='store_false', default=True, help="Default. Do not search for gap"
-                                                                                         "regions in query. Just keep "
+        parser.add_argument('--gap_regions', action='store_true', default=False, help="Default do not search for gap"
+                                                                                         "regions in query. Otherwise, just keep "
                                                                                          "positions where query hasn't  "
                                                                                          "got a gap or more than 80 % of"
                                                                                          "sequences have Aminoacid")
