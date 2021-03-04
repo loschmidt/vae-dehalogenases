@@ -108,7 +108,7 @@ class MutagenesisGenerator:
         with open(self.pickle + "/" + file_name, 'w') as file_handle:
             for i, seq in enumerate(self.anc_seqs):
                 file_handle.write(">" + names[i] + "\n" + "".join(seq) + "\n")
-        print('Fasta file generate to ', self.pickle + file_name)
+        print('Fasta file generate to ', self.pickle + "/" + file_name)
 
     def _store_in_fasta_csv(self, to_store, probs, to_file, coords):
         names = list(to_store.keys())
@@ -153,6 +153,7 @@ class MutagenesisGenerator:
          effect on latent space if the radiuses of differently init models
          are almost same.
          '''
+        print("Mutagenesis message : Straight ancestors generating process started")
         ref_pos = self._mutants_positions(self.cur)
         coor_tuple = tuple(ref_pos[0])
         tuple_dim = range(len(ref_pos[0]))
