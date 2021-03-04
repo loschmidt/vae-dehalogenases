@@ -49,12 +49,14 @@ class MSAFilterCutOff :
 
     def _remove_cols_with_gaps(self, msa, threshold=0.2, keep_ref=False):
         '''Remove positions with too many gaps. Set threshold and
-           keeping ref seq position is up to you
+           keeping ref seq position is up to you. The columns with proportion of gaps
+           lower than threshold * num_msa_seqs will be held even if there is gap in
+           the query.
            Returns modified dictionary with translate sequences AA to numbers'''
         pos_idx = []
         ref_pos = []
         if keep_ref:
-            ref_pos = self._get_ref_pos(msa, search_for_regions=True)
+            ref_pos = self._get_ref_pos(msa, search_for_regions=not(self.setuper.filter_not_regions))
         np_msa, key_list = self._remove_unexplored_and_covert_aa(msa)
         for i in range(np_msa.shape[1]):
             # Hold all position as in reference sequence
@@ -62,6 +64,8 @@ class MSAFilterCutOff :
                 pos_idx.append(i)
             elif np.sum(np_msa[:, i] == 0) <= np_msa.shape[0] * threshold:
                 pos_idx.append(i)
+        print('MSA_filter message : The MSA is cleared by gaps columns. Width: {}, '
+              'added gaps columns by threshold: {}'.format(len(pos_idx), len(pos_idx)-len(ref_pos)))
         with open(self.pickle + "/seq_pos_idx.pkl", 'wb') as file_handle:
             pickle.dump(pos_idx, file_handle)
         np_msa = np_msa[:, np.array(pos_idx)]
@@ -79,6 +83,8 @@ class MSAFilterCutOff :
                      of core of sequence
             Search for regions makes the reduction of width of the core
             by iterative run through regions in the core
+
+            In the case of option no_gap_regions just search for positions with no gaps in the query
         """
         if not self.setuper.ref_seq:
             return []
@@ -105,7 +111,7 @@ class MSAFilterCutOff :
         # first and last position of AA. Keep 2 gaps on each side.
         begin_end = [[i for i, gap in enumerate(gaps) if not gap][ii]-2-(4*ii) for ii in (0, -1)]
         begin_end = (max(begin_end[0], 0), min(begin_end[1], len(query_seq)-1))
-        # Just find the core sequence and make column reduction by threshold process
+        # Just find the core sequence (no gaps positions) and make column reduction by threshold process
         if not search_for_regions:
             print('MSA_filter message : Do not search for regions in the core')
             idx = []
@@ -128,6 +134,7 @@ class MSAFilterCutOff :
         # Split up to max region only if gaps region is really big
         # To avoid sequences like AAAAA---------------A
         if max_val > max_region_size:
+            print('MSA_filter message : Do cutoff of part of query sequences due to big gap of size {}'.format(max_val))
             fst_reg = core_protein[0:regions[idx_max][0]]
             snd_reg = core_protein[regions[idx_max][1]:]
             # Use that region with more information (amino acids)
