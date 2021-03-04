@@ -286,7 +286,7 @@ class MSAFilterCutOff :
             for i, input in enumerate(inputs):
                 ret_clusters = self.phylo_clustering(input, threshold=th)
                 clusters.extend(ret_clusters)
-                if (i+1) % 50 == 0:
+                if (i+1) % max(50, len(inputs)//10) == 0:
                     print("\tClusters proceeded {}/{}".format(i+1, len(inputs)), flush=True)
             inputs = clusters
             print('MSA_filter message : Clustering with identity {} done, number of clusters {}'.format(th, len(clusters)))
