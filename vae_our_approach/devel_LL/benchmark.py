@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
     b = Benchmarker(positive, train_set, tar_dir, generate_negative=True, ancestor_probs=probs)
     #b.test_loglikelihood()
-    #b.model_generative_ability(train_set)
+    b.model_generative_ability(train_set)
     b.make_bench()
     # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:
     #     train_set = pickle.load(file_handle)
