@@ -105,10 +105,10 @@ class MutagenesisGenerator:
         print('Fasta file generate to ', self.pickle + '/training_alignment.fasta')
 
     def store_ancestors_in_fasta(self, names, file_name='generated_ancestors.fasta'):
-        with open(self.pickle + "/" + file_name, 'w') as file_handle:
+        with open(self.high_fld + "/" + file_name, 'w') as file_handle:
             for i, seq in enumerate(self.anc_seqs):
                 file_handle.write(">" + names[i] + "\n" + "".join(seq) + "\n")
-        print('Fasta file generate to ', self.pickle + "/" + file_name)
+        print('Fasta file generate to ', self.high_fld + "/" + file_name)
 
     def _store_in_fasta_csv(self, to_store, probs, to_file, coords):
         names = list(to_store.keys())
@@ -170,9 +170,7 @@ class MutagenesisGenerator:
             i += 1
         ancestors_to_store = self.handler.decode_sequences_VAE(to_highlight, self.cur_name)
         probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors_to_store)
-        file_name = 'D{}L{}C{}straight_ancestors.fasta'.format(self.setuper.dimensionality,
-                                                               self.setuper.layersString,
-                                                               self.setuper.C)
+        file_name = '{}straight_ancestors.fasta'.format(self.setuper.model_name)
         self._store_in_fasta_csv(ancestors_to_store, to_file=file_name, probs=probs, coords=to_highlight)
         return list(ancestors_to_store.keys()), to_highlight, probs
 

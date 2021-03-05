@@ -74,7 +74,7 @@ class Benchmarker:
         plt.ylabel('Density')
         plt.title(r'Benchmark histogram $\mu={0:.2f},{1:.2f},{2:.2f},{3:.2f}$'.format(mean_n, mean_p, mean_t, mean_a))
 
-        save_path = self.setuper.high_fld + '/benchmark_density.png'
+        save_path = self.setuper.high_fld + '/{}benchmark_density.png'.format(self.setuper.model_name)
         print("Benchmark message : Class highlighter saving graph to", save_path)
         sns_plot.savefig(save_path)
         if self.setuper.stats:
@@ -84,8 +84,8 @@ class Benchmarker:
             print('\ttrain data mean: \t', mean_t)
             print('\tStraight ancestors mean: \t', mean_a)
 
-        file = open(self.setuper.high_fld + '/benchmark_stats.txt', 'w')
-        print('Benchmark stats saved in', self.setuper.high_fld + '/benchmark_stats.txt')
+        file = open(self.setuper.high_fld + '/{}benchmark_stats.txt'.format(self.setuper.model_name), 'w')
+        print('Benchmark stats saved in', self.setuper.high_fld + '/{}benchmark_stats.txt'.format(self.setuper.model_name))
         s = 'train: '+ str(mean_t) + ' positive: ' + str(mean_p) + ' negative: ' + str(mean_n) +'ancestors'+ str(mean_a)
         file.write(s)
         file.close()
