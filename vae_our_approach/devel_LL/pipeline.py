@@ -52,6 +52,8 @@ class StructChecker:
             s_layers += '_{}'.format(self.args.layers)
         self.layersString = s_layers
 
+        self.model_name = "VAE_W{}C{}D{}{}".format(self.decay, self.C, self.dimensionality, self.layersString)
+
         ## Setup enviroment variable
         os.environ['PIP_CAT'] = str(self.preserve_catalytic)
         os.environ['PIP_PAPER'] = str(self.paper_pipe)
