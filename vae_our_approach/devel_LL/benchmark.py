@@ -51,50 +51,29 @@ class Benchmarker:
         marginals_negative = self._bench(self.negative)
         self._store_marginals(marginals_train, marginals_positive, marginals_negative)
 
-        # Normalization process
-        tr_w = np.empty(len(marginals_train))
-        tr_w.fill(1 / len(marginals_train))
-        pos_w = np.empty(len(marginals_positive))
-        pos_w.fill(1 / len(marginals_positive))
-        neg_w = np.empty(len(marginals_negative))
-        neg_w.fill(1 / len(marginals_negative))
-        anc_w = np.empty(len(self.ancestors_probs))
-        anc_w.fill(1 / len(marginals_negative))
-
         mean_p = sum(marginals_positive) / len(marginals_positive)
         mean_n = sum(marginals_negative) / len(marginals_negative)
         mean_t = sum(marginals_train) / len(marginals_train)
         mean_a = sum(self.ancestors_probs) / len(self.ancestors_probs)
         # Plot it
         plt.style.use('seaborn-deep')
-        fig, ax = plt.subplots()
-        bins = np.linspace(0, 1, 50)
-        ax.hist([marginals_negative, marginals_positive, marginals_train, self.ancestors_probs], bins,
-                label=['neg', 'pos', 'train_data', 'ancestors'], color=['red', 'b', 'k', 'g'], weights=[neg_w, pos_w, tr_w, anc_w])#, histtype='step', stacked=True, fill=False, density=True)
-        fig2, aa = plt.subplots()
-        #aa = sns.distplot(marginals_negative, hist=False, kde=True,
-        #              kde_kws={'shade': True, 'linewidth': 3})
-        # sns.kdeplot(marginals_positive, ax=aa)
-        # sns.kdeplot(marginals_train, ax=aa)
-        # sns.kdeplot(self.ancestors_probs, ax=aa)
         # Prepare dataframe
         datasets = []
         probabilities = []
-        for dataset, probs in [("Positive", marginals_positive), ("Negative", marginals_negative), ("Training", marginals_train), ("Ancestors", self.ancestors_probs)]:
+        for dataset, probs in [("Positive", marginals_positive),("Negative", marginals_negative),
+                                ("Training", marginals_train), ("Ancestors", self.ancestors_probs)]:
             for p in probs:
                 datasets.append(dataset)
-                probabilities.append(p)
+                probabilities.append(p*100)
         data_dict = {"Dataset": datasets, "Probabilities": probabilities}
         dataFrame = pd.DataFrame.from_dict(data_dict)
-        sns_plot = sns.displot(dataFrame, x="Probabilities", hue="Dataset", kind="kde", fill=True)
-        ax.legend(loc='upper right')
-        plt.xlabel('% of similarity [%/100]')
-        plt.ylabel('Probability')
+        sns_plot = sns.displot(dataFrame, x="Probabilities", hue="Dataset", kind="kde", fill=True, common_norm=False,
+                               color=["green", "black", "red", "orange"])
+
+        plt.xlabel('% probability of observing')
+        plt.ylabel('Density')
         plt.title(r'Benchmark histogram $\mu={0:.2f},{1:.2f},{2:.2f},{3:.2f}$'.format(mean_n, mean_p, mean_t, mean_a))
-        ax.text(6, 2, r'$\mu={0},{1},{2}$'.format(mean_n, mean_p, mean_t))
-        save_path = self.setuper.high_fld + '/benchmark.png'
-        print("Benchmark message : Class highlighter saving graph to", save_path)
-        fig.savefig(save_path)
+
         save_path = self.setuper.high_fld + '/benchmark_density.png'
         print("Benchmark message : Class highlighter saving graph to", save_path)
         sns_plot.savefig(save_path)
