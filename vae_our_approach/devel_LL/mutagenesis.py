@@ -105,10 +105,10 @@ class MutagenesisGenerator:
         print('Fasta file generate to ', self.pickle + '/training_alignment.fasta')
 
     def store_ancestors_in_fasta(self, names, file_name='generated_ancestors.fasta'):
-        with open(self.high_fld + "/" + file_name, 'w') as file_handle:
+        with open(self.setuper.high_fld + "/" + file_name, 'w') as file_handle:
             for i, seq in enumerate(self.anc_seqs):
                 file_handle.write(">" + names[i] + "\n" + "".join(seq) + "\n")
-        print('Fasta file generate to ', self.high_fld + "/" + file_name)
+        print('Fasta file generate to ', self.setuper.high_fld + "/" + file_name)
 
     def _store_in_fasta_csv(self, to_store, probs, to_file, coords):
         names = list(to_store.keys())
