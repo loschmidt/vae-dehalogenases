@@ -73,7 +73,7 @@ class Highlighter:
                 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             # plt.tight_layout()
             #plt.title(label='Filtered Dataset, Weight = {}'.format(self.setuper.decay))
-            save_path = self.out_dir + name.replace('/', '-') + '_' + 'decay_{}_'.format(self.setuper.decay) + self.name
+            save_path = self.out_dir + name.replace('/', '-') + '{}'.format(self.setuper.model_name) + self.name
             print("Class highlighter saving graph to", save_path)
             self.fig.savefig(save_path, bbox_inches='tight')
 
@@ -151,12 +151,10 @@ class Highlighter:
         # Keep ratio
         ax[0].set(adjustable='box', aspect='equal')
         # plt.show(
-        save_path = self.out_dir + '{0}probability_graph{1}D{2}L{3}C{4}.png'.format('dynamic_' if dynamic
+        save_path = self.out_dir + '{0}probability_graph{1}{2}.png'.format('dynamic_' if dynamic
                                                                                     else 'aligned_',
                                                                                 file_notion,
-                                                                                self.setuper.dimensionality,
-                                                                                self.setuper.layersString,
-                                                                                self.setuper.C)
+                                                                                self.setuper.model_name)
         print("Class highlighter saving probability plot to", save_path)
         fig.savefig(save_path, bbox_inches='tight')
 
@@ -206,9 +204,9 @@ class Highlighter:
             return self.ax
         self.ax.scatter(high_data[:, 0], high_data[:, 1], high_data[:, 2], color='red')
         gif_name = self.name.replace('.png', '.gif')
-        save_path = self.out_dir + name.replace('/', '-') + '_3D_' + gif_name
+        save_path = self.out_dir + name.replace('/', '-') + '_3D_{}'.format(self.setuper.model_name) + gif_name
         GifMaker(self.fig, self.ax, save_path)
-        save_path = self.out_dir + name.replace('/', '-') + '_3D_' + self.name
+        save_path = self.out_dir + name.replace('/', '-') + '_3D_{}'.format(self.setuper.model_name) + self.name
         print("Class highlighter saving 3D graph to", save_path)
         self.fig.savefig(save_path)
 
@@ -218,7 +216,7 @@ class Highlighter:
         fig, axs = plt.subplots((dim//6)+1, 3)
         bins = np.linspace(-6, 6, 30)
 
-        save_path = self.out_dir + "Instrict_dim_"
+        save_path = self.out_dir + "Instrict_dim_{}_".format(self.setuper.model_name)
         for d in range(0, dim, 2):
             axs[(d // 6), (d // 2) % 3].hist(mus[:, d], bins, alpha=0.5, label='dim_{}'.format(d))
             if d+1 != dim:
