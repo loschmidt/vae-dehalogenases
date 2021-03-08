@@ -205,7 +205,7 @@ class Benchmarker:
         return profile
 
     def _store_marginals(self, marginal_t, marginal_p, marginal_n):
-        filename = self.setuper.high_fld + 'marginals_benchmark.csv'
+        filename = self.setuper.high_fld + '{}_marginals_benchmark.csv'.format(self.setuper.model_name)
         print('Benchmark message: Storing marginals probabilities in {}'.format(filename))
         with open(filename, 'w', newline='') as file:
             # Store in csv file
