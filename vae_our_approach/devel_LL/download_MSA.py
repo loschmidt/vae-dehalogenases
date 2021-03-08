@@ -35,7 +35,12 @@ class Downloader:
                 print("Downloading the {1} multiple sequence alignment for Pfam: {0} ......".format(self.pfam_id, dow))
                 http = urllib3.PoolManager()
                 r = http.request('GET', 'http://pfam.xfam.org/family/{0}/alignment/{1}/gzipped'.format(self.pfam_id, dow))
-                data = gzip.decompress(r.data)
+                try:
+                    data = gzip.decompress(r.data)
+                except OSError:
+                    print("Downloader message : No pfam file downloaded.")
+                    print("                     May you forgot get --in_file option while running script")
+                    exit(1)
                 data = data.decode()
                 with open(file_name, 'w') as file_handle:
                     print(data, file=file_handle)
