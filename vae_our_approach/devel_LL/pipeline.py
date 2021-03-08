@@ -52,7 +52,11 @@ class StructChecker:
             s_layers += '_{}'.format(self.args.layers)
         self.layersString = s_layers
 
-        self.model_name = "VAE_W{}C{}D{}{}".format(self.decay, self.C, self.dimensionality, self.layersString)
+        ## Name the model
+        if self.args.model_name == '':
+            self.model_name = "VAE_W{}C{}D{}{}".format(self.decay, self.C, self.dimensionality, self.layersString)
+        else:
+            self.model_name = self.args.model_name
 
         ## Setup enviroment variable
         os.environ['PIP_CAT'] = str(self.preserve_catalytic)
@@ -128,6 +132,8 @@ class StructChecker:
                                                                                " and neurons within. Default 100. The "
                                                                        "dimensionality of latent space is se over"
                                                                        " dimensionality argument. Example 2 3 ")
+        parser.add_argument('--model_name', type=str, default='',
+                            help="Give name to the model to better recognize its setup.")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
@@ -139,6 +145,22 @@ class StructChecker:
         for folder in self.flds_arr:
             sp.run("mkdir -p {0}".format(folder), shell=True)
         print("Directory structure of {0} was successfully prepared".format(self.run_root_dir))
+        # Prepare model parameters description into the file for better examination
+        if self.args.model_name != '':
+            ## store the model setup to file
+            filename = self.high_fld + '/ModelsParamters.txt'
+            if os.path.exists(filename):
+                append_write = 'a'  # append if already exists
+            else:
+                append_write = 'w'  # make a new file if not
+
+            hs = open(filename, append_write)
+            hs.write("Model name {} : weight decay {}, layer {}, Dim {}, C {}, epochs {}".format(self.model_name,
+                                                                                                 self.decay,
+                                                                                                 self.layersString,
+                                                                                                 self.dimensionality,
+                                                                                                 self.C, self.epochs))
+            hs.close()
 
     def _setup_RP_run(self):
         """Setups subfolder of current rp group. Sets model, pickles"""
