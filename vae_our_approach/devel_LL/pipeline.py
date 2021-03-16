@@ -135,7 +135,7 @@ class StructChecker:
                                                                        " dimensionality argument. Example 2 3 ")
         parser.add_argument('--model_name', type=str, default='',
                             help="Give name to the model to better recognize its setup.")
-        parser.add_argument('--clustalo_path', type=str, default='~/bin/clustalo',
+        parser.add_argument('--clustalo_path', type=str, default='/storage/brno2/xkohou15/bin/clustalo',
                             help="Setup path to the clustal omega binary. Default is mine ./bin/clustao")
         args = parser.parse_args()
         if args.Pfam_id is None:
