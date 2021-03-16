@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import torch
+import os
 import os.path as path
 
 
@@ -451,7 +452,7 @@ class AncestorsHandler:
         else:
             # Need to do one by one from ancestors
             import multiprocessing
-            cores_count = multiprocessing.cpu_count()
+            cores_count = min(multiprocessing.cpu_count(), 64)
             file = self.setuper.highlight_files
             # from msa_prepar import MSA
             # m = MSA(self.setuper, processMSA=False)
@@ -461,27 +462,33 @@ class AncestorsHandler:
             #     profile = "profile_{}.fa".format(k)
             #     with open(profile, "w") as f:
             #         f.write(">" + k + "\n" + v + "\n")
-            # Create profile from sequences to be aligned
-            profile = self.pickle + "/ancestors_align.fasta"
-            clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                         infile=file,
-                                                         outfile=profile,
-                                                         threads=cores_count,
-                                                         verbose=True, auto=True)
-            print("AncestorHandler message : Aligning ancestors ...\n"
-                  "                          Running {}".format(clustalomega_cline))
-            stdout, stderr = clustalomega_cline()
-
+            # check if alignment exists
             outfile = self.pickle + "/aligned_ancestors_to_MSA.aln"
-            clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                         profile1=self.setuper.in_file,
-                                                         profile2=profile,
-                                                         outfile=outfile,
-                                                         threads=cores_count,
-                                                         verbose=True, auto=True)
-            print("AncestorHandler message : Running {}".format(clustalomega_cline))
-            stdout, stderr = clustalomega_cline()
-            print(stdout)
+            if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
+                print('Anlyzer message : Alignement file exists in {}. Loading that file.'.format(outfile))
+                # with open(outfile, 'r') as file_handle:
+                #     profile = pickle.load(file_handle)
+            else:
+                # Create profile from sequences to be aligned
+                profile = self.pickle + "/ancestors_align.fasta"
+                clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                             infile=file,
+                                                             outfile=profile,
+                                                             threads=cores_count,
+                                                             verbose=True, auto=True)
+                print("AncestorHandler message : Aligning ancestors ...\n"
+                      "                          Running {}".format(clustalomega_cline))
+                stdout, stderr = clustalomega_cline()
+
+                clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                             profile1=self.setuper.in_file,
+                                                             profile2=profile,
+                                                             outfile=outfile,
+                                                             threads=cores_count,
+                                                             verbose=True, auto=True)
+                print("AncestorHandler message : Running {}".format(clustalomega_cline))
+                stdout, stderr = clustalomega_cline()
+                print(stdout)
         return aligned
 
 
