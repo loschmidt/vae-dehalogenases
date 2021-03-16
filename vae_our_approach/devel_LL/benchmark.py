@@ -47,17 +47,8 @@ class Benchmarker:
 
     def make_bench(self):
         marginals_train = self._bench(self.train_data)
-        for m in marginals_train:
-            if m > 1:
-                print("Benchmark Message : Train {} > 1")
         marginals_positive = self._bench(self.positive)
-        for m in marginals_positive:
-            if m > 1:
-                print("Benchmark Message : Pos {} > 1")
         marginals_negative = self._bench(self.negative)
-        for m in marginals_negative:
-            if m > 1:
-                print("Benchmark Message : Neg {} > 1")
         self._store_marginals(marginals_train, marginals_positive, marginals_negative)
 
         mean_p = sum(marginals_positive) / len(marginals_positive)
