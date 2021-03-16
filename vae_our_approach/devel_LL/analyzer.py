@@ -450,24 +450,38 @@ class AncestorsHandler:
                     print(k, ':', alignments[0][2], len(aligned[k]))
         else:
             # Need to do one by one from ancestors
+            import System
+            cores_coutn = System.Environment.ProcessorCount
             file = self.setuper.highlight_files
-            from msa_prepar import MSA
-            m = MSA(self.setuper, processMSA=False)
-            ancs = m.load_msa(file)
-            for k, v in ancs.items():
-                # Create tmp file with individual profiles
-                profile = "profile_{}.fa".format(k)
-                with open(profile, "w") as f:
-                    f.write(">" + k + "\n" + v + "\n")
-                outfile = self.pickle + "/aligned_{}.aln".format(k)
-                clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                             profile1=self.setuper.in_file,
-                                                             profile2=profile,
-                                                             outfile=outfile,
-                                                             verbose=True, auto=True)
-                print("AncestorHandler message : Running {}".format(clustalomega_cline))
-                stdout, stderr = clustalomega_cline()
-                print(stdout)
+            # from msa_prepar import MSA
+            # m = MSA(self.setuper, processMSA=False)
+            # ancs = m.load_msa(file)
+            # for k, v in ancs.items():
+            #     # Create tmp file with individual profiles
+            #     profile = "profile_{}.fa".format(k)
+            #     with open(profile, "w") as f:
+            #         f.write(">" + k + "\n" + v + "\n")
+            # Create profile from sequences to be aligned
+            profile = self.pickle + "/ancestors_align.fasta"
+            clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                         profile1=file,
+                                                         outfile=profile,
+                                                         threads=cores_coutn,
+                                                         verbose=True, auto=True)
+            print("AncestorHandler message : Aligning ancestors ..."
+                  "                          Running {}".format(clustalomega_cline))
+            stdout, stderr = clustalomega_cline()
+
+            outfile = self.pickle + "/aligned_ancestors_to_MSA.aln"
+            clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                         profile1=self.setuper.in_file,
+                                                         profile2=profile,
+                                                         outfile=outfile,
+                                                         threads=cores_coutn,
+                                                         verbose=True, auto=True)
+            print("AncestorHandler message : Running {}".format(clustalomega_cline))
+            stdout, stderr = clustalomega_cline()
+            print(stdout)
         return aligned
 
 
