@@ -454,7 +454,7 @@ class AncestorsHandler:
             from msa_prepar import MSA
             m = MSA(self.setuper, processMSA=False)
             ancs = m.load_msa(file)
-            for k, v in ancs:
+            for k, v in ancs.items():
                 # Create tmp file with individual profiles
                 profile = "profile_{}.fa".format(k)
                 with open(profile, "w") as f:
