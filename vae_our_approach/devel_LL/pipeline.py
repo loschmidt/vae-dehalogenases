@@ -155,11 +155,11 @@ class StructChecker:
                 append_write = 'w'  # make a new file if not
 
             hs = open(filename, append_write)
-            hs.write("Model name {} : weight decay {}, layer {}, Dim {}, C {}, epochs {}".format(self.model_name,
-                                                                                                 self.decay,
-                                                                                                 self.layersString,
-                                                                                                 self.dimensionality,
-                                                                                                 self.C, self.epochs))
+            hs.write("Model name {} : weight decay {}, layer {}, Dim {}, C {}, epochs {}\n".format(self.model_name,
+                                                                                                   self.decay,
+                                                                                                   self.layersString,
+                                                                                                   self.dimensionality,
+                                                                                                   self.C, self.epochs))
             hs.close()
 
     def _setup_RP_run(self):
