@@ -406,38 +406,38 @@ class AncestorsHandler:
         if not msa_align:
             # Do iterative alignment only to query (not optimal solution)
             with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
-            ref = pickle.load(file_handle)
-            ref_name = list(ref.keys())[0]
-            ref_seq = "".join(ref[ref_name])
-            aligned, ref_len = {}, len(ref_seq)
-            i = 0
-            for k in self.sequences.keys():
-                i += 1
-                seq = self.sequences[k]
-                alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
-                best_align = alignments[0][1]
-                if len(seq) > ref_len:
-                    # length of sequence is bigger than ref query, cut sequence on reference query gap positions
-                    print('AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
-                        '                         Sequence amino position'
-                        ' at reference gaps will be removed'.format(len(seq), ref_len))
-                    tmp = ''
-                    len_dif = len(best_align) - ref_len
-                    aligned_query = alignments[0][0]
-                    idx_to_remove = []
-                    # Remove gap positions when occur in both query and aligned sequence
-                    for i in range(len(aligned_query)):
-                        if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
-                            len_dif -= 1
-                            idx_to_remove.append(i)
-                    if len_dif > 0:
-                        # Remove positions where aligned query has gaps
+                ref = pickle.load(file_handle)
+                ref_name = list(ref.keys())[0]
+                ref_seq = "".join(ref[ref_name])
+                aligned, ref_len = {}, len(ref_seq)
+                i = 0
+                for k in self.sequences.keys():
+                    i += 1
+                    seq = self.sequences[k]
+                    alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
+                    best_align = alignments[0][1]
+                    if len(seq) > ref_len:
+                        # length of sequence is bigger than ref query, cut sequence on reference query gap positions
+                        print('AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
+                            '                         Sequence amino position'
+                            ' at reference gaps will be removed'.format(len(seq), ref_len))
+                        tmp = ''
+                        len_dif = len(best_align) - ref_len
+                        aligned_query = alignments[0][0]
+                        idx_to_remove = []
+                        # Remove gap positions when occur in both query and aligned sequence
                         for i in range(len(aligned_query)):
                             if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
                                 len_dif -= 1
                                 idx_to_remove.append(i)
-                            len_dif -= 1
-                    aligned[k] = tmp.join([best_align[i] for i in range(len(best_align)) if i not in idx_to_remove])
+                        if len_dif > 0:
+                            # Remove positions where aligned query has gaps
+                            for i in range(len(aligned_query)):
+                                if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
+                                    len_dif -= 1
+                                    idx_to_remove.append(i)
+                                len_dif -= 1
+                        aligned[k] = tmp.join([best_align[i] for i in range(len(best_align)) if i not in idx_to_remove])
                 else:
                     # try 3 iteration to fit ref query
                     open_gap_pen, gap_pen = -7, -1
