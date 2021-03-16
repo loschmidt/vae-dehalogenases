@@ -464,7 +464,7 @@ class AncestorsHandler:
             #     with open(profile, "w") as f:
             #         f.write(">" + k + "\n" + v + "\n")
             # check if alignment exists
-            outfile = self.pickle + "/aligned_ancestors_to_MSA.aln"
+            outfile = self.pickle + "/aligned_ancestors_to_MSA.fasta"
             if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
                 print('Anlyzer message : Alignement file exists in {}. Using that file.'.format(outfile))
             else:
