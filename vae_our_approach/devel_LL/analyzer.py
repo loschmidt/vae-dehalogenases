@@ -73,15 +73,18 @@ class Highlighter:
                 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             # plt.tight_layout()
             #plt.title(label='Filtered Dataset, Weight = {}'.format(self.setuper.decay))
-            save_path = self.out_dir + name.replace('/', '-') + '{}'.format(self.setuper.model_name) + self.name
+            save_path = self.out_dir + name.replace('/', '-') + '{}_'.format(self.setuper.model_name) + self.name
             print("Class highlighter saving graph to", save_path)
             self.fig.savefig(save_path, bbox_inches='tight')
 
-    def highlight_mutants(self, ancs, names, mutants, file_name='mutants', focus=False):
-        colors = ['salmon', 'tomato', 'coral', 'orangered', 'chocolate', 'sienna']
+    def highlight_mutants(self, ancs, names, mutants, mut_names=None, file_name='mutants', focus=False):
+        colors = ['green', 'red', 'salmon', 'blue', 'coral', 'chocolate', 'tomato', 'orangered', 'sienna']
         self.plt = self._init_plot()
+        # Check if names at mutants are given, otherwise init them
+        if mut_names is None:
+            mut_names = ['' for _ in range(len(mutants))]
         for i, m in enumerate(mutants):
-            self._highlight(name='', high_data=m, wait=True, no_init=True, color=colors[i % len(colors)])
+            self._highlight(name=mut_names[i], high_data=m, wait=True, no_init=True, color=colors[i % len(colors)])
         self._highlight(name=names, high_data=ancs, no_init=True, file_name=file_name, one_by_one=True, focus=focus)
 
     def highlight_file(self, file_name, wait=False):

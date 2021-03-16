@@ -12,7 +12,7 @@ import os
 
 from download_MSA import Downloader
 from pipeline import StructChecker
-from analyzer import VAEHandler
+from analyzer import VAEHandler, Highlighter
 from matplotlib import pyplot as plt
 from msa_prepar import MSA
 from msa_filter_scorer import MSAFilterCutOff as BinaryCovertor
@@ -294,12 +294,22 @@ if __name__ == '__main__':
     # Prepare straight ancestors for making its distribution
     from mutagenesis import MutagenesisGenerator as Mutagenesis
     mut = Mutagenesis(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
-    _, _, probs = mut.get_straight_ancestors()
+    _, ancs, probs = mut.get_straight_ancestors()
 
     b = Benchmarker(positive, train_set, tar_dir, generate_negative=True, ancestor_probs=probs)
     #b.test_loglikelihood()
     b.model_generative_ability(train_set)
     b.make_bench()
+    # Highlight training , positive, straight ancestors and negative control
+    neg_mus, _ = b.prepareMusSigmas(b.negative)
+    tr_subset_mus, _ = b.prepareMusSigmas(b.train_data)
+    pos_mus, _ = b.prepareMusSigmas(b.positive)
+    anc_npa = np.asarray(ancs, dtype=np.float32)[0::10, :] # Subsampling
+    mut_names = ['Positive', 'Negative', 'Training', 'Ancestors']
+
+    h = Highlighter(tar_dir)
+    h.highlight_mutants([], [], mutants=[pos_mus, neg_mus, tr_subset_mus, anc_npa], mut_names=mut_names,
+                        file_name='BenchmarkSets')
     # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:
     #     train_set = pickle.load(file_handle)
     # iden = np.identity(train_set.shape[2])
