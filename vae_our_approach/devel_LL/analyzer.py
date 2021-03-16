@@ -450,8 +450,8 @@ class AncestorsHandler:
                     print(k, ':', alignments[0][2], len(aligned[k]))
         else:
             # Need to do one by one from ancestors
-            import System
-            cores_coutn = System.Environment.ProcessorCount
+            import multiprocessing
+            cores_count = multiprocessing.cpu_count()
             file = self.setuper.highlight_files
             # from msa_prepar import MSA
             # m = MSA(self.setuper, processMSA=False)
@@ -466,7 +466,7 @@ class AncestorsHandler:
             clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
                                                          profile1=file,
                                                          outfile=profile,
-                                                         threads=cores_coutn,
+                                                         threads=cores_count,
                                                          verbose=True, auto=True)
             print("AncestorHandler message : Aligning ancestors ..."
                   "                          Running {}".format(clustalomega_cline))
@@ -477,7 +477,7 @@ class AncestorsHandler:
                                                          profile1=self.setuper.in_file,
                                                          profile2=profile,
                                                          outfile=outfile,
-                                                         threads=cores_coutn,
+                                                         threads=cores_count,
                                                          verbose=True, auto=True)
             print("AncestorHandler message : Running {}".format(clustalomega_cline))
             stdout, stderr = clustalomega_cline()
