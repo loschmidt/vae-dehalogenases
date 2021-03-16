@@ -465,20 +465,23 @@ class AncestorsHandler:
             # check if alignment exists
             outfile = self.pickle + "/aligned_ancestors_to_MSA.aln"
             if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
-                print('Anlyzer message : Alignement file exists in {}. Loading that file.'.format(outfile))
+                print('Anlyzer message : Alignement file exists in {}. Using that file.'.format(outfile))
                 # with open(outfile, 'r') as file_handle:
                 #     profile = pickle.load(file_handle)
             else:
                 # Create profile from sequences to be aligned
                 profile = self.pickle + "/ancestors_align.fasta"
-                clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                             infile=file,
-                                                             outfile=profile,
-                                                             threads=cores_count,
-                                                             verbose=True, auto=True)
-                print("AncestorHandler message : Aligning ancestors ...\n"
-                      "                          Running {}".format(clustalomega_cline))
-                stdout, stderr = clustalomega_cline()
+                if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
+                    print('Analyzer message : Alignment of ancestors exists in {}. Using that file.'.format(outfile))
+                else:
+                    clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                                 infile=file,
+                                                                 outfile=profile,
+                                                                 threads=cores_count,
+                                                                 verbose=True, auto=True)
+                    print("AncestorHandler message : Aligning ancestors ...\n"
+                          "                          Running {}".format(clustalomega_cline))
+                    stdout, stderr = clustalomega_cline()
 
                 clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
                                                              profile1=self.setuper.in_file,
