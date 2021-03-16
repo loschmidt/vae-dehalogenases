@@ -464,11 +464,11 @@ class AncestorsHandler:
             # Create profile from sequences to be aligned
             profile = self.pickle + "/ancestors_align.fasta"
             clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                         profile1=file,
+                                                         infile=file,
                                                          outfile=profile,
                                                          threads=cores_count,
                                                          verbose=True, auto=True)
-            print("AncestorHandler message : Aligning ancestors ..."
+            print("AncestorHandler message : Aligning ancestors ...\n"
                   "                          Running {}".format(clustalomega_cline))
             stdout, stderr = clustalomega_cline()
 
