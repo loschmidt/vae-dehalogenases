@@ -409,8 +409,8 @@ class AncestorsHandler:
                       '                         Sequence amino position'
                       ' at reference gaps will be removed'.format(len(seq), ref_len))
                 tmp = ''
-                len_dif = len(seq) - ref_len
-                aligned_query = best_align[0][0]
+                len_dif = len(best_align) - ref_len
+                aligned_query = alignments[0][0]
                 idx_to_remove = []
                 # Remove gap positions when occur in both query and aligned sequence
                 for i in range(len(aligned_query)):
@@ -422,11 +422,12 @@ class AncestorsHandler:
                     for i in range(len(aligned_query)):
                         if aligned_query[i] == '-' and i not in idx_to_remove and len_dif > 0:
                             idx_to_remove.append(i)
-                aligned[k] = tmp.join([best_align[i] for i in range(len(seq)) if i not in idx_to_remove])
+                            len_dif -= 1
+                aligned[k] = tmp.join([best_align[i] for i in range(len(best_align)) if i not in idx_to_remove])
             else:
                 # try 3 iteration to fit ref query
                 open_gap_pen, gap_pen = -7, -1
-                while len(best_align) > ref_len and gap_pen > -7:
+                while len(best_align) > ref_len:
                     open_gap_pen, gap_pen = open_gap_pen - 1, gap_pen - 1
                     alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
                     best_align = alignments[0][1]
