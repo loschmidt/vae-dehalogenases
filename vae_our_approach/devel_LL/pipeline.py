@@ -39,6 +39,7 @@ class StructChecker:
         self.highlight_instricts = self.args.highlight_dim
 
         self.in_file = self.args.in_file
+        self.clustalo_path = self.args.clustalo_path
 
         # Layer string for distinguishing model
         s_layers = 'L'
@@ -134,6 +135,8 @@ class StructChecker:
                                                                        " dimensionality argument. Example 2 3 ")
         parser.add_argument('--model_name', type=str, default='',
                             help="Give name to the model to better recognize its setup.")
+        parser.add_argument('--clustalo_path', type=str, default='~/bin/clustalo',
+                            help="Setup path to the clustal omega binary. Default is mine ./bin/clustao")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))

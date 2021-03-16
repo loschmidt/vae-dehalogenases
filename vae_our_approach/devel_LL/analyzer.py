@@ -2,6 +2,7 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/07/18 09:33:12"
 
 from Bio import pairwise2
+from Bio.Align.Applications import ClustalOmegaCommandline
 from download_MSA import Downloader
 from pipeline import StructChecker
 from torch.utils.data import Dataset, DataLoader
@@ -394,48 +395,67 @@ class AncestorsHandler:
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
 
-    def align_to_ref(self):
-        with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
-            ref = pickle.load(file_handle)
-        ref_name = list(ref.keys())[0]
-        ref_seq = "".join(ref[ref_name])
-        aligned, ref_len = {}, len(ref_seq)
-        i = 0
-        for k in self.sequences.keys():
-            i += 1
-            seq = self.sequences[k]
-            alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
-            best_align = alignments[0][1]
-            if len(seq) > ref_len:
-                # length of sequence is bigger than ref query, cut sequence on reference query gap positions
-                print('AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
-                      '                         Sequence amino position'
-                      ' at reference gaps will be removed'.format(len(seq), ref_len))
-                tmp = ''
-                len_dif = len(seq) - ref_len
-                aligned_query = best_align[0][0]
-                idx_to_remove = []
-                # Remove gap positions when occur in both query and aligned sequence
-                for i in range(len(aligned_query)):
-                    if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
-                        len_dif -= 1
-                        idx_to_remove.append(i)
-                if len_dif > 0:
-                    # Remove positions where aligned query has gaps
+    def align_to_ref(self, msa_align=True):
+        '''
+            Align sequences to original MSA and then apply
+            the same position removal as in MSA processing.
+            In the case of msa_align False do iterative alignment
+            to only query sequence. This may not be optimal solution
+        '''
+        aligned = {}
+        if not msa_align:
+            # Do iterative alignment only to query (not optimal solution)
+            with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
+                ref = pickle.load(file_handle)
+            ref_name = list(ref.keys())[0]
+            ref_seq = "".join(ref[ref_name])
+            ref_len = len(ref_seq)
+            i = 0
+            for k in self.sequences.keys():
+                i += 1
+                seq = self.sequences[k]
+                alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
+                best_align = alignments[0][1]
+                if len(seq) > ref_len:
+                    # length of sequence is bigger than ref query, cut sequence on reference query gap positions
+                    print('AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
+                          '                         Sequence amino position'
+                          ' at reference gaps will be removed'.format(len(seq), ref_len))
+                    tmp = ''
+                    len_dif = len(seq) - ref_len
+                    aligned_query = best_align[0][0]
+                    idx_to_remove = []
+                    # Remove gap positions when occur in both query and aligned sequence
                     for i in range(len(aligned_query)):
-                        if aligned_query[i] == '-' and i not in idx_to_remove and len_dif > 0:
+                        if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
+                            len_dif -= 1
                             idx_to_remove.append(i)
-                aligned[k] = tmp.join([best_align[i] for i in range(len(seq)) if i not in idx_to_remove])
-            else:
-                # try 3 iteration to fit ref query
-                open_gap_pen, gap_pen = -7, -1
-                while len(best_align) > ref_len and gap_pen > -7:
-                    open_gap_pen, gap_pen = open_gap_pen - 1, gap_pen - 1
-                    alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
-                    best_align = alignments[0][1]
-                aligned[k] = alignments[0][1]
-            if self.setuper.stats:
-                print(k, ':', alignments[0][2], len(aligned[k]))
+                    if len_dif > 0:
+                        # Remove positions where aligned query has gaps
+                        for i in range(len(aligned_query)):
+                            if aligned_query[i] == '-' and i not in idx_to_remove and len_dif > 0:
+                                idx_to_remove.append(i)
+                    aligned[k] = tmp.join([best_align[i] for i in range(len(seq)) if i not in idx_to_remove])
+                else:
+                    # try 3 iteration to fit ref query
+                    open_gap_pen, gap_pen = -7, -1
+                    while len(best_align) > ref_len and gap_pen > -7:
+                        open_gap_pen, gap_pen = open_gap_pen - 1, gap_pen - 1
+                        alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
+                        best_align = alignments[0][1]
+                    aligned[k] = alignments[0][1]
+                if self.setuper.stats:
+                    print(k, ':', alignments[0][2], len(aligned[k]))
+        else:
+            outfile = self.pickle + "/aligned_{}".format((self.setuper.highlight_files.split('/')[-1]).split('.')[0])
+            clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                         profile1=self.setuper.in_file,
+                                                         profile2=self.setuper.highlight_files,
+                                                         outfile=outfile,
+                                                         verbose=True, auto=True)
+            print("AncestorHandler message : Running {}".format(clustalomega_cline))
+            stdout, stderr = clustalomega_cline()
+            print(stdout)
         return aligned
 
 
