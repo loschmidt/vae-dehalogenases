@@ -452,11 +452,12 @@ class AncestorsHandler:
         else:
             # Need to do one by one from ancestors
             import multiprocessing
-            cores_count = min(multiprocessing.cpu_count(), 64)
+            cores_count = min(multiprocessing.cpu_count(), 8)
             file = self.setuper.highlight_files
-            # from msa_prepar import MSA
-            # m = MSA(self.setuper, processMSA=False)
-            # ancs = m.load_msa(file)
+            from msa_prepar import MSA
+            m = MSA(self.setuper, processMSA=False)
+            ancs = m.load_msa(file)
+            ancestral_names = list(ancs.keys())
             # for k, v in ancs.items():
             #     # Create tmp file with individual profiles
             #     profile = "profile_{}.fa".format(k)
@@ -466,8 +467,6 @@ class AncestorsHandler:
             outfile = self.pickle + "/aligned_ancestors_to_MSA.aln"
             if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
                 print('Anlyzer message : Alignement file exists in {}. Using that file.'.format(outfile))
-                # with open(outfile, 'r') as file_handle:
-                #     profile = pickle.load(file_handle)
             else:
                 # Create profile from sequences to be aligned
                 profile = self.pickle + "/ancestors_align.fasta"
@@ -492,6 +491,12 @@ class AncestorsHandler:
                 print("AncestorHandler message : Running {}".format(clustalomega_cline))
                 stdout, stderr = clustalomega_cline()
                 print(stdout)
+            with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
+                pos_idx = pickle.load(file_handle)
+            # Find sequences from file and process them in the same way as during MSA processing
+            alignment = m.load_msa(outfile)
+            for name in ancestral_names:
+                aligned[name] = [item for i, item in enumerate(alignment[name]) if i in pos_idx]
         return aligned
 
 
