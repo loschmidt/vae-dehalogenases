@@ -471,8 +471,8 @@ class AncestorsHandler:
             else:
                 # Create profile from sequences to be aligned
                 profile = self.pickle + "/ancestors_align.fasta"
-                if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
-                    print('Analyzer message : Alignment of ancestors exists in {}. Using that file.'.format(outfile))
+                if os.path.exists(profile) and os.path.getsize(profile) > 0:
+                    print('Analyzer message : Alignment of ancestors exists in {}. Using that file.'.format(profile))
                 else:
                     clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
                                                                  infile=file,
