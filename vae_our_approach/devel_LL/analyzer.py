@@ -458,11 +458,6 @@ class AncestorsHandler:
             m = MSA(self.setuper, processMSA=False)
             ancs = m.load_msa(file)
             ancestral_names = list(ancs.keys())
-            # for k, v in ancs.items():
-            #     # Create tmp file with individual profiles
-            #     profile = "profile_{}.fa".format(k)
-            #     with open(profile, "w") as f:
-            #         f.write(">" + k + "\n" + v + "\n")
             # check if alignment exists
             outfile = self.pickle + "/aligned_ancestors_to_MSA.fasta"
             if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
@@ -517,5 +512,5 @@ if __name__ == '__main__':
         names = tar_dir.highlight_seqs.split()
         for n in names:
             highlighter.highlight_name(name=n)
-    if tar_dir.highlight_instricts is not None:
+    if tar_dir.highlight_instricts:
         highlighter.plot_instrict_dimensions(mus)
