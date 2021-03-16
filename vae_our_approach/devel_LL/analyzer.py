@@ -449,15 +449,25 @@ class AncestorsHandler:
                 if self.setuper.stats:
                     print(k, ':', alignments[0][2], len(aligned[k]))
         else:
-            outfile = self.pickle + "/aligned_{}".format((self.setuper.highlight_files.split('/')[-1]).split('.')[0])
-            clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                         profile1=self.setuper.in_file,
-                                                         profile2=self.setuper.highlight_files,
-                                                         outfile=outfile,
-                                                         verbose=True, auto=True)
-            print("AncestorHandler message : Running {}".format(clustalomega_cline))
-            stdout, stderr = clustalomega_cline()
-            print(stdout)
+            # Need to do one by one from ancestors
+            file = self.setuper.highlight_files
+            from msa_prepar import MSA
+            m = MSA(self.setuper, processMSA=False)
+            ancs = m.load_msa(file)
+            for k, v in ancs:
+                # Create tmp file with individual profiles
+                profile = "profile_{}.fa".format(k)
+                with open(profile, "w") as f:
+                    f.write(">" + k + "\n" + v + "\n")
+                outfile = self.pickle + "/aligned_{}.aln".format(k)
+                clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                             profile1=self.setuper.in_file,
+                                                             profile2=profile,
+                                                             outfile=outfile,
+                                                             verbose=True, auto=True)
+                print("AncestorHandler message : Running {}".format(clustalomega_cline))
+                stdout, stderr = clustalomega_cline()
+                print(stdout)
         return aligned
 
 
