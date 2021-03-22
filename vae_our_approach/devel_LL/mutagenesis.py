@@ -1,7 +1,7 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/09/03 09:36:00"
 
-from analyzer import VAEHandler, Highlighter
+from analyzer import VAEHandler, Highlighter, AncestorsHandler
 from msa_filter_scorer import MSAFilterCutOff as Convertor
 from msa_prepar import MSA
 from pipeline import StructChecker
@@ -174,6 +174,19 @@ class MutagenesisGenerator:
         self._store_in_fasta_csv(ancestors_to_store, to_file=file_name, probs=probs, coords=to_highlight)
         return list(ancestors_to_store.keys()), to_highlight, probs
 
+    def measure_probability_given_ancestors(self):
+        '''Measure probability of ancestors given in file'''
+        if self.setuper.align:
+            ancestors = MSA(setuper=self.setuper, processMSA=False).load_msa(file=self.setuper.highlight_files)
+            ancestors = AncestorsHandler(setuper=self.setuper, seq_to_align=ancestors).align_to_ref()
+            probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors)
+            file_name = '{}sebestova_ancestors.fasta'.format(self.setuper.model_name)
+            self._store_in_fasta_csv(ancestors, to_file=file_name, probs=probs, coords=[(0.0, 0.0) for _ in probs])
+            return probs, list(ancestors.keys())
+        else:
+            print("Mutagenesis message : Ancestor's probabilities measurement - not given file and align option ")
+            return [], []
+
     def dynamic_system(self, beta=None):
         """Ancestor reconstruction is made not straightly
          but by dynamic system described by formula:
@@ -184,7 +197,7 @@ class MutagenesisGenerator:
                     in the gaussian space around current point
             beta  - the size of step
         """
-        CENTER_THRESHOLD = 0.01
+        CENTER_THRESHOLD = 0.2
         BETA = beta if beta is not None else self.setuper.dyn_beta
 
         ancestors = []
@@ -214,7 +227,7 @@ class MutagenesisGenerator:
         dist_to_center = sqrt(mean[0]**2 + mean[1]**2)
         iterations = 1
         ancestors.append(mean.copy())
-        while dist_to_center > CENTER_THRESHOLD and iterations < 300:
+        while dist_to_center > CENTER_THRESHOLD and iterations < 12:
             # select for weighting points from reasonable surroundings
             start, end = next((x for x, val in enumerate(mus_x_sort) if val[0] > mean[0]-1), 0), \
                              next((x for x, val in enumerate(mus_x_sort) if val[0] > mean[0]+1), len(mus_x_sort))
@@ -226,20 +239,42 @@ class MutagenesisGenerator:
             selected = selected[start: end]
             # Weighted coordinates influence
             alpha_x, alpha_y = 0, 0
+            maxx, mayy = (-1000000, 0, 0, 0,0), (-10000000,0,0,0,0)
+            cnt = 0
+            print('mean', mean)
+            #print('alpha_X              alpha_y')
             for x, y in selected:
                 # Transform points to 0, 0 mean normal distribution
                 x, y = x - mean[0], y - mean[1]
                 p_prob = weightor.pdf([x, y])
                 alpha_x += x * p_prob
                 alpha_y += y * p_prob
+                #print(alpha_x, '(+{})'.format(x * p_prob), '\t', alpha_y, '(+{})'.format(y * p_prob))
+                if x * p_prob > maxx[0]:
+                    maxx = (x * p_prob, cnt, x, y, p_prob)
+                if y * p_prob > mayy[0]:
+                    mayy = (y * p_prob, cnt, x, y, p_prob)
+                cnt += 1
+            import matplotlib.pyplot as plt
+            self.fig, ax = plt.subplots()
+            ax.plot([a[0] for a in selected], [a[1] for a in selected], '.', alpha=0.1, markersize=3, label='full')
+            ax.plot(mean[0], mean[1], '.', alpha=1, markersize=3, label='full', color='red')
+            ax.set_xlim([-6, 6])
+            ax.set_ylim([-6, 6])
+            plt.show()
             ## TODO diky normalizaci nemaji jine body vliv a sgn ma vliv solve it 
-            #alpha_x, alpha_y = alpha_x / len(selected), alpha_y / len(selected)
+            alpha_x, alpha_y = alpha_x / len(selected), alpha_y / len(selected)
             # apply formulas for dynamic system x(t+1) = beta(-sgn(x(t)) + alpha_x)
-            mean[0] += BETA * (-np.sign(mean[0]) + alpha_x)
-            mean[1] += BETA * (-np.sign(mean[1]) + alpha_y)
+            mean[0] += BETA * (-np.sign(mean[0])) + alpha_x
+            mean[1] += BETA * (-np.sign(mean[1])) + alpha_y
+            print('mean is :', mean, 'length', len(selected))
+            print('alphaX',alpha_x, maxx)
+            print('alphaY', alpha_y, mayy)
+            #weightor = norm(mean=mean, cov=cov)
             dist_to_center = sqrt(mean[0] ** 2 + mean[1] ** 2)
             iterations += 1
             ancestors.append(mean.copy())
+        exit(0)
         ancestors_to_store = self.handler.decode_sequences_VAE(ancestors, self.cur_name)
         probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(ancestors_to_store)
         self._store_in_fasta_csv(ancestors_to_store, to_file='dynamic_system_{}.fasta'.format(str(BETA)), probs=probs,coords=ancestors)
@@ -303,9 +338,11 @@ if __name__ == '__main__':
     #     h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
     # mut.store_ancestors_in_fasta(names)
     names, ancestors, probs = mut.get_straight_ancestors()
+    given_anc_probs, given_anc_names = mut.measure_probability_given_ancestors()
     #h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
     h = Highlighter(tar_dir)
     h.plot_probabilities(probs, ancestors)
+    h.plot_straight_probs_against_ancestors(probs, given_anc_probs, given_anc_names)
     # betas = [0.20, 0.15, 0.1, 0.05, 0.08, 0.03]
     # betas = [0.25]
     # for beta in betas:

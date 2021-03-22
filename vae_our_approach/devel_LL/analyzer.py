@@ -107,6 +107,7 @@ class Highlighter:
         self._highlight(name=name, high_data=data, no_init=True)
 
     def plot_probabilities(self, probs, ancestors, dynamic=False, file_notion=''):
+        '''This method plots probabilities of sequences into three plots.'''
         ratios = [9, 3, 5] if self.setuper.align else [6, 1]
         cnt_plot = 3 if self.setuper.align else 2
         fig, ax = plt.subplots(cnt_plot, 1, gridspec_kw={'height_ratios': ratios})
@@ -161,6 +162,26 @@ class Highlighter:
                                                                                 file_notion,
                                                                                 self.setuper.model_name)
         print("Class highlighter saving probability plot to", save_path)
+        fig.savefig(save_path, bbox_inches='tight')
+
+    def plot_straight_probs_against_ancestors(self, straight, ancs_probs, ancs_names):
+        ''' Method is creating plot as bot line with horizontal lines of anc to include
+            probabilities of ancestors given by file. '''
+        fig, ax = plt.subplots(1, 1)
+        ax[0].plot(list(range(len(straight))), straight, 'bo', list(range(len(straight))), straight, 'k')
+        ax[0].set_xlabel("$Sequence number$")
+        ax[0].set_ylabel("$Probability$")
+
+        colors = ['green', 'red', 'salmon', 'coral', 'chocolate', 'orangered', 'sienna']
+
+        i = 0
+        for anc, n in zip(ancs_probs, ancs_names):
+            ax[0].hlines(y=anc, xmin=0, xmax=len(straight), linewidth=1, color=colors[i])
+            ax.text(len(straight)+2, anc, n, ha='right', va='center')
+            i += 1
+
+        save_path = self.out_dir + 'Sebestova_probs_{}.png'.format(self.setuper.model_name)
+        print("Class highlighter saving aligned given ancestral sequences probability plot to", save_path)
         fig.savefig(save_path, bbox_inches='tight')
 
     def _name_match(self, names):
@@ -450,7 +471,7 @@ class AncestorsHandler:
                 if self.setuper.stats:
                     print(k, ':', alignments[0][2], len(aligned[k]))
         else:
-            # Need to do one by one from ancestors
+            # Align sequences to the profile of original MSA and filter by same protocol
             import multiprocessing
             cores_count = min(multiprocessing.cpu_count(), 8)
             file = self.setuper.highlight_files
