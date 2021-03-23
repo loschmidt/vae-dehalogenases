@@ -96,7 +96,6 @@ class Train:
 
             train_idx = np.array(list(set(range(self.num_seq)) - set(validation_idx)))
             train_idx.sort()
-            print("Count idexs", train_idx.shape, num_seq_subset, len(idx_subset), k, self.num_seq)
 
             train_msa = torch.from_numpy(self.seq_msa_binary[train_idx,])
             if self.use_cuda:
@@ -127,7 +126,6 @@ class Train:
 
             if self.setuper.robustness_train is not None:
                 # Save it to the special name
-                print("SAving just for fun", self.setuper.model_name)
                 torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/{}.model".format(self.setuper.model_name))
 
             print("Finish the {}th fold training".format(k))
