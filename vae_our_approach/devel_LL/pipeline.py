@@ -41,6 +41,9 @@ class StructChecker:
         self.in_file = self.args.in_file
         self.clustalo_path = self.args.clustalo_path
 
+        self.robustness_train = self.args.robustness_train
+        self.robustness_measure = self.args.robustness_measure
+
         # Layer string for distinguishing model
         s_layers = 'L'
         self.layers = []
@@ -137,6 +140,12 @@ class StructChecker:
                             help="Give name to the model to better recognize its setup.")
         parser.add_argument('--clustalo_path', type=str, default='/storage/brno2/xkohou15/bin/clustalo',
                             help="Setup path to the clustal omega binary. Default is mine ./bin/clustao")
+        parser.add_argument('--robustness_train', action='store_true', default=False,
+                            help="Option to run just one train fold validation for robustness purposes.\n"
+                                 "It is used with robustness class which inthis mode run batch scripts in cluster.")
+        parser.add_argument('--robustness_measure', action='store_true', default=False,
+                            help="Option for robustness class. Run with this option in case you want measure \n"
+                                 "the deviations from referent model with name VAE_rob_0")
         args = parser.parse_args()
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))

@@ -57,14 +57,31 @@ class Train:
 
         ## the following list holds the elbo values on validation data
         elbo_all_list = []
+
+        # Count of validations run is for robustness just one
+        K = 1 if self.setuper.robustness_train else self.K
         
-        for k in range(self.K):
+        for k in range(K):
             print("Start the {}th fold training".format(k))
             print("-" * 60)
 
             ## build a VAE model with random parameters
             vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type, self.setuper.layers)
-            
+
+            ## random initialization of weights in the case of robsutness
+            if self.setuper.robustness_train:
+                import torch.nn as nn
+                from random import random, seed
+                import time
+                seed(time.time())
+                spread = 1.5
+                for en_layer, dec_layer in zip(vae.encoder_linears, vae.decoder_linears):
+                    nn.init.normal_(en_layer.weight, mean=0.0, std=random() * spread)
+                    nn.init.normal_(dec_layer.weight, mean=0.0, std=random() * spread)
+                nn.init.normal_(vae.encoder_mu.weight, mean=0.0, std=random() * spread)
+                nn.init.normal_(vae.encoder_logsigma.weight, mean=0.0, std=random() * spread)
+                print("Train message : random weights init")
+
             ## move the VAE onto a GPU
             if self.use_cuda:
                 vae.cuda()
@@ -79,6 +96,7 @@ class Train:
 
             train_idx = np.array(list(set(range(self.num_seq)) - set(validation_idx)))
             train_idx.sort()
+            print("Count idexs", train_idx.shape, num_seq_subset, len(idx_subset), k, self.num_seq)
 
             train_msa = torch.from_numpy(self.seq_msa_binary[train_idx,])
             if self.use_cuda:
@@ -106,6 +124,11 @@ class Train:
             torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}_{}.model".format(
                 str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality),
                 self.setuper.layersString))
+
+            if self.setuper.robustness_train is not None:
+                # Save it to the special name
+                print("SAving just for fun", self.setuper.model_name)
+                torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/{}.model".format(self.setuper.model_name))
 
             print("Finish the {}th fold training".format(k))
             print("=" * 60)
@@ -169,4 +192,7 @@ if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     Downloader(tar_dir)
-    Train(tar_dir, benchmark=True).train()
+    if tar_dir.robustness_train is None:
+        Train(tar_dir, benchmark=True).train()
+    else:
+        Train(tar_dir, benchmark=False).train()
