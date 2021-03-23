@@ -99,12 +99,14 @@ class Train:
         validation_loss_list = []
 
         epoch = 0
-        epoch_cond_list = [False, False, False]
+        epoch_cond_list = 3 * [False]
         last_progress_elbo = float("inf")
-        errors_accepted = 10
+        errors_accepted = 100 # Take last 100 samples from array epochs
+        err_frac = 0.8 # 80 percent error tolerance along last 100 validations
 
-        ## Last 3 validations has to have worse value than last one in progress
-        while not all(epoch_cond_list[-errors_accepted:]):
+        # More than 80 % (80 iterations) of last validations have to be worse than
+        # the last successful learning step to quit validation and determine correct
+        while not (sum(epoch_cond_list[-errors_accepted:]) > err_frac * errors_accepted):
             loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight, self.setuper.C)
             optimizer.zero_grad()
             loss.backward()
