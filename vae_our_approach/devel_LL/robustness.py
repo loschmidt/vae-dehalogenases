@@ -56,8 +56,9 @@ class Robustness:
         print("Robustness message : initialization of {} models training".format(model_cnt))
 
         for name in model_names:
-            cmd = 'qsub -v c="{}" run_scripts/robustness_train.sh'.format(name)
-            os.system('qsub -v name=${'+ name +'} params_pipe.sh')
+            cmd = 'qsub -v name="{}" ./run_scripts/robustness_train.sh'.format(name)
+            print("Robustness message : running cmd", cmd)
+            os.system(cmd)
 
     def robustness_measure(self):
         pass
