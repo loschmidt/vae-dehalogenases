@@ -33,8 +33,8 @@ class Robustness:
         TRAIN = 0
         MEASURE = 1
 
-        self.mode = TRAIN if self.setuper.robustness_train is not None else 0
-        self.mode = MEASURE if self.setuper.robustness_measure is not None else 0
+        self.mode = TRAIN if self.setuper.robustness_train else 0
+        self.mode = MEASURE if self.setuper.robustness_measure else 0
         
         if self.mode == TRAIN:
             self.robustness_train()

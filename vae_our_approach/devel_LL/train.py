@@ -124,7 +124,7 @@ class Train:
                 str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality),
                 self.setuper.layersString))
 
-            if self.setuper.robustness_train is not None:
+            if self.setuper.robustness_train:
                 # Save it to the special name
                 torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/{}.model".format(self.setuper.model_name))
 
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     Downloader(tar_dir)
-    if tar_dir.robustness_train is None:
+    if tar_dir.robustness_train:
         Train(tar_dir, benchmark=True).train()
     else:
         Train(tar_dir, benchmark=False).train()
