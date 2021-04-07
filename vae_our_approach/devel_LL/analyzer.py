@@ -258,9 +258,10 @@ class Highlighter:
         fig.savefig(save_to)
 
 class VAEHandler:
-    def __init__(self, setuper):
+    def __init__(self, setuper, model_name=None):
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
+        self.model_name = model_name
         self.vae = None
         if torch.cuda.is_available():
             self.use_cuda = True
@@ -280,9 +281,12 @@ class VAEHandler:
 
         ## build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
-        vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_{}_fold_0_C_{}_D_{}_{}.model"
-                                       .format(str(self.setuper.decay), self.setuper.C, self.setuper.dimensionality,
-                                               self.setuper.layersString)))
+        if self.model_name:
+            vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/" + self.model_name))
+        else:
+            vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_{}_fold_0_C_{}_D_{}_{}.model"
+                                           .format(str(self.setuper.decay), self.setuper.C, self.setuper.dimensionality,
+                                                   self.setuper.layersString)))
         # vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}_D_{}.model"
         #                               .format(self.setuper.C, self.setuper.dimensionality)))
         # vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0.model"))
