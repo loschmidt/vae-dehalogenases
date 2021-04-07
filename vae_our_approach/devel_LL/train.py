@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import torch
 import torch.optim as optim
+import os
 
 from pipeline import StructChecker
 from download_MSA import Downloader
@@ -176,6 +177,18 @@ class Train:
 
             with open(self.setuper.pickles_fld + "/elbo_all.pkl", 'wb') as file_handle:
                 pickle.dump(elbo_all, file_handle)
+            # In the case of robustness train save to file value with its final loss
+            # to eliminate badly initiliazed models
+            if self.setuper.robustness_train:
+                filename = self.setuper.pickles_fld + '/ModelsRobustnessLosses.txt'
+                if os.path.exists(filename):
+                    append_write = 'a'  # append if already exists
+                else:
+                    append_write = 'w'  # make a new file if not
+
+                hs = open(filename, append_write)
+                hs.write("Model name,{},loss,{}\n".format(self.setuper.model_name, train_loss_list[-1]))
+                hs.close()
 
     def _load_pickles(self):
         with open(self.setuper.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
