@@ -203,7 +203,7 @@ if __name__ == '__main__':
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     Downloader(tar_dir)
-    if tar_dir.robustness_train:
+    if not tar_dir.robustness_train:
         Train(tar_dir, benchmark=True).train()
     else:
         Train(tar_dir, benchmark=False).train()
