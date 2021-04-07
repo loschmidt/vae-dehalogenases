@@ -18,9 +18,9 @@ from scipy.stats import multivariate_normal as norm
 from torch import tensor
 
 class MutagenesisGenerator:
-    def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2):
+    def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2, model_name=None):
         self.num_mutations = num_point_mut
-        self.handler = VAEHandler(setuper)
+        self.handler = VAEHandler(setuper, model_name=model_name)
         self.threshold = distance_threshold
         self.pickle = setuper.pickles_fld
         self.setuper = setuper
