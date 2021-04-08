@@ -5,6 +5,8 @@ import os
 import pickle
 
 from pipeline import StructChecker
+from analyzer import VAEHandler
+from msa_filter_scorer import MSAFilterCutOff as Convertor
 
 class Robustness:
     """
@@ -18,8 +20,8 @@ class Robustness:
             ii) --robustness_measure option:
                 This mode is run after training of all models have been done. User has to run it on his own
                 it is not automated.
-                It samples straight ancestors from first reference model. These sequences lie on the line
-                in reference model, but where are they located in other models?
+                It samples straight ancestors from REFERENCE model (this model has to be named reference).
+                These sequences lie on the line in reference model, but where are they located in other models?
                 These sequences are then embedded into the latent space of rest set of models and the embedding
                 deviation from line is done.
     """
@@ -61,7 +63,56 @@ class Robustness:
             os.system(cmd)
 
     def robustness_measure(self):
-        pass
+        """ Measure robustness of random weights initialization """
+        models = self._get_successful_models()
+        convector = Convertor(self.setuper)
+        ancestors = self._get_original_straight_ancestors()
+
+        for model in models:
+            # Get positions of straight ancestors in model and compute derivation
+            vae = VAEHandler(self.setuper, model_name=model)
+            binary, weights, keys = convector.prepare_aligned_msa_for_Vae(ancestors)
+            data, _ = vae.propagate_through_VAE(binary, weights, keys)
+            self.compute_deviation(data)
+            del vae
+
+    def compute_deviation(self, points):
+        """
+            Measure how far points of ancestors are from straight line
+            toward center from query position (1st point)
+        """
+
+
+    def _get_original_straight_ancestors(self):
+        """ Loading sequences generated during straight ancestral reconstruction with reference model """
+        filename = self.out_dir + "referencestraight_ancestors.fasta"
+        if not os.path.isfile(filename):
+            print("Robustness message : Not find reference straight ancestors in file", filename)
+            exit(0)
+        from msa_prepar import MSA
+        m = MSA(self.setuper, processMSA=False)
+        ancs = m.load_msa(filename)
+        return ancs
+
+    def _get_successful_models(self, filename="ModelsRobustnessLosses.txt"):
+        """ Parsing file with names of models and select that which were successful"""
+        filename = self.setuper.pickles_fld + '/' + filename
+        model_names = []
+        model_losses = []
+        with open(filename, "r") as file:
+            # Format Model name, NAME, loss, LOSS
+            for l in file:
+                data = l.split(sep=",")
+                model_names.append(data[1])
+                model_losses.append(data[3])
+        print("Robustness message : filtering models by loss success, cnt of models {}".format(len(model_names)))
+        # Model with loss bigger than 3000 is excluded
+        final_models = []
+        for loss, model in zip(model_losses, model_names):
+            if loss > 3000:
+                final_models.append(model)
+        print("Robustness message : {} models left after filtering phase".format(len(final_models)))
+        return final_models
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
