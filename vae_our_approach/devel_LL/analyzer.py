@@ -89,14 +89,14 @@ class Highlighter:
             self._highlight(name=mut_names[i], high_data=m, wait=True, no_init=True, color=colors[i % len(colors)])
         self._highlight(name=names, high_data=ancs, no_init=True, file_name=file_name, one_by_one=True, focus=focus)
 
-    def highlight_line_deviation(self, query_pos, points, mean, maxDev, file_name='robustness_plot'):
+    def highlight_line_deviation(self, query_pos, points, mean, maxDev, loss, file_name='robustness_plot'):
         """ Higlight deviation against line for robustness purposes """
         self.plt = self._init_plot()
         # Draw line for this model from center to query
         x = [0, query_pos[0][0]]
         y = [0, query_pos[0][1]]
         self.plt.plot(x, y, color='orange')
-        self.plt.set_title(r'Deviation stats $\mean={0:.2f}, $\max={1:.2f}$'.format(mean, maxDev))
+        self.plt.title(r'Deviation stats mean={0:.2f}, max={1:.2f}, loss={1:.2f}'.format(mean, maxDev, loss))
         self._highlight(name=file_name, high_data=points, no_init=True, color='red')
 
     def highlight_file(self, file_name, wait=False):
