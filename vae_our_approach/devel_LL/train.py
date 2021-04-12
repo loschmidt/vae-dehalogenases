@@ -137,6 +137,7 @@ class Train:
             print("-" * 60)
             ## evaluate the trained model
             if self.use_cuda:
+                print("Cleaning CUDA cache")
                 torch.cuda.empty_cache()
                 vae.cuda()
 
@@ -144,7 +145,7 @@ class Train:
             ## because the function vae.compute_elbo_with_multiple samples uses
             ## a large amount of memory on GPUs. we have to split validation data
             ## into batches.
-            batch_size = 32
+            batch_size = 20
             num_batches = len(validation_idx) // batch_size + 1
             for idx_batch in range(num_batches):
                 if (idx_batch + 1) % 50 == 0:
