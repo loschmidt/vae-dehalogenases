@@ -5,7 +5,7 @@ import os
 import pickle
 
 from pipeline import StructChecker
-from analyzer import VAEHandler
+from analyzer import VAEHandler, Highlighter
 from msa_filter_scorer import MSAFilterCutOff as Convertor
 
 class Robustness:
@@ -41,6 +41,7 @@ class Robustness:
         if self.mode == TRAIN:
             self.robustness_train()
         else:
+            self.high = Highlighter(setuper)
             self.robustness_measure()
 
     def robustness_train(self):
@@ -67,19 +68,25 @@ class Robustness:
         models = self._get_successful_models()
         convector = Convertor(self.setuper)
         ancestors = self._get_original_straight_ancestors()
+        binary, weights, keys = convector.prepare_aligned_msa_for_Vae(ancestors)
+        # Prepare query sequence
+        with open(self.pickle + "reference_seq.pkl", 'rb') as file_handle:
+            ref_dict = pickle.load(file_handle)
+        query_bin, query_w, query_k = convector.prepare_aligned_msa_for_Vae(ref_dict)
 
         for model in models:
             # Get positions of straight ancestors in model and compute derivation
             vae = VAEHandler(self.setuper, model_name=model)
-            binary, weights, keys = convector.prepare_aligned_msa_for_Vae(ancestors)
+            query_pos, _ = vae.propagate_through_VAE(query_bin, query_w, query_k)
             data, _ = vae.propagate_through_VAE(binary, weights, keys)
-            self.compute_deviation(data)
+            self.compute_deviation(query_pos, data)
+            self.high.highlight_line_deviation(query_pos, data, file_name=model+'_robustPlot')
             del vae
 
-    def compute_deviation(self, points):
+    def compute_deviation(self, query, points):
         """
             Measure how far points of ancestors are from straight line
-            toward center from query position (1st point)
+            toward center from query position.
         """
 
 
@@ -109,7 +116,7 @@ class Robustness:
         # Model with loss bigger than 3000 is excluded
         final_models = []
         for loss, model in zip(model_losses, model_names):
-            if loss > 3000:
+            if loss < 500:
                 final_models.append(model)
         print("Robustness message : {} models left after filtering phase".format(len(final_models)))
         return final_models

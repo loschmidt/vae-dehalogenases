@@ -89,6 +89,15 @@ class Highlighter:
             self._highlight(name=mut_names[i], high_data=m, wait=True, no_init=True, color=colors[i % len(colors)])
         self._highlight(name=names, high_data=ancs, no_init=True, file_name=file_name, one_by_one=True, focus=focus)
 
+    def highlight_line_deviation(self, query_pos, points, file_name='robustness_plot'):
+        """ Higlight deviation against line for robustness purposes """
+        self.plt = self._init_plot()
+        # Draw line for this model from center to query
+        x = [0, query_pos[0]]
+        y = [0, query_pos[1]]
+        self.plt.plot(x, y, color='orange')
+        self._highlight(name=file_name, high_data=points, no_init=True, color='red')
+
     def highlight_file(self, file_name, wait=False):
         msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=file_name)
         name = (file_name.split("/")[-1]).split(".")[0]
