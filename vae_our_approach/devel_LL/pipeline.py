@@ -15,6 +15,7 @@ class StructChecker:
         else:
             self.ref_seq = False
             self.ref_n = ""
+        self.msa_file = ""
         self.keep_gaps = bool(self.args.keep_gaps)
         self.stats = self.args.stats
         self.epochs = self.args.num_epoch
