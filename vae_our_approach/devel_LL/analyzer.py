@@ -96,7 +96,7 @@ class Highlighter:
         x = [0, query_pos[0][0]]
         y = [0, query_pos[0][1]]
         self.plt.plot(x, y, color='orange')
-        self.plt.title(r'Deviation stats mean={0:.2f}, max={1:.2f}, loss={1:.2f}'.format(mean, maxDev, loss))
+        self.plt.set_title(r'Deviation stats mean={0:.2f}, max={1:.2f}, loss={1:.2f}'.format(mean, maxDev, loss))
         self._highlight(name=file_name, high_data=points, no_init=True, color='red')
 
     def highlight_file(self, file_name, wait=False):
