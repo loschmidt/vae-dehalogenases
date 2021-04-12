@@ -121,13 +121,14 @@ class Train:
             ## cope trained model to cpu and save it
             if self.use_cuda:
                 vae.cpu()
-            torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}_{}.model".format(
-                str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality),
-                self.setuper.layersString))
 
             if self.setuper.robustness_train:
                 # Save it to the special name
                 torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/{}.model".format(self.setuper.model_name))
+            else:
+                torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}_{}.model".format(
+                    str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality),
+                    self.setuper.layersString))
 
             print("Finish the {}th fold training".format(k))
             print("=" * 60)
