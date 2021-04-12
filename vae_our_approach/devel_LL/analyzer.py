@@ -93,10 +93,10 @@ class Highlighter:
         """ Higlight deviation against line for robustness purposes """
         self.plt = self._init_plot()
         # Draw line for this model from center to query
-        x = [0, query_pos[0]]
-        y = [0, query_pos[1]]
+        x = [0, query_pos[0][0]]
+        y = [0, query_pos[0][1]]
         self.plt.plot(x, y, color='orange')
-        self.plt.title(r'Deviation stats $\mean={0:.2f}, $\max={1:.2f}$'.format(mean, maxDev))
+        self.plt.set_title(r'Deviation stats $\mean={0:.2f}, $\max={1:.2f}$'.format(mean, maxDev))
         self._highlight(name=file_name, high_data=points, no_init=True, color='red')
 
     def highlight_file(self, file_name, wait=False):
