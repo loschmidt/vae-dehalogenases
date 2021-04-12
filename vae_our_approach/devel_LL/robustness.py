@@ -126,7 +126,7 @@ class Robustness:
             # Format Model name, NAME, loss, LOSS
             for l in file:
                 data = l.split(sep=",")
-                model_names.append(data[1])
+                model_names.append(data[1] + ".model")
                 model_losses.append(data[3])
         print("Robustness message : filtering models by loss success, cnt of models {}".format(len(model_names)))
         # Model with loss bigger than 3000 is excluded
