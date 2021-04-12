@@ -7,6 +7,7 @@ import pickle
 from pipeline import StructChecker
 from analyzer import VAEHandler, Highlighter
 from msa_filter_scorer import MSAFilterCutOff as Convertor
+from math import sqrt
 
 class Robustness:
     """
@@ -25,6 +26,7 @@ class Robustness:
                 These sequences are then embedded into the latent space of rest set of models and the embedding
                 deviation from line is done.
     """
+
     def __init__(self, setuper):
         self.setuper = setuper
         self.out_dir = setuper.high_fld + '/'
@@ -37,7 +39,7 @@ class Robustness:
 
         self.mode = TRAIN if self.setuper.robustness_train else 0
         self.mode = MEASURE if self.setuper.robustness_measure else 0
-        
+
         if self.mode == TRAIN:
             self.robustness_train()
         else:
@@ -79,16 +81,29 @@ class Robustness:
             vae = VAEHandler(self.setuper, model_name=model)
             query_pos, _ = vae.propagate_through_VAE(query_bin, query_w, query_k)
             data, _ = vae.propagate_through_VAE(binary, weights, keys)
-            self.compute_deviation(query_pos, data)
-            self.high.highlight_line_deviation(query_pos, data, file_name=model+'_robustPlot')
+            mean, maxDev = Robustness.compute_deviation(query_pos, data)
+            self.high.highlight_line_deviation(query_pos, data, mean, maxDev, file_name=model + '_robustPlot')
             del vae
 
-    def compute_deviation(self, query, points):
+    @staticmethod
+    def compute_deviation(query, points):
         """
             Measure how far points of ancestors are from straight line
             toward center from query position.
-        """
+            To compute distance of point from line use formula for computation distance
+            from line define by two points in our case by center (0, 0) and query position (query[0], query[1])
 
+            distance(p1,p2, (x0, y0)) =  |(x2 - x1)(y1 - y0) - (x1 - x0)(y2 - y1)| / sqrt((x2 - x1)^2 + (y2 - y1)^2
+        """
+        x1, y1 = (0, 0)
+        x2, y2 = query
+        denominator = sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        deviations = []
+        for x0, y0 in points:
+            v = abs((x2 - x1)*(y1 - y0) - (x1 - x0)*(y2 - y1)) / denominator
+            deviations.append(v)
+        av_dev = sum(deviations) / len(deviations)
+        return av_dev, max(deviations)
 
     def _get_original_straight_ancestors(self):
         """ Loading sequences generated during straight ancestral reconstruction with reference model """
@@ -116,10 +131,11 @@ class Robustness:
         # Model with loss bigger than 3000 is excluded
         final_models = []
         for loss, model in zip(model_losses, model_names):
-            if loss < 500:
+            if float(loss) < 500:
                 final_models.append(model)
         print("Robustness message : {} models left after filtering phase".format(len(final_models)))
         return final_models
+
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
