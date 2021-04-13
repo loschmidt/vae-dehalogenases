@@ -75,7 +75,7 @@ class Train:
                 from random import random, seed
                 import time
                 seed(time.time())
-                spread = 0.6
+                spread = 0.15
                 for en_layer, dec_layer in zip(vae.encoder_linears, vae.decoder_linears):
                     nn.init.normal_(en_layer.weight, mean=0.0, std=random() * spread)
                     nn.init.normal_(dec_layer.weight, mean=0.0, std=random() * spread)
