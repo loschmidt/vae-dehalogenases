@@ -38,11 +38,11 @@ class Curator:
 
     def __init__(self, cmd_hand):
         self.cmd_hand = cmd_hand
-        self.seq_keys = self._load_pickles()
+        #self.seq_keys = self._load_pickles()
         if cmd_hand.txt_path:
-            self.parse_txt()
+            self.mutants, self.temps = self.parse_txt()
         else:
-            self.parse_csv()
+            self.mutants, self.temps = self.parse_csv()
 
     def parse_txt(self):
         """
@@ -72,7 +72,7 @@ class Curator:
                     if line[0] == '>':
                         state = MUT
                     else:
-                        source_seq.extend(list(line))
+                        source_seq.extend(list(line[:-1]))
                     continue
                 if state == MUT:
                     if line[0] == '>':
@@ -82,6 +82,9 @@ class Curator:
                     seq = mutate_seq(source_seq, muts)
                     mutated_seqs[muts] = seq
                     mutated_temp[muts] = float(temp)
+                if state == MUT_FASTA:
+                    pass
+        return mutated_seqs, mutated_temp
 
     def parse_csv(self):
         """
@@ -102,10 +105,14 @@ class Curator:
 def mutate_seq(seq, muts):
     """ mutation format S144F[;S144K]* """
     muts = muts.split(';')
-    mutated = seq
+    mutated = seq.copy()
     for mut in muts:
         pos = int(mut[1:-1])-1
         if seq[pos] != mut[0]:
             print(" Curator warning : {}[{}] vs expected residue by mutation {}".format(seq[pos], pos, mut[0]))
         mutated[pos] = mut[-1]
     return mutated
+
+if __name__ == '__main__':
+    cmd_line = CommandHandler()
+    Curator(cmd_line)
