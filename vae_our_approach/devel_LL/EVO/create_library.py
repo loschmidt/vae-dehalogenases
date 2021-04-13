@@ -16,6 +16,7 @@ class CommandHandler:
         args = self._get_parser()
         self.txt_path = args.source_txt
         self.csv_path = args.source_csv
+        self.pickle_fld = args.pickle_fld
 
     @staticmethod
     def _get_parser():
@@ -37,7 +38,7 @@ class Curator:
 
     def __init__(self, cmd_hand):
         self.cmd_hand = cmd_hand
-        self._load_pickles()
+        self.seq_keys = self._load_pickles()
         if cmd_hand.txt_path:
             self.parse_txt()
         else:
@@ -53,7 +54,34 @@ class Curator:
                 ....
                 ....]+ <- repeated more times
         """
-        pass
+        START = 0
+        LOAD_SRC = 1
+        MUT = 2
+        MUT_FASTA = 3
+
+        source_seq = []
+        mutated_seqs = {}
+        mutated_temp = {}
+        state = START
+        with open(self.cmd_hand.txt_path, "r") as file:
+            for i, line in enumerate(file):
+                if state == START:
+                    state = LOAD_SRC
+                    continue
+                if state == LOAD_SRC:
+                    if line[0] == '>':
+                        state = MUT
+                    else:
+                        source_seq.extend(list(line))
+                    continue
+                if state == MUT:
+                    if line[0] == '>':
+                        state = MUT_FASTA
+                        continue
+                    muts, temp = line.split()[0], line.split()[-1]
+                    seq = mutate_seq(source_seq, muts)
+                    mutated_seqs[muts] = seq
+                    mutated_temp[muts] = float(temp)
 
     def parse_csv(self):
         """
@@ -66,5 +94,18 @@ class Curator:
         pass
 
     def _load_pickles(self):
-        with open(self.setuper.pickles_fld + "/keys_list.pkl", 'rb') as file_handle:
-            self.seq_keys = pickle.load(file_handle)
+        with open(self.cmd_hand.pickles_fld + "/keys_list.pkl", 'rb') as file_handle:
+            seq_keys = pickle.load(file_handle)
+            return seq_keys
+
+
+def mutate_seq(seq, muts):
+    """ mutation format S144F[;S144K]* """
+    muts = muts.split(';')
+    mutated = seq
+    for mut in muts:
+        pos = int(mut[1:-1])-1
+        if seq[pos] != mut[0]:
+            print(" Curator warning : {}[{}] vs expected residue by mutation {}".format(seq[pos], pos, mut[0]))
+        mutated[pos] = mut[-1]
+    return mutated
