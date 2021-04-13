@@ -33,7 +33,7 @@ cd $DATADIR
 
 echo "========================================================================"
 echo "Training model ${NAME}"
-python3 train.py --Pfam_id ${UPDIR} --output_dir ${TARGET} --stats --in_file ./results/PF00561/MSA/identified_targets_msa.fa --num_epoch 16700 --ref P59336_S14 --weight_decay 0.0 --C ${C} --layers ${L} --dimensionality ${D} --model_name ${NAME} --K 10 --robustness_train
+python3 train.py --Pfam_id ${UPDIR} --output_dir ${TARGET} --stats --in_file ./results/PF00561/MSA/identified_targets_msa.fa --num_epoch 16700 --ref P59336_S14 --weight_decay 0.0 --C ${C} --layers ${L} --dimensionality ${D} --model_name ${NAME} --K 5 --robustness_train
 
 echo "Training process is finished" >> $LOGDIR/jobs_info.txt
 # clean the SCRATCH directory
