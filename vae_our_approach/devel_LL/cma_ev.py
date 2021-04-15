@@ -27,6 +27,7 @@ class EvolutionSearch:
         self.curator = Curator(cmd_handler)
         self.setuper = setuper
         self.vae = Vae_encoder(None, None, self.setuper, generate_negative=False)
+        self.out_dir = setuper.high_fld + '/'
 
     def fitness_landscape(self):
         """ Prepare fitness landscape using gaussian processes """
@@ -55,7 +56,9 @@ class EvolutionSearch:
         ax = fig.add_subplot(111)
         ax.pcolormesh(X0p, X1p, Zp)
 
-        plt.show()
+        save_path = self.out_dir + 'fitness_landscape_{}.png'.format(self.setuper.model_name)
+        print(" CMA_EV message : saving landscape fitness to", save_path)
+        plt.savefig(save_path)
 
 if __name__ == "__main__":
     tar_dir = StructChecker()
