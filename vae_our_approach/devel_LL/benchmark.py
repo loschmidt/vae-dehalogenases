@@ -38,7 +38,7 @@ class Benchmarker:
 
         if generate_negative:
             self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
-        self.vae_handler = VAEHandler(setuper)
+        self.vae_handler = VAEHandler(setuper, model_name=setuper.model_name)
         self.binaryConv = BinaryCovertor(self.setuper)
 
         self.ancestors_probs = ancestor_probs
