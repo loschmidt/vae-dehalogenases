@@ -9,6 +9,7 @@ from analyzer import VAEHandler, Highlighter
 from msa_filter_scorer import MSAFilterCutOff as Convertor
 from math import sqrt
 
+
 class Robustness:
     """
         The purpose of this class is to execute robustness measurement of
@@ -79,10 +80,12 @@ class Robustness:
         for model, loss in zip(models, losses):
             # Get positions of straight ancestors in model and compute derivation
             vae = VAEHandler(self.setuper, model_name=model)
+            mu, _, _ = vae.latent_space(check_exists=False)
             query_pos, _ = vae.propagate_through_VAE(query_bin, query_w, query_k)
             data, _ = vae.propagate_through_VAE(binary, weights, keys)
             mean, maxDev = Robustness.compute_deviation(query_pos, data)
-            self.high.highlight_line_deviation(query_pos, data, mean, maxDev, loss, file_name=model + '_robustPlot')
+            self.high.highlight_line_deviation(query_pos, data, mean, maxDev, loss,
+                                               mu, file_name=model + '_robustPlot')
             del vae
 
     @staticmethod
@@ -97,10 +100,10 @@ class Robustness:
         """
         x1, y1 = (0, 0)
         x2, y2 = tuple(query[0])
-        denominator = sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        denominator = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         deviations = []
         for x0, y0 in points:
-            v = abs((x2 - x1)*(y1 - y0) - (x1 - x0)*(y2 - y1)) / denominator
+            v = abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) / denominator
             deviations.append(v)
         av_dev = sum(deviations) / len(deviations)
         return av_dev, max(deviations)
@@ -112,7 +115,7 @@ class Robustness:
             print("Robustness message : Not find reference straight ancestors in file", filename)
             exit(0)
         from msa_prepar import MSA
-        self.setuper.set_msa_file("tmp") # Secure that msa file attribute exists
+        self.setuper.set_msa_file("tmp")  # Secure that msa file attribute exists
         m = MSA(self.setuper, processMSA=False)
         ancs = m.load_msa(filename)
         return ancs
