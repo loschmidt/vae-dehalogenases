@@ -29,7 +29,7 @@ class EvolutionSearch:
         self.vae = Vae_encoder(None, None, self.setuper, generate_negative=False)
         self.out_dir = setuper.high_fld + '/'
 
-    def fitness_landscape(self):
+    def fit_landscape(self):
         """ Prepare fitness landscape using gaussian processes """
         mutants, y = self.curator.get_data()
         binary = self.vae.binaryConv.prepare_aligned_msa_for_Vae(mutants)
@@ -66,3 +66,4 @@ if __name__ == "__main__":
     cmd_line = CommandHandler()
 
     evo = EvolutionSearch(tar_dir, cmd_line)
+    evo.fit_landscape()
