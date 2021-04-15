@@ -96,6 +96,9 @@ class Curator:
         """
         pass
 
+    def get_data(self):
+        return self.mutants, self.temps
+
     def _load_pickles(self):
         with open(self.cmd_hand.pickles_fld + "/keys_list.pkl", 'rb') as file_handle:
             seq_keys = pickle.load(file_handle)
