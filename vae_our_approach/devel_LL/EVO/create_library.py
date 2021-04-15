@@ -27,7 +27,7 @@ class CommandHandler:
                                                                          "simple txt. See txt parsermethod description")
         parser.add_argument("--pickle_fld", type=str, default=None, help="the path to the pickle format with prepare"
                                                                          "training dataset to model")
-        args = parser.parse_args()
+        args, unknown = parser.parse_known_args()
         return args
 
 
