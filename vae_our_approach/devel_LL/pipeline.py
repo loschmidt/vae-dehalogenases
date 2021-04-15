@@ -147,7 +147,10 @@ class StructChecker:
         parser.add_argument('--robustness_measure', action='store_true', default=False,
                             help="Option for robustness class. Run with this option in case you want measure \n"
                                  "the deviations from referent model with name VAE_rob_0")
-        args = parser.parse_args()
+        args, unknown = parser.parse_known_args()
+        if '--source_txt' not in unknown and len(unknown) > 0:
+            print(' Parser error : unrecognized parameters', unknown)
+            exit(1)
         if args.Pfam_id is None:
             print("Error: Pfam_id parameter is missing!! Please run {0} --Pfam_id [Pfam ID]".format(__file__))
             exit(1)
