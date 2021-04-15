@@ -32,7 +32,7 @@ class EvolutionSearch:
     def fit_landscape(self):
         """ Prepare fitness landscape using gaussian processes """
         mutants, y = self.curator.get_data()
-        binary = self.vae.binaryConv.prepare_aligned_msa_for_Vae(mutants)
+        binary, _, _ = self.vae.binaryConv.prepare_aligned_msa_for_Vae(mutants)
         X, _ = self.vae.prepareMusSigmas(binary)
 
         # Input space
