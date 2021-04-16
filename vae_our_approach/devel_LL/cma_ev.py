@@ -41,7 +41,7 @@ class EvolutionSearch:
         fasta.store_ancestors_in_fasta(names=list(mutants.keys()), file_name=file_name)
         print(" Evolutionary search : Mutant library saved to", self.out_dir + file_name)
 
-        self.setuper.highlight_files = file_name
+        self.setuper.highlight_files = self.out_dir + file_name
         mutant_aligned = AncestorsHandler(setuper=self.setuper, seq_to_align=mutants).align_to_ref()
         binary, _, _ = self.vae.binaryConv.prepare_aligned_msa_for_Vae(mutant_aligned)
         X, _ = self.vae.prepareMusSigmas(binary)
