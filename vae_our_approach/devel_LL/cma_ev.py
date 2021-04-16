@@ -13,6 +13,7 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from EVO.create_library import CommandHandler, Curator
 from pipeline import StructChecker
 from benchmark import Benchmarker as Vae_encoder
+from analyzer import AncestorsHandler
 
 
 class EvolutionSearch:
@@ -32,7 +33,8 @@ class EvolutionSearch:
     def fit_landscape(self):
         """ Prepare fitness landscape using gaussian processes """
         mutants, y = self.curator.get_data()
-        binary, _, _ = self.vae.binaryConv.prepare_aligned_msa_for_Vae(mutants)
+        mutant_aligned = AncestorsHandler(setuper=self.setuper, seq_to_align=mutants).align_to_ref()
+        binary, _, _ = self.vae.binaryConv.prepare_aligned_msa_for_Vae(mutant_aligned)
         X, _ = self.vae.prepareMusSigmas(binary)
 
         # Input space
