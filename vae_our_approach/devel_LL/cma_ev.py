@@ -37,9 +37,9 @@ class EvolutionSearch:
         # Store them in the file
         fasta = FastaStore(self.setuper)
         fasta.anc_seqs = list(mutants.values())
-        file_name = self.out_dir + 'thermo_mutant_library.fasta'
+        file_name ='thermo_mutant_library.fasta'
         fasta.store_ancestors_in_fasta(names=list(mutants.keys()), file_name=file_name)
-        print(" Evolutionary search : Mutant library saved to", file_name)
+        print(" Evolutionary search : Mutant library saved to", self.out_dir + file_name)
 
         self.setuper.highlight_files = file_name
         mutant_aligned = AncestorsHandler(setuper=self.setuper, seq_to_align=mutants).align_to_ref()
