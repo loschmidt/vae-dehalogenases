@@ -84,6 +84,9 @@ class Curator:
                     mutated_temp[muts] = float(temp)
                 if state == MUT_FASTA:
                     pass
+            # Add query sequence
+            mutated_seqs["query"] = source_seq
+            mutated_temp["query"] = 0.0
         return mutated_seqs, mutated_temp
 
     def parse_csv(self):
