@@ -54,8 +54,8 @@ class EvolutionSearch:
         # Prepare gaussian process class and fit data
         kernel = C(1.0, (1e-3, 1e3)) * RBF([5, 5], (1e-2, 1e2))
         gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=15)
-
-        gp.fit(X, y)
+        
+        gp.fit(X, list(y.values()))
 
         x1x2 = np.array(list(product(x1, x2)))
         y_pred, MSE = gp.predict(x1x2, return_std=True)
