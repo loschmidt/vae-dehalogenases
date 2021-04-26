@@ -519,7 +519,7 @@ class AncestorsHandler:
                                                                  infile=file,
                                                                  outfile=profile,
                                                                  threads=cores_count,
-                                                                 verbose=True, auto=True)
+                                                                 verbose=True, auto=True, dealign=True)
                     print("AncestorHandler message : Aligning ancestors ...\n"
                           "                          Running {}".format(clustalomega_cline))
                     stdout, stderr = clustalomega_cline()
