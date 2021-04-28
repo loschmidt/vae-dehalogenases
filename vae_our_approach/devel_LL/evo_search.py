@@ -13,7 +13,7 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from EVO.create_library import CommandHandler, Curator
 from pipeline import StructChecker
 from benchmark import Benchmarker as Vae_encoder
-from analyzer import AncestorsHandler
+from analyzer import AncestorsHandler, VAEHandler
 from mutagenesis import MutagenesisGenerator as FastaStore
 
 
@@ -30,9 +30,13 @@ class EvolutionSearch:
         self.setuper = setuper
         self.vae = Vae_encoder(None, None, self.setuper, generate_negative=False)
         self.out_dir = setuper.high_fld + '/'
+        self.handler = VAEHandler(setuper)
 
     def fit_landscape(self):
-        """ Prepare fitness landscape using gaussian processes """
+        """
+        Prepare fitness landscape using gaussian processes
+        return: gp_regressor, mutants mapped to latent space
+        """
         mutants, y = self.curator.get_data()
         # Store them in the file
         fasta = FastaStore(self.setuper)
@@ -69,6 +73,35 @@ class EvolutionSearch:
 
         save_path = self.out_dir + 'fitness_landscape_{}.png'.format(self.setuper.model_name)
         print(" CMA_EV message : saving landscape fitness to", save_path)
+        plt.savefig(save_path)
+
+        return gp, X
+
+    def init_plot_fitness_LS(self, gp):
+        """ Plot latent space with fitness Tm distribution """
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111)
+
+        # Plot Tm background
+        area = np.linspace(-6, 6)  # p
+        gp_points = np.array(list(product(area, area)))
+        gp_bgr = gp_points[:, 0].reshape(500, 500)
+        y_pred, MSE = gp.predict(gp_points, return_std=True)
+        zp = np.reshape(y_pred, (500, 500))
+        ax.pcolormesh(gp_bgr, gp_bgr, zp)
+
+        # Highlight latent space
+        mus, _, _ = self.handler.latent_space(check_exists=True)
+        ax.plot(mus[:, 0], mus[:, 1], '.', alpha=0.1, markersize=3, label='sequences')
+        ax.set_xlim([-6, 6])
+        ax.set_ylim([-6, 6])
+        ax.set_xlabel("$Z_1$")
+        ax.set_ylabel("$Z_2$")
+        return ax
+
+    def save_plot(self, name):
+        save_path = self.out_dir + '{}.png'.format(name)
+        print(" CMA_EV message : saving plot to", save_path)
         plt.savefig(save_path)
 
 if __name__ == "__main__":
