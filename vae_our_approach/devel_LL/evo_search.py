@@ -5,6 +5,7 @@ from itertools import product
 
 import pickle
 import os
+import torch
 from math import sqrt
 import numpy as np
 from matplotlib import pyplot as plt
@@ -134,10 +135,20 @@ class EvolutionSearch:
 
     def decode(self, coord):
         """ Decode sequence from the latent space, also return log likelihood """
-        seq_dict = self.handler.decode_sequences_VAE(coord, "coded")
+        vae_coord = [tuple(coord)]
+        seq_dict = self.handler.decode_sequences_VAE(vae_coord, "coded")
         seq = list(seq_dict["coded"])
-        log_likelihood = self.handler.get_marginal_probability(coord, already_encoded=True)
+        binary = self.get_binary(seq_dict)
+        log_likelihood = self.handler.get_marginal_probability(binary)
         return seq, log_likelihood
+
+    def get_binary(self, seqs):
+        """ Encode sequence to one hot encoding and prepare for vae"""
+        binary, _, _ = self.vae.binaryConv.prepare_aligned_msa_for_Vae(seqs)
+        binary = binary.astype(np.float32)
+        binary = binary.reshape((binary.shape[0], -1))
+        binary = torch.from_numpy(binary)
+        return binary
 
     def search(self, generations, members, start_coords, identity, filename=None):
         """ Evolutionary search in the latent space. Main loop. """
@@ -152,9 +163,10 @@ class EvolutionSearch:
         best_identity = 0.0
 
         step = 0
-        print("while {} {}".format(abs(best_identity - identity) > 2, step < generations))
-        while abs(best_identity - identity) > 2 and step < generations:
+        print("mean ", m)
+        while abs(best_identity - identity) > 0.01 and step < generations:
             samples = norm.rvs(mean=m, cov=sigma*cov, size=members)
+            print("Samples", samples[:5])
             xs = list(map(lambda x: self.fitness(x, target_identity=identity), samples))
             xs = rescale_fit(xs)
             xs = sorted(xs, key=lambda x: x[0], reverse=True) # Maximize fitness
@@ -168,6 +180,7 @@ class EvolutionSearch:
             mean_stats = self.fitness(m, target_identity=identity)
             self.log(step, xs, mean_stats, filename)
             step += 1
+            best_identity = xs[0][2][1]
             print("Steppp")
 
     def fitness(self, coord, target_identity):
@@ -184,11 +197,12 @@ class EvolutionSearch:
         Fitness function is compose to be maximized!
         """
         gp_c, iden_c, dist_c, like_c = (0.25, 0.25, 0.25, 0.02)
+        print("Coordinaty ", coord)
         seq, log_likelihood = self.decode(coord)
         fitness_value = 0.0
 
         # Predicted temperature, enough confidence to include it?
-        tm_pred, MSE = self.gp.predict(coord, return_std=True)
+        tm_pred, MSE = self.gp.predict(coord.reshape(1, -1), return_std=True)
         if abs(MSE) < 2.5:
             fitness_value += gp_c * tm_pred * (3.5 - abs(MSE))
         else:
@@ -218,12 +232,12 @@ class EvolutionSearch:
         log_str = "======================================================\n" \
                   "Step : {}\n" \
                   "Best member:\n" \
-                  "best_fitness: {:.4f}; coords: {}, tm_pred: {:.4f}, identity: {:.4f}, likelihood: {:.4f}\n" \
+                  "best_fitness: {:.4f}; coords: {}, tm_pred: {:.4f}, identity: {:.4f} %, likelihood: {:.4f}\n" \
                   "sequence: {}\n" \
                   "New mean:\n" \
-                  "best_fitness: {:.4f}; coords: {},{}, tm_pred: {:.4f}, identity: {:.4f}, likelihood: {:.4f}\n" \
-                  "sequence: {}\n".format(step, best[0], best[1], best[2][0], best[2][1], best[2][3], seq,
-                                                mean[0], mean[1], mean[2][0], mean[2][1], mean[2][3], mean_seq)
+                  "best_fitness: {:.4f}; coords: {},{}, tm_pred: {:.4f}, identity: {:.4f} %, likelihood: {:.4f}\n" \
+                  "sequence: {}\n".format(step, best[0], best[1], best[2][0], best[2][1]*100, best[2][3], seq,
+                                                mean[0], mean[1], mean[2][0], mean[2][1]*100, mean[2][3], mean_seq)
         if filename is not None:
             filename = self.out_dir + filename
             if os.path.exists(filename):
@@ -247,6 +261,6 @@ if __name__ == "__main__":
     # ax = evo.init_plot_fitness_LS()
     # ax = highlight_coord(ax, coords, color='g')
     # evo.save_plot(name="green")
-    query_coords = evo.encode(evo.query)
+    query_coords = evo.encode(evo.query)[0]
     evo.search(10, 30, query_coords, 0.75)
     print("Hree")
