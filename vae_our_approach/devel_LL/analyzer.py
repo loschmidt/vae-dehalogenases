@@ -423,9 +423,12 @@ class VAEHandler:
                 ret = vae.decode_samples(z, sigma, samples)
         return ret
 
-    def get_marginal_probability(self, x):
-        '''This method returns the exact probability
-         as it is obtained by VAE'''
+    def get_marginal_probability(self, x, multiple_likelohoods=False):
+        """
+        This method returns the exact probability as it is obtained by VAE
+
+        To return log likelihoods far each sequence se multiple_likelihoods to True
+        """
         vae = self.vae
         if vae is None:
             vae, _, _ = self._prepare_model()
@@ -433,7 +436,7 @@ class VAEHandler:
             if self.use_cuda:
                 x = x.cuda()
             # indices already on cpu(not tensor)
-            ret = vae.marginal_sequence(x)
+            ret = vae.marginal_sequence(x, multiple_likelohoods)
         return ret
 
 
