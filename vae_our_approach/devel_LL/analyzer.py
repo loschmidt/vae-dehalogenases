@@ -423,7 +423,7 @@ class VAEHandler:
                 ret = vae.decode_samples(z, sigma, samples)
         return ret
 
-    def get_marginal_probability(self, x):
+    def get_marginal_probability(self, x, already_encoded=False):
         '''This method returns the exact probability
          as it is obtained by VAE'''
         vae = self.vae
@@ -432,8 +432,11 @@ class VAEHandler:
         with torch.no_grad():
             if self.use_cuda:
                 x = x.cuda()
-            # indices already on cpu(not tensor)
-            ret = vae.marginal_sequence(x)
+            if already_encoded:
+                ret = vae.decoder_seq(x)
+            else:
+                # indices already on cpu(not tensor)
+                ret = vae.marginal_sequence(x)
         return ret
 
 
@@ -508,7 +511,7 @@ class AncestorsHandler:
             # check if alignment exists
             outfile = self.pickle + "/aligned_ancestors_to_MSA.fasta"
             if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
-                print('Anlyzer message : Alignement file exists in {}. Using that file.'.format(outfile))
+                print('Analyzer message : Alignment file exists in {}. Using that file.'.format(outfile))
             else:
                 # Create profile from sequences to be aligned
                 profile = self.pickle + "/ancestors_align.fasta"
