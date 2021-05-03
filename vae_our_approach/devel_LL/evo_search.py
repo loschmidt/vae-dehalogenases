@@ -49,7 +49,7 @@ class EvolutionSearch:
 
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
             self.query = pickle.load(file_handle)
-            self.query_seq = list(self.query.values())
+            self.query_seq = list(self.query.values())[0]
             self.seq_len = len(self.query_seq)
         with open(self.pickle + "/elbo_all.pkl", 'rb') as file_handle:
             self.mean_elbo = np.mean(pickle.load(file_handle))
@@ -133,14 +133,14 @@ class EvolutionSearch:
         X, _ = self.vae.prepareMusSigmas(binary)
         return X
 
-    def decode(self, coord):
+    def decode(self, coords):
         """ Decode sequence from the latent space, also return log likelihood """
-        vae_coord = [tuple(coord)]
+        vae_coord = [tuple(coord) for coord in coords]
         seq_dict = self.handler.decode_sequences_VAE(vae_coord, "coded")
-        seq = list(seq_dict["coded"])
+        seqs = list(seq_dict.values())
         binary = self.get_binary(seq_dict)
-        log_likelihood = self.handler.get_marginal_probability(binary)
-        return seq, log_likelihood
+        log_likelihood = self.handler.get_marginal_probability(binary, multiple_likelohoods=True)
+        return seqs, log_likelihood.numpy()
 
     def get_binary(self, seqs):
         """ Encode sequence to one hot encoding and prepare for vae"""
@@ -152,24 +152,25 @@ class EvolutionSearch:
 
     def search(self, generations, members, start_coords, identity, filename=None):
         """ Evolutionary search in the latent space. Main loop. """
+
         def rescale_fit(to_rescale):
             """ To secure fitness values are positive """
             min_fit = min([x[0] for x in to_rescale])
-            xs_rescaled = [(x+min_fit, coord, stats) for x, coord, stats in to_rescale]
+            xs_rescaled = [(x + min_fit, coord, stats) for x, coord, stats in to_rescale]
             return xs_rescaled
 
         n = start_coords.shape[0]
-        m, sigma, cov,  p_s, p_c, mu = start_coords, 0.2, np.identity(n), np.zeros(n), np.zeros(n), members // 3
+        m, sigma, cov, p_s, p_c, mu = start_coords, 0.99, np.identity(n), np.zeros(n), np.zeros(n), members // 3
         best_identity = 0.0
 
         step = 0
-        print("mean ", m)
+        ax = self.init_plot_fitness_LS()
         while abs(best_identity - identity) > 0.01 and step < generations:
-            samples = norm.rvs(mean=m, cov=sigma*cov, size=members)
-            print("Samples", samples[:5])
-            xs = list(map(lambda x: self.fitness(x, target_identity=identity), samples))
+            samples = norm.rvs(mean=m, cov=sigma * cov, size=members)
+            # xs = list(map(lambda x: self.fitness(x, target_identity=identity), samples))
+            xs = self.fitness(samples, target_identity=identity)
             xs = rescale_fit(xs)
-            xs = sorted(xs, key=lambda x: x[0], reverse=True) # Maximize fitness
+            xs = sorted(xs, key=lambda x: x[0], reverse=True)  # Maximize fitness
             m_prev = m
             m = update_mean(m_prev, xs, sigma, n=mu)
             p_c = update_pc(m_prev, xs, mu, p_c, n)
@@ -177,13 +178,18 @@ class EvolutionSearch:
             p_s = update_ps(p_s, cov, m_prev, xs, mu, n)
             sigma = path_length_control(sigma, p_s, m_prev, xs, mu, n)
 
-            mean_stats = self.fitness(m, target_identity=identity)
-            self.log(step, xs, mean_stats, filename)
+            mean_stats = self.fitness(np.array([m]), target_identity=identity)
+            self.log(step, sigma, xs, mean_stats[0], filename)
             step += 1
             best_identity = xs[0][2][1]
-            print("Steppp")
 
-    def fitness(self, coord, target_identity):
+            ax = highlight_coord(ax, samples, color='g' if step % 2 == 0 else 'y')
+            ax = highlight_coord(ax, np.array([m]), color='r')
+            if filename is not None:
+                print("Progress report : step {} / {}".format(step, generations))
+        self.save_plot(name="iter_{}".format(step))
+
+    def fitness(self, coords, target_identity):
         """
         Fitness function for CMA-ES composed of:
             1) Gaussian processes Tm predicted value + its certainty
@@ -196,48 +202,53 @@ class EvolutionSearch:
 
         Fitness function is compose to be maximized!
         """
-        gp_c, iden_c, dist_c, like_c = (0.25, 0.25, 0.25, 0.02)
-        print("Coordinaty ", coord)
-        seq, log_likelihood = self.decode(coord)
-        fitness_value = 0.0
+        gp_c, iden_c, dist_c, like_c = (0.25, 0.25, 0.5, 0.1)
+        seqs, log_likelihoods = self.decode(coords)
 
-        # Predicted temperature, enough confidence to include it?
-        tm_pred, MSE = self.gp.predict(coord.reshape(1, -1), return_std=True)
-        if abs(MSE) < 2.5:
-            fitness_value += gp_c * tm_pred * (3.5 - abs(MSE))
-        else:
-            tm_pred = None
-        # Percentage identity
-        query_identity = sum([a == b for a, b in zip(self.query_seq, seq)]) / self.seq_len
-        fitness_value -= iden_c * abs(target_identity - query_identity) # Abs distance, try another
-        # Distance to the center, support multidimensional space
-        center_distance = sqrt(sum(list(map(lambda x: x**2, coord))))
-        fitness_value -= dist_c * center_distance
-        # Log likelihood influence, quite huge negative number (-236.05 ...)
-        fitness_value += log_likelihood * like_c
+        # Predicted temperature
+        tm_pred, MSE = self.gp.predict(coords, return_std=True)
 
-        return fitness_value, coord, (tm_pred, query_identity, center_distance, log_likelihood, seq)
+        xs = []
+        for i in range(coords.shape[0]):
+            fitness_value, tm = 0.0, None
+            # Enough confidence to include it?
+            if abs(MSE[i]) < 2.5:
+                fitness_value += gp_c * tm_pred[i] * (3.5 - abs(MSE))
+                tm = tm_pred[i]
+            # Percentage identity
+            query_identity = sum([1 if a == b else 0 for a, b in zip(self.query_seq, seqs[i])]) / self.seq_len
+            fitness_value -= iden_c * abs(target_identity - query_identity)  # Abs distance, try another
+            # Distance to the center, support multidimensional space
+            center_distance = sqrt(sum(list(map(lambda x: x ** 2, coords[i]))))
+            fitness_value -= dist_c * center_distance
+            # Log likelihood influence, quite huge negative number (-236.05 ...)
+            fitness_value += log_likelihoods[i] * like_c
+            xs.append((fitness_value, coords[i], (tm, query_identity, center_distance, log_likelihoods[i], seqs[i])))
+        return xs
 
-    def log(self, step, stats, mean, filename=None):
+    def log(self, step, sigma, stats, mean, filename=None):
         """ Logging method """
+
         def insert_newlines(string, every=80):
+            string = "".join(string)
             return '\n'.join(string[i:i + every] for i in range(0, len(string), every))
 
+        log_str = ""
         if step == 0:
-            log_str = "######################################################\n" \
+            log_str = "#####################################################################################\n" \
                       "# Variational autoencoder CMA-ES approach starts      \n"
         best = stats[0]
         seq = insert_newlines(best[2][4])
         mean_seq = insert_newlines(mean[2][4])
-        log_str = "======================================================\n" \
-                  "Step : {}\n" \
+        log_str = "=========================================================================================\n" \
+                  "Step : {}, step size: {:.4f}\n" \
                   "Best member:\n" \
-                  "best_fitness: {:.4f}; coords: {}, tm_pred: {:.4f}, identity: {:.4f} %, likelihood: {:.4f}\n" \
-                  "sequence: {}\n" \
+                  "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
+                  "sequence:\n{}\n" \
                   "New mean:\n" \
-                  "best_fitness: {:.4f}; coords: {},{}, tm_pred: {:.4f}, identity: {:.4f} %, likelihood: {:.4f}\n" \
-                  "sequence: {}\n".format(step, best[0], best[1], best[2][0], best[2][1]*100, best[2][3], seq,
-                                                mean[0], mean[1], mean[2][0], mean[2][1]*100, mean[2][3], mean_seq)
+                  "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
+                  "sequence:\n{}\n".format(step, sigma, best[0], best[1], best[2][0], best[2][1]*100, best[2][3], seq,
+                                            mean[0], mean[1], mean[2][0], mean[2][1]*100, mean[2][3], "".join(mean_seq))
         if filename is not None:
             filename = self.out_dir + filename
             if os.path.exists(filename):
@@ -262,5 +273,4 @@ if __name__ == "__main__":
     # ax = highlight_coord(ax, coords, color='g')
     # evo.save_plot(name="green")
     query_coords = evo.encode(evo.query)[0]
-    evo.search(10, 30, query_coords, 0.75)
-    print("Hree")
+    evo.search(4, 30, query_coords, 0.75)
