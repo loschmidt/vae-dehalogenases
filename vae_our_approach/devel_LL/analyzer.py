@@ -423,7 +423,7 @@ class VAEHandler:
                 ret = vae.decode_samples(z, sigma, samples)
         return ret
 
-    def get_marginal_probability(self, x, already_encoded=False):
+    def get_marginal_probability(self, x):
         '''This method returns the exact probability
          as it is obtained by VAE'''
         vae = self.vae
@@ -432,11 +432,8 @@ class VAEHandler:
         with torch.no_grad():
             if self.use_cuda:
                 x = x.cuda()
-            if already_encoded:
-                ret = vae.decoder_seq(x)
-            else:
-                # indices already on cpu(not tensor)
-                ret = vae.marginal_sequence(x)
+            # indices already on cpu(not tensor)
+            ret = vae.marginal_sequence(x)
         return ret
 
 
