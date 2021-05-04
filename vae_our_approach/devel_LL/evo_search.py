@@ -204,7 +204,7 @@ class EvolutionSearch:
 
         Fitness function is compose to be maximized!
         """
-        gp_c, iden_c, dist_c, like_c = (0.25, 0.25, 0.5, 0.1)
+        gp_c, iden_c, dist_c, like_c = (0.5, 0.25, 0.9, 0.5)
         seqs, log_likelihoods = self.decode(coords)
 
         # Predicted temperature
@@ -219,12 +219,12 @@ class EvolutionSearch:
                 tm = tm_pred[i]
             # Percentage identity
             query_identity = sum([1 if a == b else 0 for a, b in zip(self.query_seq, seqs[i])]) / self.seq_len
-            # fitness_value -= iden_c * abs(target_identity - query_identity)  # Abs distance, try another
+            fitness_value -= iden_c * abs(target_identity - query_identity)  # Abs distance, try another
             # Distance to the center, support multidimensional space
             center_distance = sqrt(sum(list(map(lambda x: x ** 2, coords[i]))))
             fitness_value -= dist_c * center_distance
             # Log likelihood influence, quite huge negative number (-236.05 ...)
-            # fitness_value += log_likelihoods[i] * like_c
+            fitness_value += log_likelihoods[i] * like_c
             xs.append((fitness_value, coords[i], (tm, query_identity, center_distance, log_likelihoods[i], seqs[i])))
         return xs
 
@@ -312,9 +312,9 @@ if __name__ == "__main__":
     cmd_line = CommandHandler()
 
     # Experiment setup
-    experiment_runs = 4
+    experiment_runs = 2
     experiment_generations = 10
-    population = 30
+    population = 12
 
     evo = EvolutionSearch(tar_dir, cmd_line)
     coords = evo.fit_landscape()
