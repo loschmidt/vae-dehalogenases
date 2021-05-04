@@ -120,7 +120,7 @@ class EvolutionSearch:
         ax.set_ylim([-7, 7])
         ax.set_xlabel("$Z_1$")
         ax.set_ylabel("$Z_2$")
-        return ax
+        return ax, fig
 
     def save_plot(self, name):
         save_path = self.out_dir + '{}.png'.format(name)
@@ -160,11 +160,11 @@ class EvolutionSearch:
             return xs_rescaled
 
         n = start_coords.shape[0]
-        m, sigma, cov, p_s, p_c, mu = start_coords, 0.99, np.identity(n), np.zeros(n), np.zeros(n), members // 3
+        m, sigma, cov, p_s, p_c, mu = start_coords, 0.5, np.identity(n), np.zeros(n), np.zeros(n), members // 3
         best_identity = 0.0
 
-        step = 0
-        ax = self.init_plot_fitness_LS()
+        step, means = 0, [m]
+        ax, _ = self.init_plot_fitness_LS()
         while abs(best_identity - identity) > 0.01 and step < generations:
             samples = norm.rvs(mean=m, cov=sigma * cov, size=members)
             # xs = list(map(lambda x: self.fitness(x, target_identity=identity), samples))
@@ -182,12 +182,14 @@ class EvolutionSearch:
             self.log(step, sigma, xs, mean_stats[0], filename)
             step += 1
             best_identity = xs[0][2][1]
+            means.append(m)
 
             ax = highlight_coord(ax, samples, color='g' if step % 2 == 0 else 'y')
             ax = highlight_coord(ax, np.array([m]), color='r')
             if filename is not None:
-                print("Progress report : step {} / {}".format(step, generations))
+                print("# Progress report : step {} / {}".format(step, generations))
         self.save_plot(name="iter_{}".format(step))
+        return means
 
     def fitness(self, coords, target_identity):
         """
@@ -217,12 +219,12 @@ class EvolutionSearch:
                 tm = tm_pred[i]
             # Percentage identity
             query_identity = sum([1 if a == b else 0 for a, b in zip(self.query_seq, seqs[i])]) / self.seq_len
-            fitness_value -= iden_c * abs(target_identity - query_identity)  # Abs distance, try another
+            # fitness_value -= iden_c * abs(target_identity - query_identity)  # Abs distance, try another
             # Distance to the center, support multidimensional space
             center_distance = sqrt(sum(list(map(lambda x: x ** 2, coords[i]))))
             fitness_value -= dist_c * center_distance
             # Log likelihood influence, quite huge negative number (-236.05 ...)
-            fitness_value += log_likelihoods[i] * like_c
+            # fitness_value += log_likelihoods[i] * like_c
             xs.append((fitness_value, coords[i], (tm, query_identity, center_distance, log_likelihoods[i], seqs[i])))
         return xs
 
@@ -240,15 +242,17 @@ class EvolutionSearch:
         best = stats[0]
         seq = insert_newlines(best[2][4])
         mean_seq = insert_newlines(mean[2][4])
-        log_str = "=========================================================================================\n" \
-                  "Step : {}, step size: {:.4f}\n" \
-                  "Best member:\n" \
-                  "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
-                  "sequence:\n{}\n" \
-                  "New mean:\n" \
-                  "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
-                  "sequence:\n{}\n".format(step, sigma, best[0], best[1], best[2][0], best[2][1]*100, best[2][3], seq,
-                                            mean[0], mean[1], mean[2][0], mean[2][1]*100, mean[2][3], "".join(mean_seq))
+        log_str += "=========================================================================================\n" \
+                   "Step : {}, step size: {:.4f}\n" \
+                   "Best member:\n" \
+                   "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
+                   "sequence:\n{}\n" \
+                   "New mean:\n" \
+                   "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
+                   "sequence:\n{}\n".format(step, sigma, best[0], best[1], best[2][0], best[2][1] * 100, best[2][3],
+                                            seq,
+                                            mean[0], mean[1], mean[2][0], mean[2][1] * 100, mean[2][3],
+                                            "".join(mean_seq))
         if filename is not None:
             filename = self.out_dir + filename
             if os.path.exists(filename):
@@ -261,11 +265,56 @@ class EvolutionSearch:
         else:
             print(log_str)
 
+    @staticmethod
+    def _trajectories(runs):
+        """ Prepare trajectories for gif """
+
+        def splitter(p1, p2, cnt=5):
+            x1, y1 = p1
+            x2, y2 = p2
+            d_x, d_y = (x2 - x1) / cnt, (y2 - y1) / cnt
+            return [[x1 + i * d_x, y1 + i * d_y] for i in range(1, cnt + 1)]
+
+        # Make smooth movement
+        trajectories = []
+        for run in runs:
+            trajectory = [run[0]]
+            for i in range(1, len(run)):
+                trajectory.extend(splitter(run[i - 1], run[i]))
+            trajectories.append(trajectory)
+        return np.array(trajectories)
+
+    def animate(self, runs, generations, gif='search.gif'):
+        """ Creates an demonstration movement in the latent space only for 2D"""
+        from celluloid import Camera
+
+        split_ratio = 5 # Intervals divided to 5 intervals
+        trajectories = EvolutionSearch._trajectories(runs)
+
+        ax, fig = self.init_plot_fitness_LS(plot_landscape=False)
+        mus, _, _ = self.handler.latent_space(check_exists=True)
+        camera = Camera(fig)
+        for i in range(generations * split_ratio + 1):
+            ax.plot(mus[:, 0], mus[:, 1], '.', alpha=0.1, markersize=3)
+            for r in trajectories:
+                ax.scatter(r[i][0], r[i][1], marker="o", s=13 ** 2, color="black", alpha=1.0)
+                ax.plot(r[0:i, 0], r[0:i, 1], linestyle="dashed", linewidth=2, color="black", label=str(i))
+            plt.tight_layout()
+            camera.snap()
+        animation = camera.animate(interval=110, repeat=True, repeat_delay=500)  # create animation
+        animation.save(self.out_dir + gif, writer="imagemagick")  # save animation as gif
+        print("Animation {} saved into {}".format(gif, self.out_dir))
+
 
 if __name__ == "__main__":
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     cmd_line = CommandHandler()
+
+    # Experiment setup
+    experiment_runs = 4
+    experiment_generations = 10
+    population = 30
 
     evo = EvolutionSearch(tar_dir, cmd_line)
     coords = evo.fit_landscape()
@@ -273,4 +322,10 @@ if __name__ == "__main__":
     # ax = highlight_coord(ax, coords, color='g')
     # evo.save_plot(name="green")
     query_coords = evo.encode(evo.query)[0]
-    evo.search(4, 30, query_coords, 0.75)
+    run_trajectories = []
+    for run_i in range(experiment_runs):
+        print("="*80)
+        print("# Run {} out of {}".format(run_i+1, experiment_runs))
+        ret = evo.search(experiment_generations, population, query_coords, 0.75)
+        run_trajectories.append(ret)
+    evo.animate(run_trajectories, experiment_generations)
