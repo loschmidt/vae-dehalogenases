@@ -165,7 +165,7 @@ class EvolutionSearch:
 
         step, means = 0, [m]
         # ax, _ = self.init_plot_fitness_LS()
-        while abs(best_identity - identity) > 0.01 and step < generations:
+        while abs(best_identity - identity) > 0.04 and step < generations:
             samples = norm.rvs(mean=m, cov=sigma * cov, size=members)
             xs = self.fitness(samples, target_identity=identity, pareto=pareto)
             xs = rescale_fit(xs)
@@ -186,7 +186,7 @@ class EvolutionSearch:
 
             # ax = highlight_coord(ax, samples, color='g' if step % 2 == 0 else 'y')
             # ax = highlight_coord(ax, np.array([m]), color='r')
-            if filename is not None:
+            if filename is not None and step % 10 == 0:
                 print("# Progress report : step {} / {}".format(step, generations))
         # self.save_plot(name="iter_{}".format(step))
         self.log_to_file(filename)
@@ -343,14 +343,14 @@ if __name__ == "__main__":
     ##########################
     # Experiment setup
     experiment_runs = 1
-    experiment_generations = 2
-    population = 12
+    experiment_generations = 50
+    population = 36
     sigma_step = 0.5
     target_identity = 0.75
     query_coords = evo.encode(evo.query)[0]
     PARETO, WEIGHT = True, False
     # Fitness influence of: Tm, identity, distance to center, likelihood. Applies only in weight mode!!
-    evo.fitness_class_setting = (0.7, 0.25, 1.5, 0.8)
+    evo.fitness_class_setting = (0.7, 0.35, 1.1, 0.8)
 
     ##########################
     # Run experiments
@@ -359,6 +359,6 @@ if __name__ == "__main__":
         print("=" * 80)
         print("# Run {} out of {}".format(run_i + 1, experiment_runs))
         ret = evo.search(experiment_generations, population, query_coords, target_identity,
-                         sigma_step, pareto=PARETO, filename="run_{}.txt".format(run_i + 1))
+                         sigma_step, pareto=PARETO, filename="run_{}.csv".format(run_i + 1))
         run_trajectories.append(ret)
     evo.animate(run_trajectories, experiment_generations)
