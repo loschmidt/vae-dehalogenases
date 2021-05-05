@@ -6,10 +6,8 @@ from itertools import product
 import pickle
 import os
 import torch
-from math import sqrt
 import numpy as np
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
