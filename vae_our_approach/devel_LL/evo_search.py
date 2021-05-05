@@ -165,12 +165,13 @@ class EvolutionSearch:
         best_identity = 0.0
 
         step, means = 0, [m]
-        ax, _ = self.init_plot_fitness_LS()
+        #ax, _ = self.init_plot_fitness_LS()
         while abs(best_identity - identity) > 0.01 and step < generations:
             samples = norm.rvs(mean=m, cov=sigma * cov, size=members)
-            xs = self.fitness(samples, target_identity=identity, pareto=fitness_mode)
+            xs = self.fitness(samples, target_identity=identity, pareto=pareto)
             xs = rescale_fit(xs)
             xs = sorted(xs, key=lambda x: x[0], reverse=True)  # Maximize fitness
+            mu = len(xs) if pareto else mu
             m_prev = m
             m = update_mean(m_prev, xs, sigma, n=mu)
             p_c = update_pc(m_prev, xs, mu, p_c, n)
@@ -184,11 +185,11 @@ class EvolutionSearch:
             best_identity = xs[0][2][1]
             means.append(m)
 
-            ax = highlight_coord(ax, samples, color='g' if step % 2 == 0 else 'y')
-            ax = highlight_coord(ax, np.array([m]), color='r')
+            #ax = highlight_coord(ax, samples, color='g' if step % 2 == 0 else 'y')
+            #ax = highlight_coord(ax, np.array([m]), color='r')
             if filename is not None:
                 print("# Progress report : step {} / {}".format(step, generations))
-        self.save_plot(name="iter_{}".format(step))
+        #self.save_plot(name="iter_{}".format(step))
         return means
 
     def fitness(self, coords, target_identity, pareto=True):
@@ -205,9 +206,9 @@ class EvolutionSearch:
         Modes: Fitness function can run in different mode
                 True - Pareto, False - Weight multicriterial fitness function
 
-        Fitness function is compose to be minimazed!
+        Fitness function is compose to be maximized!
         """
-        gp_c, iden_c, dist_c, like_c = self.fitness_class_setting #(0.7, 0.25, 1.5, 0.5)
+        gp_c, iden_c, dist_c, like_c = self.fitness_class_setting  # (0.7, 0.25, 1.5, 0.5)
         seqs, log_likelihoods = self.decode(coords)
 
         # Predicted temperature
@@ -215,7 +216,7 @@ class EvolutionSearch:
 
         xs = []
         for i in range(coords.shape[0]):
-            fitness_value, tm = 0.0, None
+            fitness_value, tm = 0.0, -6.666  # Magic constant
             # Enough confidence to include it?
             if abs(MSE[i]) < 2.5:
                 fitness_value += gp_c * tm_pred[i] * (3.5 - abs(MSE))
@@ -224,11 +225,26 @@ class EvolutionSearch:
             query_identity = sum([1 if a == b else 0 for a, b in zip(self.query_seq, seqs[i])]) / self.seq_len
             fitness_value -= iden_c * abs(target_identity - query_identity) * 100  # Abs distance, try another
             # Distance to the center, support multidimensional space
-            center_distance = np.linalg.norm(coords[i]) #sqrt(sum(list(map(lambda x: x ** 2, coords[i]))))
+            center_distance = np.linalg.norm(coords[i])
             fitness_value -= dist_c * center_distance
             # Log likelihood influence, quite huge negative number (-236.05 ...)
             fitness_value += log_likelihoods[i] * like_c
             xs.append((fitness_value, coords[i], (tm, query_identity, center_distance, log_likelihoods[i], seqs[i])))
+        # In the case of pareto optimization choose only not dominated fitness
+        if pareto:
+            xs_sorted = sorted(xs, key=lambda x: x[0], reverse=True)
+            i, id = 0, target_identity
+            while i < len(xs_sorted) - 1:
+                x, j = xs_sorted[i][2], i + 1
+                while j < len(xs_sorted):
+                    y = xs_sorted[j][2]
+                    # x >> y, y is dominated by x
+                    if x[0] >= y[0] and abs(id - x[1]) > abs(id - y[1]) and x[2] < y[2] and x[3] > y[3]:
+                        xs_sorted.pop(j)
+                    else:
+                        j += 1
+                i += 1
+            xs = xs_sorted
         return xs
 
     def log(self, step, sigma, stats, mean, filename=None):
@@ -252,10 +268,10 @@ class EvolutionSearch:
                    "sequence:\n{}\n" \
                    "New mean:\n" \
                    "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
-                   "sequence:\n{}\n".format(step, sigma, best[0], best[1], best[2][0], best[2][1] * 100, best[2][3],
-                                            seq,
-                                            mean[0], mean[1], mean[2][0], mean[2][1] * 100, mean[2][3],
-                                            "".join(mean_seq))
+                   "sequence:\n{}\n".format(step, sigma, best[0], best[1], None if best[2][0] == -6.666 else best[2][0],
+                                            best[2][1] * 100, best[2][3], seq,
+                                            mean[0], mean[0], mean[1], None if mean[2][0] == -6.666 else mean[2][0],
+                                            mean[2][1] * 100, mean[2][3], "".join(mean_seq))
         if filename is not None:
             filename = self.out_dir + filename
             if os.path.exists(filename):
@@ -291,7 +307,7 @@ class EvolutionSearch:
         """ Creates an demonstration movement in the latent space only for 2D"""
         from celluloid import Camera
 
-        split_ratio = 5 # Intervals divided to 5 intervals
+        split_ratio = 5  # Intervals divided to 5 intervals
         trajectories = EvolutionSearch._trajectories(runs)
 
         ax, fig = self.init_plot_fitness_LS(plot_landscape=False)
@@ -331,15 +347,15 @@ if __name__ == "__main__":
     query_coords = evo.encode(evo.query)[0]
     PARETO, WEIGHT = True, False
     # Fitness influence of: Tm, identity, distance to center, likelihood. Applies only in weight mode!!
-    evo.fitness_class_setting = (0.7, 0.25, 1.5, 0.5)
+    evo.fitness_class_setting = (0.7, 0.25, 1.5, 0.8)
 
     ##########################
     # Run experiments
     run_trajectories = []
     for run_i in range(experiment_runs):
-        print("="*80)
-        print("# Run {} out of {}".format(run_i+1, experiment_runs))
+        print("=" * 80)
+        print("# Run {} out of {}".format(run_i + 1, experiment_runs))
         ret = evo.search(experiment_generations, population, query_coords, target_identity,
-                         sigma_step, pareto=PARETO)
+                         sigma_step, pareto=PARETO, filename="run_{}.txt".format(run_i))
         run_trajectories.append(ret)
-    #evo.animate(run_trajectories, experiment_generations)
+    evo.animate(run_trajectories, experiment_generations)
