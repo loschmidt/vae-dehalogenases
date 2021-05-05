@@ -46,6 +46,7 @@ class EvolutionSearch:
         self.out_dir = setuper.high_fld + '/'
         self.handler = VAEHandler(setuper)
         self.gp = None
+        self.fitness_class_setting = (0.7, 0.25, 1.5, 0.5)
 
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
             self.query = pickle.load(file_handle)
@@ -150,7 +151,7 @@ class EvolutionSearch:
         binary = torch.from_numpy(binary)
         return binary
 
-    def search(self, generations, members, start_coords, identity, filename=None):
+    def search(self, generations, members, start_coords, identity, step=0.5, filename=None, pareto=True):
         """ Evolutionary search in the latent space. Main loop. """
 
         def rescale_fit(to_rescale):
@@ -160,15 +161,14 @@ class EvolutionSearch:
             return xs_rescaled
 
         n = start_coords.shape[0]
-        m, sigma, cov, p_s, p_c, mu = start_coords, 0.5, np.identity(n), np.zeros(n), np.zeros(n), members // 3
+        m, sigma, cov, p_s, p_c, mu = start_coords, step, np.identity(n), np.zeros(n), np.zeros(n), members // 3
         best_identity = 0.0
 
         step, means = 0, [m]
         ax, _ = self.init_plot_fitness_LS()
         while abs(best_identity - identity) > 0.01 and step < generations:
             samples = norm.rvs(mean=m, cov=sigma * cov, size=members)
-            # xs = list(map(lambda x: self.fitness(x, target_identity=identity), samples))
-            xs = self.fitness(samples, target_identity=identity)
+            xs = self.fitness(samples, target_identity=identity, pareto=fitness_mode)
             xs = rescale_fit(xs)
             xs = sorted(xs, key=lambda x: x[0], reverse=True)  # Maximize fitness
             m_prev = m
@@ -191,7 +191,7 @@ class EvolutionSearch:
         self.save_plot(name="iter_{}".format(step))
         return means
 
-    def fitness(self, coords, target_identity):
+    def fitness(self, coords, target_identity, pareto=True):
         """
         Fitness function for CMA-ES composed of:
             1) Gaussian processes Tm predicted value + its certainty
@@ -202,9 +202,12 @@ class EvolutionSearch:
             4) Log likelihood of sequence observing by the model
                - The higher likelihood means that sequence is more likely from aligned protein family
 
-        Fitness function is compose to be maximized!
+        Modes: Fitness function can run in different mode
+                True - Pareto, False - Weight multicriterial fitness function
+
+        Fitness function is compose to be minimazed!
         """
-        gp_c, iden_c, dist_c, like_c = (0.5, 0.25, 0.9, 0.5)
+        gp_c, iden_c, dist_c, like_c = self.fitness_class_setting #(0.7, 0.25, 1.5, 0.5)
         seqs, log_likelihoods = self.decode(coords)
 
         # Predicted temperature
@@ -219,9 +222,9 @@ class EvolutionSearch:
                 tm = tm_pred[i]
             # Percentage identity
             query_identity = sum([1 if a == b else 0 for a, b in zip(self.query_seq, seqs[i])]) / self.seq_len
-            fitness_value -= iden_c * abs(target_identity - query_identity)  # Abs distance, try another
+            fitness_value -= iden_c * abs(target_identity - query_identity) * 100  # Abs distance, try another
             # Distance to the center, support multidimensional space
-            center_distance = sqrt(sum(list(map(lambda x: x ** 2, coords[i]))))
+            center_distance = np.linalg.norm(coords[i]) #sqrt(sum(list(map(lambda x: x ** 2, coords[i]))))
             fitness_value -= dist_c * center_distance
             # Log likelihood influence, quite huge negative number (-236.05 ...)
             fitness_value += log_likelihoods[i] * like_c
@@ -311,21 +314,32 @@ if __name__ == "__main__":
     tar_dir.setup_struct()
     cmd_line = CommandHandler()
 
-    # Experiment setup
-    experiment_runs = 2
-    experiment_generations = 10
-    population = 12
-
+    # Prepare evo class
     evo = EvolutionSearch(tar_dir, cmd_line)
     coords = evo.fit_landscape()
     # ax = evo.init_plot_fitness_LS()
     # ax = highlight_coord(ax, coords, color='g')
     # evo.save_plot(name="green")
+
+    ##########################
+    # Experiment setup
+    experiment_runs = 1
+    experiment_generations = 10
+    population = 12
+    sigma_step = 0.5
+    target_identity = 0.75
     query_coords = evo.encode(evo.query)[0]
+    PARETO, WEIGHT = True, False
+    # Fitness influence of: Tm, identity, distance to center, likelihood. Applies only in weight mode!!
+    evo.fitness_class_setting = (0.7, 0.25, 1.5, 0.5)
+
+    ##########################
+    # Run experiments
     run_trajectories = []
     for run_i in range(experiment_runs):
         print("="*80)
         print("# Run {} out of {}".format(run_i+1, experiment_runs))
-        ret = evo.search(experiment_generations, population, query_coords, 0.75)
+        ret = evo.search(experiment_generations, population, query_coords, target_identity,
+                         sigma_step, pareto=PARETO)
         run_trajectories.append(ret)
-    evo.animate(run_trajectories, experiment_generations)
+    #evo.animate(run_trajectories, experiment_generations)
