@@ -427,7 +427,7 @@ class VAEHandler:
         """
         This method returns the exact probability as it is obtained by VAE
 
-        To return log likelihoods far each sequence se multiple_likelihoods to True
+        To return log likelihoods far each sequence position set multiple_likelihoods to True
         """
         vae = self.vae
         if vae is None:
@@ -439,6 +439,12 @@ class VAEHandler:
             ret = vae.marginal_sequence(x, multiple_likelohoods)
         return ret
 
+    def residues_probability(self, x):
+        """ Return classic probability of each position to be seen on output """
+        vae = self.vae
+        if vae is None:
+            vae, _, _ = self._prepare_model()
+        return vae.residues_probabilities(x)
 
 class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):

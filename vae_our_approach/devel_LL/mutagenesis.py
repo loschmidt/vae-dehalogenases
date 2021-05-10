@@ -15,7 +15,7 @@ import pickle
 import csv
 import os.path as path
 from scipy.stats import multivariate_normal as norm
-from torch import tensor
+import torch
 
 class MutagenesisGenerator:
     def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2, model_name=None):
@@ -110,25 +110,51 @@ class MutagenesisGenerator:
                 file_handle.write(">" + names[i] + "\n" + "".join(seq) + "\n")
         print('Fasta file generate to ', self.setuper.high_fld + "/" + file_name)
 
+    def sequence_binary(self, seqs_dict):
+        """ Prepare sequence dictionary to be one hot encoded and retyped for VAE """
+        binary, _, _ = Convertor(self.setuper).prepare_aligned_msa_for_Vae(seqs_dict)
+        binary = binary.astype(np.float32)
+        binary = binary.reshape((binary.shape[0], -1))
+        binary = torch.from_numpy(binary)
+        return binary
+
+    def residues_likelihood_above_threshold(self, seqs_dict, threshold=0.9):
+        """
+        Compute likelihood of each residue in sequence
+        and count those having probability above threshold
+        """
+        binaries = self.sequence_binary(seqs_dict)
+        p_seqs_residues = self.handler.residues_probability(binaries)
+        sequences_res_above = np.zeros(p_seqs_residues.shape[0], dtype=int)
+        for i, seq_res_p in enumerate(p_seqs_residues):
+            sequences_res_above[i] += (seq_res_p > threshold).sum()
+        return sequences_res_above
+
     def _store_in_fasta_csv(self, to_store, probs, to_file, coords):
+        """ Store appropriate information in csv file for protein selection and sequence in fasta"""
         names = list(to_store.keys())
         vals = list(to_store.values())
         self.anc_seqs = vals
         self.store_ancestors_in_fasta(names=names, file_name=to_file)
         # Measuring the identity
-        query_name = self.setuper.ref_n
+        query_name = self.cur_name
         query_dict = MutagenesisGenerator.binary_to_seq(self.setuper, seq_key=query_name, return_binary=False)
         query_seq = query_dict[query_name]
         identity = lambda x, query: (sum([1 if i==j else 0 for i,j in zip(x,query)])/len(query))*100
+
+        threshold = 0.9
+        residues_prob_above = self.residues_likelihood_above_threshold(to_store, threshold=threshold)
+        col_res_prob_name = "Cnt residues prob above {}".format(threshold)
+
         # Store in csv file
         with open(self.setuper.high_fld + '/{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x",
-                             "Coordinate y", "Query identity [%]"])
-            for i, (name, seq, prob, c) in enumerate(zip(names, vals, probs, coords)):
+                             "Coordinate y", "Query identity [%]", col_res_prob_name])
+            for i, (name, seq, prob, c, res_p) in enumerate(zip(names, vals, probs, coords, residues_prob_above)):
                 seq_str = ''
                 query_iden = identity(seq, query_seq)
-                writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1], query_iden])
+                writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1], query_iden, res_p])
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
@@ -146,13 +172,14 @@ class MutagenesisGenerator:
         return min_dist, ancestor, anc_pos, mutants_pos
 
     def get_straight_ancestors(self, cnt_of_anc=100):
-        '''Method does that the line between a position of reference sequence
+        """
+         Method does that the line between a position of reference sequence
          and the center (0,0) is divided to cnt_of_anc and the borders of the
          intervals are denoted as ancestors. It can be used as a validation
          metric that int the randomly initialized weights od encoder has no
          effect on latent space if the radiuses of differently init models
          are almost same.
-         '''
+        """
         print("Mutagenesis message : Straight ancestors generating process started")
         ref_pos = self._mutants_positions(self.cur)
         coor_tuple = tuple(ref_pos[0])
@@ -329,7 +356,7 @@ if __name__ == '__main__':
     dow = Downloader(tar_dir)
 
     # ref = MutagenesisGenerator.binary_to_seq(tar_dir,seq_key='P27652.1')
-    ref_binary = MutagenesisGenerator.binary_to_seq(tar_dir, seq_key='P59336_S14', return_binary=True)
+    #ref_binary = MutagenesisGenerator.binary_to_seq(tar_dir, seq_key='P59336_S14', return_binary=True)
     mut = MutagenesisGenerator(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
     # ancs, names, muts = mut.reconstruct_ancestors(samples=tar_dir.mutant_samples)
     #h = Highlighter(tar_dir)
@@ -338,14 +365,8 @@ if __name__ == '__main__':
     #     h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
     # mut.store_ancestors_in_fasta(names)
     names, ancestors, probs = mut.get_straight_ancestors()
-    given_anc_probs, given_anc_names = mut.measure_probability_given_ancestors()
+    #given_anc_probs, given_anc_names = mut.measure_probability_given_ancestors()
     #h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
     h = Highlighter(tar_dir)
     h.plot_probabilities(probs, ancestors)
-    h.plot_straight_probs_against_ancestors(probs, given_anc_probs, given_anc_names)
-    # betas = [0.20, 0.15, 0.1, 0.05, 0.08, 0.03]
-    # betas = [0.25]
-    # for beta in betas:
-    #     ancestors, probs = mut.dynamic_system(beta=beta)
-    #     h.plot_probabilities(probs, ancestors, dynamic=True, file_notion='_beta_{}'.format(str(beta)))
-    # mut.test_generative()
+    #h.plot_straight_probs_against_ancestors(probs, given_anc_probs, given_anc_names)

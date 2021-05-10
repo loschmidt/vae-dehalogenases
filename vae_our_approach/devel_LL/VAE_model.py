@@ -146,7 +146,7 @@ class VAE(nn.Module):
             return idxs
 
     def marginal_sequence(self, x, likelihoods=False):
-        """ Return one or multiple likelihoods one by one """
+        """ Return one or multiple likelihoods one by one TODO TEST IT :D """
         with torch.no_grad():
             ## Decode exact point in the latent space
             mu, sigma = self.encoder(x)
@@ -157,8 +157,26 @@ class VAE(nn.Module):
             log_PxGz = torch.sum(x * log_p, -1)
             # Return simple sum saying it is log probability of seeing our sequences
             if likelihoods:
-                return log_PxGz
+                return log_PxGz # TODO This should be checked
             return torch.sum(log_PxGz).double() / log_PxGz.shape[0]
+
+    def residues_probabilities(self, x):
+        """ Get true probability of each position to be seen on the output. Return as numpy. """
+        z, _ = self.encoder(x)
+        log_p = self.decoder(z)
+
+        # Reshape x
+        final_shape = tuple(x.shape[0:-1])
+        x = torch.unsqueeze(x, -1)
+        x = x.view(final_shape + (-1, self.num_aa_type))
+        # Reshape vae output
+        log_p = torch.unsqueeze(log_p, -1)
+        log_p = log_p.view(final_shape + (-1, self.num_aa_type))
+        p = torch.exp(log_p)
+
+        PxGz = torch.sum(p * x, dim=-1)
+
+        return PxGz.detach().numpy()
 
     def compute_weighted_elbo(self, x, weight, c_fx_x=2):
         ## sample z from q(z|x)

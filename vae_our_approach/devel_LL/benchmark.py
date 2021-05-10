@@ -91,8 +91,10 @@ class Benchmarker:
         file.close()
 
     def measure_seq_probability(self, seqs_dict):
-        '''Method measures the marginal probability of
-        observation of the sequence on the output of network'''
+        """
+        Method measures the marginal probability of
+        observation of the sequence on the output of network
+        """
         # Encode sequence to binary
         binary, _, _ = self.binaryConv.prepare_aligned_msa_for_Vae(seqs_dict)
         probs = self._bench(binary)
@@ -115,7 +117,7 @@ class Benchmarker:
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
         '''
-        N = 5000
+        N = 5
         probs = []  # marginal propabilities
 
         print('=' * 60)
