@@ -175,8 +175,8 @@ class EvolutionSearch:
             m = update_mean(m_prev, xs, sigma, n=mu)
             p_c = update_pc(m_prev, xs, mu, p_c, n)
             cov = update_Cov(cov, m_prev, xs, mu, p_c, n)
-            p_s = update_ps(p_s, cov, m_prev, xs, mu, n)
-            sigma = path_length_control(sigma, p_s, m_prev, xs, mu, n)
+            #p_s = update_ps(p_s, cov, m_prev, xs, mu, n)
+            #sigma = path_length_control(sigma, p_s, m_prev, xs, mu, n)
 
             mean_stats = self.fitness(np.array([m]), target_identity=identity)
             self.log(step, sigma, xs, mean_stats[0], filename)
@@ -258,7 +258,7 @@ class EvolutionSearch:
         if step == 0:
             self.log_str = "#####################################################################################\n" \
                            "# Variational autoencoder CMA-ES approach starts      \n" \
-                           "Step;Step_size;fitness;identity;likelihood;MEAN_x;MEAN_y;fitness;identity;likelihood\n"
+                           "Step;Step_size;fitness;identity;likelihood;MEAN_x;MEAN_y;fitness;identity;likelihood;Sekvence best;mean\n"
         best = stats[0]
         seq = insert_newlines(best[2][4])
         mean_seq = insert_newlines(mean[2][4])
@@ -273,9 +273,9 @@ class EvolutionSearch:
         #                                     best[2][1] * 100, best[2][3], seq,
         #                                     mean[0], mean[0], mean[1], None if mean[2][0] == -6.666 else mean[2][0],
         #                                     mean[2][1] * 100, mean[2][3], "".join(mean_seq))
-        self.log_str += "{};{};{:.4f};{:.4f};{:.4f};{};{};{};{};{}" \
+        self.log_str += "{};{};{:.4f};{:.4f};{:.4f};{};{};{};{};{};{}" \
                         "\n".format(step, sigma, best[0], best[2][1], best[2][3],
-                                    mean[1][0], mean[1][1], mean[0], mean[2][1], mean[2][3])
+                                    mean[1][0], mean[1][1], mean[0], mean[2][1], mean[2][3], "".join(mean[2][4]))
         if filename is None:
             print(self.log_str)
             self.log_str = ""
@@ -342,10 +342,10 @@ if __name__ == "__main__":
 
     ##########################
     # Experiment setup
-    experiment_runs = 1
+    experiment_runs = 10
     experiment_generations = 50
-    population = 36
-    sigma_step = 0.5
+    population = 63
+    sigma_step = 0.3
     target_identity = 0.75
     query_coords = evo.encode(evo.query)[0]
     PARETO, WEIGHT = True, False
@@ -359,6 +359,6 @@ if __name__ == "__main__":
         print("=" * 80)
         print("# Run {} out of {}".format(run_i + 1, experiment_runs))
         ret = evo.search(experiment_generations, population, query_coords, target_identity,
-                         sigma_step, pareto=PARETO, filename="run_{}.csv".format(run_i + 1))
+                         sigma_step, pareto=PARETO, filename="run_noStep{}.csv".format(run_i + 1))
         run_trajectories.append(ret)
-    evo.animate(run_trajectories, experiment_generations)
+    #evo.animate(run_trajectories, experiment_generations)
