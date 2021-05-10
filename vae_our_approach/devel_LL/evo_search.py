@@ -4,7 +4,6 @@ __date__ = "2021/04/16 00:10:00"
 from itertools import product
 
 import pickle
-import os
 import torch
 import numpy as np
 from matplotlib import pyplot as plt
@@ -26,6 +25,19 @@ from cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_co
 def highlight_coord(ax, mus, color='r'):
     ax.plot(mus[:, 0], mus[:, 1], '.', alpha=1, markersize=3, color=color)
     return ax
+
+
+def load_means_from_file(filename):
+    """ Helpful function due to quotes at Metacentrum """
+    means = []
+    with open(filename, 'r') as lines:
+        for line in lines:
+            if line[0] == "#" or line.split(";")[0] == "Step":
+                continue
+            items = line.split(";")
+            x, y = float(items[5]), float(items[6])
+            means.append([x, y])
+    return np.array(means)
 
 
 class EvolutionSearch:
@@ -164,7 +176,6 @@ class EvolutionSearch:
         best_identity = 0.0
 
         step, means = 0, [m]
-        # ax, _ = self.init_plot_fitness_LS()
         while abs(best_identity - identity) > 0.04 and step < generations:
             samples = norm.rvs(mean=m, cov=sigma * cov, size=members)
             xs = self.fitness(samples, target_identity=identity, pareto=pareto)
@@ -188,7 +199,6 @@ class EvolutionSearch:
             # ax = highlight_coord(ax, np.array([m]), color='r')
             if filename is not None and step % 10 == 0:
                 print("# Progress report : step {} / {}".format(step, generations))
-        # self.save_plot(name="iter_{}".format(step))
         self.log_to_file(filename)
         return means
 
@@ -262,17 +272,6 @@ class EvolutionSearch:
         best = stats[0]
         seq = insert_newlines(best[2][4])
         mean_seq = insert_newlines(mean[2][4])
-        # log_str += "=========================================================================================\n" \
-        #            "Step : {}, step size: {:.4f}\n" \
-        #            "Best member:\n" \
-        #            "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
-        #            "sequence:\n{}\n" \
-        #            "New mean:\n" \
-        #            "best_fitness: {:.4f}; coords: {}, tm_pred: {}, identity: {:.4f} %, likelihood: {:.4f}\n" \
-        #            "sequence:\n{}\n".format(step, sigma, best[0], best[1], None if best[2][0] == -6.666 else best[2][0],
-        #                                     best[2][1] * 100, best[2][3], seq,
-        #                                     mean[0], mean[0], mean[1], None if mean[2][0] == -6.666 else mean[2][0],
-        #                                     mean[2][1] * 100, mean[2][3], "".join(mean_seq))
         self.log_str += "{};{};{:.4f};{:.4f};{:.4f};{};{};{};{};{}" \
                         "\n".format(step, sigma, best[0], best[2][1], best[2][3],
                                     mean[1][0], mean[1][1], mean[0], mean[2][1], mean[2][3])
@@ -336,15 +335,12 @@ if __name__ == "__main__":
     # Prepare evo class
     evo = EvolutionSearch(tar_dir, cmd_line)
     coords = evo.fit_landscape()
-    # ax = evo.init_plot_fitness_LS()
-    # ax = highlight_coord(ax, coords, color='g')
-    # evo.save_plot(name="green")
 
     ##########################
     # Experiment setup
-    experiment_runs = 1
+    experiment_runs = 10
     experiment_generations = 50
-    population = 36
+    population = 64
     sigma_step = 0.5
     target_identity = 0.75
     query_coords = evo.encode(evo.query)[0]
@@ -359,6 +355,6 @@ if __name__ == "__main__":
         print("=" * 80)
         print("# Run {} out of {}".format(run_i + 1, experiment_runs))
         ret = evo.search(experiment_generations, population, query_coords, target_identity,
-                         sigma_step, pareto=PARETO, filename="run_{}.csv".format(run_i + 1))
+                         sigma_step, pareto=PARETO, filename="run_pokus{}.csv".format(run_i + 1))
         run_trajectories.append(ret)
-    evo.animate(run_trajectories, experiment_generations)
+    #evo.animate(run_trajectories, experiment_generations)
