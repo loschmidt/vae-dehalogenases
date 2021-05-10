@@ -144,7 +144,7 @@ class MutagenesisGenerator:
 
         threshold = 0.9
         residues_prob_above = self.residues_likelihood_above_threshold(to_store, threshold=threshold)
-        col_res_prob_name = "Cnt residues prob above {}".format(threshold)
+        col_res_prob_name = "Residues count of probabilities above {}".format(threshold)
 
         # Store in csv file
         with open(self.setuper.high_fld + '/{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:

@@ -117,7 +117,7 @@ class Benchmarker:
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
         '''
-        N = 5
+        N = 5000
         probs = []  # marginal propabilities
 
         print('=' * 60)
