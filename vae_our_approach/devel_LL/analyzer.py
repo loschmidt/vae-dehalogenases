@@ -11,6 +11,7 @@ from msa_prepar import MSA
 from msa_filter_scorer import MSAFilterCutOff as Convertor
 from supportscripts.animator import GifMaker
 from torch import tensor
+from scipy.spatial import distance
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -317,7 +318,9 @@ class VAEHandler:
             msa_keys = pickle.load(file_handle)
         with open(self.pickle + "/seq_weight.pkl", 'rb') as file_handle:
             seq_weight = pickle.load(file_handle)
-        return seq_weight.astype(np.float32), msa_keys
+        with open(self.pickle + "/training_alignment.pkl", 'rb') as file_handle:
+            train_dict = pickle.load(file_handle)
+        return seq_weight.astype(np.float32), msa_keys, train_dict
 
     def latent_space(self, check_exists=False):
         pickle_name = self.pickle + "/latent_space.pkl"
@@ -328,7 +331,7 @@ class VAEHandler:
                 latent_space = pickle.load(file_handle)
             return latent_space['mu'], latent_space['sigma'], latent_space['key']
 
-        msa_weight, msa_keys = self._load_pickles()
+        msa_weight, msa_keys, _ = self._load_pickles()
         vae, msa_binary, num_seq = self._prepare_model()
         self.vae = vae
 
@@ -445,6 +448,32 @@ class VAEHandler:
         if vae is None:
             vae, _, _ = self._prepare_model()
         return vae.residues_probabilities(x)
+
+    def get_closest_dataset_sequence(self, x_coords):
+        """
+        Method searches for the closest sequence in the input dataset and returns its ID and sequence
+        Parameters:
+            x_coords : list of tuples with coordinates into the latent space.
+                       The nearest points to these are found
+        Returns:
+            List of tuples [(id, sequence),...]
+                id - key of nearest sequence
+                sequence - sequence of the closest point from input dataset
+            Note that the order in list corresponds to the order in x_coords
+        """
+        def closest_node(node, nodes):
+            closest_index = distance.cdist(np.array([node]), nodes).argmin()
+            return closest_index
+
+        _, keys, train_dict = self._load_pickles()
+        mu, _, _ = self.latent_space(check_exists=True)
+
+        closest_sequences = []
+        for coords in x_coords:
+            key_ind = closest_node(coords, mu)
+            seq_id = keys[key_ind]
+            closest_sequences.append((seq_id, train_dict[seq_id]))
+        return closest_sequences
 
 class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):

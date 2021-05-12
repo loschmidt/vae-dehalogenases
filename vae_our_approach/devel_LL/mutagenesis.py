@@ -146,15 +146,21 @@ class MutagenesisGenerator:
         residues_prob_above = self.residues_likelihood_above_threshold(to_store, threshold=threshold)
         col_res_prob_name = "Residues count of probabilities above {}".format(threshold)
 
+        closest_sequences = self.handler.get_closest_dataset_sequence(x_coords=coords)
+
         # Store in csv file
         with open(self.setuper.high_fld + '/{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x",
-                             "Coordinate y", "Query identity [%]", col_res_prob_name])
-            for i, (name, seq, prob, c, res_p) in enumerate(zip(names, vals, probs, coords, residues_prob_above)):
+                             "Coordinate y", "Query identity [%]", col_res_prob_name, "Closest ID",
+                             "Closest identity [%]"])
+            for i, (name, seq, prob, c, res_p, close) in enumerate(zip(names, vals, probs, coords, residues_prob_above,
+                                                                       closest_sequences)):
                 seq_str = ''
                 query_iden = identity(seq, query_seq)
-                writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1], query_iden, res_p])
+                cl_identity = identity(seq, close[1])
+                writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1], query_iden, res_p,
+                                 close[0], cl_identity])
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
