@@ -136,31 +136,50 @@ class MutagenesisGenerator:
         vals = list(to_store.values())
         self.anc_seqs = vals
         self.store_ancestors_in_fasta(names=names, file_name=to_file)
-        # Measuring the identity
-        query_name = self.cur_name
-        query_dict = MutagenesisGenerator.binary_to_seq(self.setuper, seq_key=query_name, return_binary=False)
-        query_seq = query_dict[query_name]
+
+        # Measuring the identity with Query decoded from binary
+        query_dict = MutagenesisGenerator.binary_to_seq(self.setuper, seq_key=self.cur_name, return_binary=False)
+        query_seq = query_dict[self.cur_name]
         identity = lambda x, query: (sum([1 if i==j else 0 for i,j in zip(x,query)])/len(query))*100
 
+        # Residues probabilities above 0.9 counting
         threshold = 0.9
         residues_prob_above = self.residues_likelihood_above_threshold(to_store, threshold=threshold)
         col_res_prob_name = "Residues count of probabilities above {}".format(threshold)
 
+        # Find closest sequence in term of distance in the latent space
         closest_sequences = self.handler.get_closest_dataset_sequence(x_coords=coords)
+
+        def query_indels_and_substitution(seq, query):
+            """ Determines how many indels were added to WT and these positions keep in list """
+            substitution_list = []
+            gaps_vec = [p != '-' for p in query]
+            wt_positions = [sum(gaps_vec[:prefix+1]) for prefix in range(len(query))]
+            for pos, (seq_char, query_char) in enumerate(zip(seq, query)):
+                if seq_char != query_char:
+                    if query_char == '-':
+                        substitution_list.append("ins{}{}".format(wt_positions[pos], seq_char))
+                    if seq_char == '-':
+                        substitution_list.append("del{}{}".format(wt_positions[pos], query_char))
+                    else: # Substitution occurs
+                        substitution_list.append("{}{}{}".format(query_char, wt_positions[pos], seq_char))
+            return len(substitution_list), ", ".join(substitution_list)
 
         # Store in csv file
         with open(self.setuper.high_fld + '/{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x",
                              "Coordinate y", "Query identity [%]", col_res_prob_name, "Closest ID",
-                             "Closest identity [%]"])
+                             "Closest identity [%]", "Count of indels",
+                             "Insertions, deletions and substitutions in WT {}".format(self.cur_name)])
             for i, (name, seq, prob, c, res_p, close) in enumerate(zip(names, vals, probs, coords, residues_prob_above,
                                                                        closest_sequences)):
                 seq_str = ''
                 query_iden = identity(seq, query_seq)
+                cnt_indels, indels = query_indels_and_substitution(seq, query_seq)
                 cl_identity = identity(seq, close[1])
                 writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1], query_iden, res_p,
-                                 close[0], cl_identity])
+                                 close[0], cl_identity, cnt_indels, indels])
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
