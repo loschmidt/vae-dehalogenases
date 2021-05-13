@@ -159,7 +159,7 @@ class MutagenesisGenerator:
                 if seq_char != query_char:
                     if query_char == '-':
                         substitution_list.append("ins{}{}".format(wt_positions[pos], seq_char))
-                    if seq_char == '-':
+                    elif seq_char == '-':
                         substitution_list.append("del{}{}".format(wt_positions[pos], query_char))
                     else: # Substitution occurs
                         substitution_list.append("{}{}{}".format(query_char, wt_positions[pos], seq_char))
