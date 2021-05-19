@@ -67,8 +67,10 @@ class Benchmarker:
                 probabilities.append(p*100)
         data_dict = {"Dataset": datasets, "Probabilities": probabilities}
         dataFrame = pd.DataFrame.from_dict(data_dict)
-        sns_plot = sns.displot(dataFrame, x="Probabilities", hue="Dataset", kind="kde", fill=True, common_norm=False,
-                               color=["green", "black", "red", "orange"])
+        # sns_plot = sns.displot(dataFrame, x="Probabilities", hue="Dataset", kind="kde", fill=True, common_norm=False,
+        #                        color=["green", "black", "red", "orange"])
+        sns_plot = sns.histplot(data=dataFrame, x="Probabilities", hue="Dataset", multiple="dodge", shrink=.8,
+                                color=["green", "black", "red", "orange"])
 
         plt.xlabel('% probability of observing')
         plt.ylabel('Density')
@@ -76,7 +78,7 @@ class Benchmarker:
 
         save_path = self.setuper.high_fld + '/{}benchmark_density.png'.format(self.setuper.model_name)
         print("Benchmark message : Class highlighter saving graph to", save_path)
-        sns_plot.savefig(save_path)
+        sns_plot.figure.savefig(save_path)
         if self.setuper.stats:
             print('Benchmark message : Benchmark results:')
             print('\tpositive mean: \t', mean_p)
