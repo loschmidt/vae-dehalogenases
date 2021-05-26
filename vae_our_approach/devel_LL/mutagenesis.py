@@ -152,18 +152,19 @@ class MutagenesisGenerator:
 
         def query_indels_and_substitution(seq, query):
             """ Determines how many indels were added to WT and these positions keep in list """
+            indels_list = []
             substitution_list = []
             gaps_vec = [p != '-' for p in query]
             wt_positions = [sum(gaps_vec[:prefix+1]) for prefix in range(len(query))]
             for pos, (seq_char, query_char) in enumerate(zip(seq, query)):
                 if seq_char != query_char:
                     if query_char == '-':
-                        substitution_list.append("ins{}{}".format(wt_positions[pos], seq_char))
+                        indels_list.append("ins{}{}".format(wt_positions[pos], seq_char))
                     elif seq_char == '-':
-                        substitution_list.append("del{}{}".format(wt_positions[pos], query_char))
+                        indels_list.append("del{}{}".format(wt_positions[pos], query_char))
                     else: # Substitution occurs
                         substitution_list.append("{}{}{}".format(query_char, wt_positions[pos], seq_char))
-            return len(substitution_list), ", ".join(substitution_list)
+            return substitution_list, indels_list
 
         # Store in csv file
         with open(self.setuper.high_fld + '/{0}_probabilities_ancs.csv'.format(to_file.split('.')[0]), 'w', newline='') as file:
@@ -171,15 +172,16 @@ class MutagenesisGenerator:
             writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x",
                              "Coordinate y", "Query identity [%]", col_res_prob_name, "Closest ID",
                              "Closest identity [%]", "Count of indels",
-                             "Insertions, deletions and substitutions in WT {}".format(self.cur_name)])
+                             "Indels", "Count of substitutions", "Substitutions in WT {}".format(self.cur_name)])
             for i, (name, seq, prob, c, res_p, close) in enumerate(zip(names, vals, probs, coords, residues_prob_above,
                                                                        closest_sequences)):
                 seq_str = ''
                 query_iden = identity(seq, query_seq)
-                cnt_indels, indels = query_indels_and_substitution(seq, query_seq)
+                subs_list, indels = query_indels_and_substitution(seq, query_seq)
                 cl_identity = identity(seq, close[1])
                 writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1], query_iden, res_p,
-                                 close[0], cl_identity, cnt_indels, indels])
+                                 close[0], cl_identity, len(indels), ", ".join(indels),
+                                 len(subs_list), ", ".join(subs_list)])
 
     def _get_ancestor(self, mutants):
         mutants_pos = self._mutants_positions(mutants)
