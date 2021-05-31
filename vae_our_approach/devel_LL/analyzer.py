@@ -341,6 +341,7 @@ class VAEHandler:
 
         mu_list = []
         sigma_list = []
+        keys_list = []
         for idx, data in enumerate(train_data_loader):
             msa, weight, key = data
             with torch.no_grad():
@@ -352,14 +353,16 @@ class VAEHandler:
                     sigma = sigma.cpu().data.numpy()
                 mu_list.append(mu)
                 sigma_list.append(sigma)
+                keys_list.append(key)
         mu = np.vstack(mu_list)
         sigma = np.vstack(sigma_list)
+        keys = np.vstack(keys_list)
 
         pickle_name = "/{}latent_space.pkl".format(self.model_name+"_" if self.model_name else "")
         with open(self.pickle + pickle_name, 'wb') as file_handle:
-            pickle.dump({'key': key, 'mu': mu, 'sigma': sigma}, file_handle)
+            pickle.dump({'key': keys, 'mu': mu, 'sigma': sigma}, file_handle)
         print('The latent space was created....')
-        return mu, sigma, key
+        return mu, sigma, keys
 
     def propagate_through_VAE(self, binaries, weights, keys):
         # check if VAE is already ready from latent space method
@@ -465,8 +468,8 @@ class VAEHandler:
             closest_index = distance.cdist(np.array([node]), nodes).argmin()
             return closest_index
 
-        _, keys, train_dict = self._load_pickles()
-        mu, _, _ = self.latent_space(check_exists=True)
+        _, _, train_dict = self._load_pickles()
+        mu, _, keys = self.latent_space(check_exists=True)
 
         closest_sequences = []
         for coords in x_coords:
