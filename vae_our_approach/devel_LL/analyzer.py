@@ -190,7 +190,7 @@ class Highlighter:
         ax.set_ylabel("$Probability$")
 
         colors = ['green', 'red', 'salmon', 'coral', 'chocolate', 'orangered', 'sienna']
-        probs = [(i, j) for i, j in zip(ancs_probs, ancs_names)]
+        probs = [(i, j) for i, j in zip(ancs_probs, [x for x in range(1,len(ancs_names)+1)])]
         sort_probs = sorted(probs, key=lambda x:x[0])
 
         i = 0
@@ -557,7 +557,7 @@ class AncestorsHandler:
                                                                  infile=file,
                                                                  outfile=profile,
                                                                  threads=cores_count,
-                                                                 verbose=True, auto=True, dealign=True)
+                                                                 verbose=True, auto=True)#, dealign=True)
                     print("AncestorHandler message : Aligning ancestors ...\n"
                           "                          Running {}".format(clustalomega_cline))
                     stdout, stderr = clustalomega_cline()
@@ -567,7 +567,7 @@ class AncestorsHandler:
                                                              profile2=profile,
                                                              outfile=outfile,
                                                              threads=cores_count,
-                                                             verbose=True, auto=True, isprofile=True)
+                                                             verbose=True, auto=True)#, isprofile=True)
                 print("AncestorHandler message : Running {}".format(clustalomega_cline))
                 stdout, stderr = clustalomega_cline()
                 print(stdout)
