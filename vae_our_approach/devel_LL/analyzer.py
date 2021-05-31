@@ -35,8 +35,8 @@ class Highlighter:
             return self._highlight_3D(name='', high_data=self.mu)
         self.fig, ax = plt.subplots()
         ax.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
-        ax.set_xlim([-6, 6])
-        ax.set_ylim([-6, 6])
+        ax.set_xlim([-7, 7])
+        ax.set_ylim([-7, 7])
         ax.set_xlabel("$Z_1$")
         ax.set_ylabel("$Z_2$")
         return ax
