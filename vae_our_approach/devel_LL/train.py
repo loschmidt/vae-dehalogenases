@@ -46,6 +46,8 @@ class Train:
                 pickle.dump(self.benchmark_set, file_handle)
             with open(setuper.pickles_fld + '/training_set.pkl', 'wb') as file_handle:
                 pickle.dump(self.seq_msa_binary, file_handle)
+            with open(setuper.pickles_fld + '/training_keys.pkl', 'wb') as file_handle:
+                pickle.dump(self.seq_keys[random_idx[self.num_seq // percentage]], file_handle)
         self.seq_msa_binary = self.seq_msa_binary.reshape((self.num_seq, -1))
         self.seq_msa_binary = self.seq_msa_binary.astype(np.float32)
 

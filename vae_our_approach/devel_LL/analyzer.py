@@ -287,7 +287,7 @@ class VAEHandler:
 
     def _prepare_model(self):
         ## prepare model to mapping from highlighting files
-        with open(self.pickle + "/seq_msa_binary.pkl", 'rb') as file_handle:
+        with open(self.pickle + "/training_set.pkl", 'rb') as file_handle:
             msa_original_binary = pickle.load(file_handle)
         num_seq = msa_original_binary.shape[0]
         len_protein = msa_original_binary.shape[1]
@@ -314,7 +314,7 @@ class VAEHandler:
 
     def _load_pickles(self):
         '''Side effect setups self.vae'''
-        with open(self.pickle + "/keys_list.pkl", 'rb') as file_handle:
+        with open(self.pickle + "/training_keys.pkl", 'rb') as file_handle:
             msa_keys = pickle.load(file_handle)
         with open(self.pickle + "/seq_weight.pkl", 'rb') as file_handle:
             seq_weight = pickle.load(file_handle)
