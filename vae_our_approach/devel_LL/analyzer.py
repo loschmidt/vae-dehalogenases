@@ -329,7 +329,7 @@ class VAEHandler:
                   "Loading and returning that file...".format(pickle_name))
             with open(pickle_name, 'rb') as file_handle:
                 latent_space = pickle.load(file_handle)
-            return latent_space['mu'], latent_space['sigma'], latent_space['key']
+            return latent_space['mu'], latent_space['sigma'], latent_space['key'][0]
 
         msa_weight, msa_keys, _ = self._load_pickles()
         vae, msa_binary, num_seq = self._prepare_model()
@@ -362,7 +362,7 @@ class VAEHandler:
         with open(self.pickle + pickle_name, 'wb') as file_handle:
             pickle.dump({'key': keys, 'mu': mu, 'sigma': sigma}, file_handle)
         print('The latent space was created....')
-        return mu, sigma, keys
+        return mu, sigma, keys[0]
 
     def propagate_through_VAE(self, binaries, weights, keys):
         # check if VAE is already ready from latent space method

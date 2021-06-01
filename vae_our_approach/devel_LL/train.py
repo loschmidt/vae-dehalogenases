@@ -37,7 +37,7 @@ class Train:
         self.benchmark_set = np.zeros((self.num_seq // percentage, self.len_protein, self.num_res_type))
         if benchmark:
             # Take 5 percent from original MSA for further evaluation
-            random_idx = np.random.permutation(range(self.num_seq))
+            random_idx = np.random.permutation(range(1, self.num_seq))
             for i in range(self.num_seq // percentage):
                 self.benchmark_set[i] = self.seq_msa_binary[random_idx[i]]
             self.seq_msa_binary = np.delete(self.seq_msa_binary, random_idx[:(self.num_seq // percentage)], axis=0)
@@ -67,7 +67,7 @@ class Train:
 
         # Count of validations run is for robustness just one
         K = 1 if self.setuper.robustness_train else self.K
-        
+        K = 1        
         for k in range(K):
             print("Start the {}th fold training".format(k))
             print("-" * 60)
