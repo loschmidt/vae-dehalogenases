@@ -42,13 +42,14 @@ class Train:
                 self.benchmark_set[i] = self.seq_msa_binary[random_idx[i]]
             self.seq_msa_binary = np.delete(self.seq_msa_binary, random_idx[:(self.num_seq // percentage)], axis=0)
             training_weights = np.delete(self.seq_weight, random_idx[:(self.num_seq // percentage)], axis=0)
+            training_keys = np.delete(self.seq_keys, random_idx[:(self.num_seq // percentage)], axis=0)
             self.num_seq = self.seq_msa_binary.shape[0]
             with open(setuper.pickles_fld + '/positive_control.pkl', 'wb') as file_handle:
                 pickle.dump(self.benchmark_set, file_handle)
             with open(setuper.pickles_fld + '/training_set.pkl', 'wb') as file_handle:
                 pickle.dump(self.seq_msa_binary, file_handle)
             with open(setuper.pickles_fld + '/training_keys.pkl', 'wb') as file_handle:
-                pickle.dump(self.seq_keys[random_idx[self.num_seq // percentage]], file_handle)
+                pickle.dump(training_keys, file_handle)
             with open(setuper.pickles_fld + '/training_weights.pkl', 'wb') as file_handle:
                 pickle.dump(training_weights, file_handle)
         self.seq_msa_binary = self.seq_msa_binary.reshape((self.num_seq, -1))
