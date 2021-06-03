@@ -315,9 +315,9 @@ class VAEHandler:
 
     def _load_pickles(self):
         '''Side effect setups self.vae'''
-        with open(self.pickle + "/training_keys.pkl", 'rb') as file_handle:
+        with open(self.pickle + "/keys_list.pkl", 'rb') as file_handle:
             msa_keys = pickle.load(file_handle)
-        with open(self.pickle + "/training_weights.pkl", 'rb') as file_handle:
+        with open(self.pickle + "/seq_weight.pkl", 'rb') as file_handle:
             seq_weight = pickle.load(file_handle)
         with open(self.pickle + "/training_alignment.pkl", 'rb') as file_handle:
             train_dict = pickle.load(file_handle)
