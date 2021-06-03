@@ -28,8 +28,8 @@ def plot_dual_axis(prs, wt, cl, res, inds, file):
     fig.set_size_inches(28.5, 15.5)
     plt.xticks(ancs, ancs)
     ax.plot(ancs, prs, color="red", marker="o", label='Probability')
-    ax.plot(ancs, wt, color="green", marker="o", label='WT')
-    ax.plot(ancs, cl, color="orange", marker="o", label='Closest')
+    ax.plot(ancs, wt, color="green", marker="v", label='WT')
+    ax.plot(ancs, cl, color="orange", marker="^", label='Closest')
     ax.set_xlabel("ancestors number", fontsize=14)
     ax.set_ylabel("Percentage [%]", color="red", fontsize=14)
     ax.legend(loc='upper left', bbox_to_anchor=(0.3, 1.05),
@@ -37,8 +37,8 @@ def plot_dual_axis(prs, wt, cl, res, inds, file):
 
     # Second y axis
     ax2 = ax.twinx()
-    ax2.plot(ancs, res, color="blue", marker="o", label='90% residues')
-    ax2.plot(ancs, inds, color="black", marker="o", label='Indel cnt')
+    ax2.plot(ancs, res, color="blue", marker="s", label='90% residues')
+    ax2.plot(ancs, inds, color="black", marker="x", label='Indel cnt')
     ax2.set_ylabel("Residue cnt", color="blue", fontsize=14)
     ax2.legend(loc='upper right', bbox_to_anchor=(0.8, 1.05),
                ncol=2, fancybox=True, shadow=True)
