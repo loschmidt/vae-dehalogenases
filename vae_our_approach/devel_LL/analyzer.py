@@ -505,10 +505,13 @@ class VAEHandler:
         _, keys, train_dict = self._load_pickles()
         train_seqs = train_dict.values()
 
+        print("="*80)
         closest_sequences = []
-        for sequence in sequences:
+        for iteration, sequence in enumerate(sequences):
             i_key, closest_identity = closest_seq_identity(sequence, train_seqs)
             closest_sequences.append((keys[i_key], closest_identity))
+            if (iteration+1) % (len(sequences) / 5) == 0:
+                print("Closest sequence search : iteration {} out of {}".format((iteration+1), len(sequences)))
         return closest_sequences
 
 
