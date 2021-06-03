@@ -128,6 +128,7 @@ class Highlighter:
         ratios = [9, 3, 5] if self.setuper.align else [6, 1]
         cnt_plot = 3 if self.setuper.align else 2
         fig, ax = plt.subplots(cnt_plot, 1, gridspec_kw={'height_ratios': ratios})
+        fig.tight_layout()
         ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
         if self.setuper.align:
             msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=self.setuper.highlight_files)
@@ -510,7 +511,7 @@ class VAEHandler:
         for iteration, sequence in enumerate(sequences):
             i_key, closest_identity = closest_seq_identity(sequence, train_seqs)
             closest_sequences.append((keys[i_key], closest_identity))
-            if (iteration+1) % (len(sequences) // 5) == 0:
+            if (iteration) % (len(sequences) // 5) == 0:
                 print("Closest sequence search : iteration {} out of {}".format((iteration+1), len(sequences)))
         return closest_sequences
 
