@@ -75,7 +75,7 @@ class Highlighter:
             else:
                 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             # plt.tight_layout()
-            #plt.title(label='Filtered Dataset, Weight = {}'.format(self.setuper.decay))
+            # plt.title(label='Filtered Dataset, Weight = {}'.format(self.setuper.decay))
             save_path = self.out_dir + name.replace('/', '-') + '{}_'.format(self.setuper.model_name) + self.name
             print("Class highlighter saving graph to", save_path)
             self.fig.savefig(save_path, bbox_inches='tight')
@@ -142,10 +142,10 @@ class Highlighter:
             for i, k in enumerate(keys):
                 ax[0].annotate(i + 1, data[i, :2])
                 ax[2].annotate(i + 1, data[i, :2])
-            x1 = min(data[:,0])
-            x2 = max(data[:,0])
-            y1 = min(data[:,1])
-            y2 = max(data[:,1])
+            x1 = min(data[:, 0])
+            x2 = max(data[:, 0])
+            y1 = min(data[:, 1])
+            y2 = max(data[:, 1])
             x1, x2 = (x1, x2) if x1 < x2 else (x2, x1)
             y1, y2 = (y1, y2) if y1 < y2 else (y2, y1)
             # Plot ancestors
@@ -175,9 +175,9 @@ class Highlighter:
         ax[0].set(adjustable='box', aspect='equal')
         # plt.show(
         save_path = self.out_dir + '{0}probability_graph{1}{2}.png'.format('dynamic_' if dynamic
-                                                                                    else 'aligned_',
-                                                                                file_notion,
-                                                                                self.setuper.model_name)
+                                                                           else 'aligned_',
+                                                                           file_notion,
+                                                                           self.setuper.model_name)
         print("Class highlighter saving probability plot to", save_path)
         fig.savefig(save_path, bbox_inches='tight')
 
@@ -190,16 +190,16 @@ class Highlighter:
         ax.set_ylabel("$Probability$")
 
         colors = ['green', 'red', 'salmon', 'coral', 'chocolate', 'orangered', 'sienna']
-        probs = [(i, j) for i, j in zip(ancs_probs, [x for x in range(1,len(ancs_names)+1)])]
-        sort_probs = sorted(probs, key=lambda x:x[0])
+        probs = [(i, j) for i, j in zip(ancs_probs, [x for x in range(1, len(ancs_names) + 1)])]
+        sort_probs = sorted(probs, key=lambda x: x[0])
 
         i = 0
         for anc, n in sort_probs:
             ax.hlines(y=anc, xmin=0, xmax=len(straight), linewidth=1, color=colors[i])
             if i % 2 == 0:
-                ax.text(len(straight)+2, anc, n, ha='left', va='center')
+                ax.text(len(straight) + 2, anc, n, ha='left', va='center')
             else:
-                ax.text(-2 , anc, n, ha='right', va='center')
+                ax.text(-2, anc, n, ha='right', va='center')
             i += 1
 
         save_path = self.out_dir + 'Sebestova_probs_{}.png'.format(self.setuper.model_name)
@@ -261,18 +261,19 @@ class Highlighter:
     def plot_instrict_dimensions(self, mus):
         '''Plot histograms for individual dimensions to check collapsed one'''
         dim = mus.shape[-1]
-        fig, axs = plt.subplots((dim//6)+1, 3)
+        fig, axs = plt.subplots((dim // 6) + 1, 3)
         bins = np.linspace(-6, 6, 30)
 
         save_path = self.out_dir + "Instrict_dim_{}_".format(self.setuper.model_name)
         for d in range(0, dim, 2):
             axs[(d // 6), (d // 2) % 3].hist(mus[:, d], bins, alpha=0.5, label='dim_{}'.format(d))
-            if d+1 != dim:
-                axs[(d // 6), (d // 2) % 3].hist(mus[:, d+1], bins, alpha=0.5, label='dim_{}'.format(d+1))
+            if d + 1 != dim:
+                axs[(d // 6), (d // 2) % 3].hist(mus[:, d + 1], bins, alpha=0.5, label='dim_{}'.format(d + 1))
             axs[(d // 6), (d // 2) % 3].legend(loc='upper right')
         save_to = save_path + 'combined.png'
         print("Class highlighter saving graph to", save_to)
         fig.savefig(save_to)
+
 
 class VAEHandler:
     def __init__(self, setuper, model_name=None):
@@ -358,7 +359,7 @@ class VAEHandler:
         sigma = np.vstack(sigma_list)
         keys = np.vstack(keys_list)
 
-        pickle_name = "/{}latent_space.pkl".format(self.model_name+"_" if self.model_name else "")
+        pickle_name = "/{}latent_space.pkl".format(self.model_name + "_" if self.model_name else "")
         with open(self.pickle + pickle_name, 'wb') as file_handle:
             pickle.dump({'key': keys, 'mu': mu, 'sigma': sigma}, file_handle)
         print('The latent space was created....')
@@ -464,6 +465,7 @@ class VAEHandler:
                 sequence - sequence of the closest point from input dataset
             Note that the order in list corresponds to the order in x_coords
         """
+
         def closest_node(node, nodes):
             closest_index = distance.cdist(np.array([node]), nodes).argmin()
             return closest_index
@@ -477,6 +479,38 @@ class VAEHandler:
             seq_id = keys[key_ind]
             closest_sequences.append((seq_id, train_dict[seq_id]))
         return closest_sequences
+
+    def get_identity_closest_dataset_sequence(self, sequences):
+        """
+        Method searches for the most identical sequence in the input dataset.
+        Parameters:
+            sequences : list of chars representing amino acid sequence level
+        Returns:
+            List of tuples [(id, identity),...]
+            id - key of nearest sequence
+            identity - percentage sequence identity with the corresponding sequence in sequences
+        Note that the order in list corresponds to the order in sequences
+        """
+        identity = lambda x, query: (sum([1 if i == j else 0 for i, j in zip(x, query)]) / len(query)) * 100
+
+        def closest_seq_identity(seq, dataset):
+            max_identity, id_i = 0.0, 0
+            for i, d in dataset:
+                seq_identity = identity(d, seq)
+                if seq_identity > max_identity:
+                    max_identity = seq_identity
+                    id_i = i
+            return id_i, max_identity
+
+        _, keys, train_dict = self._load_pickles()
+        train_seqs = train_dict.values()
+
+        closest_sequences = []
+        for sequence in sequences:
+            i_key, closest_identity = closest_seq_identity(sequence, train_seqs)
+            closest_sequences.append((keys[i_key], closest_identity))
+        return closest_sequences
+
 
 class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):
@@ -508,8 +542,8 @@ class AncestorsHandler:
                     if len(seq) > ref_len:
                         # length of sequence is bigger than ref query, cut sequence on reference query gap positions
                         print('AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
-                            '                         Sequence amino position'
-                            ' at reference gaps will be removed'.format(len(seq), ref_len))
+                              '                         Sequence amino position'
+                              ' at reference gaps will be removed'.format(len(seq), ref_len))
                         tmp = ''
                         len_dif = len(best_align) - ref_len
                         aligned_query = alignments[0][0]
@@ -560,7 +594,7 @@ class AncestorsHandler:
                                                                  infile=file,
                                                                  outfile=profile,
                                                                  threads=cores_count,
-                                                                 verbose=True, auto=True)#, dealign=True)
+                                                                 verbose=True, auto=True)  # , dealign=True)
                     print("AncestorHandler message : Aligning ancestors ...\n"
                           "                          Running {}".format(clustalomega_cline))
                     stdout, stderr = clustalomega_cline()
@@ -570,7 +604,7 @@ class AncestorsHandler:
                                                              profile2=profile,
                                                              outfile=outfile,
                                                              threads=cores_count,
-                                                             verbose=True, auto=True)#, isprofile=True)
+                                                             verbose=True, auto=True)  # , isprofile=True)
                 print("AncestorHandler message : Running {}".format(clustalomega_cline))
                 stdout, stderr = clustalomega_cline()
                 print(stdout)

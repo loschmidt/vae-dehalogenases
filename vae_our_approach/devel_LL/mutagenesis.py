@@ -148,7 +148,7 @@ class MutagenesisGenerator:
         col_res_prob_name = "Residues count of probabilities above {}".format(threshold)
 
         # Find closest sequence in term of distance in the latent space
-        closest_sequences = self.handler.get_closest_dataset_sequence(x_coords=coords)
+        closest_sequences = self.handler.get_identity_closest_dataset_sequence(vals)
 
         def query_indels_and_substitution(seq, query):
             """ Determines how many indels were added to WT and these positions keep in list """
@@ -178,9 +178,8 @@ class MutagenesisGenerator:
                 seq_str = ''
                 query_iden = identity(seq, query_seq)
                 subs_list, indels = query_indels_and_substitution(seq, query_seq)
-                cl_identity = identity(seq, close[1])
                 writer.writerow([i, name, seq_str.join(seq), prob, c[0], c[1], query_iden, res_p,
-                                 close[0], cl_identity, len(indels), ", ".join(indels),
+                                 close[0], close[1], len(indels), ", ".join(indels),
                                  len(subs_list), ", ".join(subs_list)])
 
     def _get_ancestor(self, mutants):
