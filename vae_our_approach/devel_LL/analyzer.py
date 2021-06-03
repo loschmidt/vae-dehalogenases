@@ -287,7 +287,7 @@ class VAEHandler:
 
     def _prepare_model(self):
         ## prepare model to mapping from highlighting files
-        with open(self.pickle + "/training_set.pkl", 'rb') as file_handle:
+        with open(self.pickle + "/seq_msa_binary.pkl", 'rb') as file_handle:
             msa_original_binary = pickle.load(file_handle)
         num_seq = msa_original_binary.shape[0]
         len_protein = msa_original_binary.shape[1]
@@ -329,7 +329,7 @@ class VAEHandler:
                   "Loading and returning that file...".format(pickle_name))
             with open(pickle_name, 'rb') as file_handle:
                 latent_space = pickle.load(file_handle)
-            return latent_space['mu'], latent_space['sigma'], latent_space['key'][0]
+            return latent_space['mu'], latent_space['sigma'], latent_space['key']
 
         msa_weight, msa_keys, _ = self._load_pickles()
         vae, msa_binary, num_seq = self._prepare_model()
@@ -362,7 +362,7 @@ class VAEHandler:
         with open(self.pickle + pickle_name, 'wb') as file_handle:
             pickle.dump({'key': keys, 'mu': mu, 'sigma': sigma}, file_handle)
         print('The latent space was created....')
-        return mu, sigma, keys[0]
+        return mu, sigma, keys
 
     def propagate_through_VAE(self, binaries, weights, keys):
         # check if VAE is already ready from latent space method
@@ -468,8 +468,8 @@ class VAEHandler:
             closest_index = distance.cdist(np.array([node]), nodes).argmin()
             return closest_index
 
-        _, _, train_dict = self._load_pickles()
-        mu, _, keys = self.latent_space(check_exists=True)
+        _, keys, train_dict = self._load_pickles()
+        mu, _, _ = self.latent_space(check_exists=True)
 
         closest_sequences = []
         for coords in x_coords:
