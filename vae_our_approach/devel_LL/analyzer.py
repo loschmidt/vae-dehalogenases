@@ -495,7 +495,7 @@ class VAEHandler:
 
         def closest_seq_identity(seq, dataset):
             max_identity, id_i = 0.0, 0
-            for i, d in dataset:
+            for i, d in enumerate(dataset):
                 seq_identity = identity(d, seq)
                 if seq_identity > max_identity:
                     max_identity = seq_identity
@@ -510,7 +510,7 @@ class VAEHandler:
         for iteration, sequence in enumerate(sequences):
             i_key, closest_identity = closest_seq_identity(sequence, train_seqs)
             closest_sequences.append((keys[i_key], closest_identity))
-            if (iteration+1) % (len(sequences) / 5) == 0:
+            if (iteration+1) % (len(sequences) // 5) == 0:
                 print("Closest sequence search : iteration {} out of {}".format((iteration+1), len(sequences)))
         return closest_sequences
 
