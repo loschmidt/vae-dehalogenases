@@ -1,5 +1,6 @@
 import csv
 import argparse
+import matplotlib
 import matplotlib.pyplot as plt
 
 
@@ -21,7 +22,8 @@ def parse_csv(file):
 
 
 def plot_dual_axis(prs, wt, cl, res, inds, file):
-    plt.figure(figsize=(30, 6), dpi=100)
+    plt.figure(figsize=(30, 6), dpi=400)
+    matplotlib.rc('ytick', labelsize=20)
 
     ancs = range(len(prs))
     fig, ax = plt.subplots()
@@ -31,23 +33,23 @@ def plot_dual_axis(prs, wt, cl, res, inds, file):
     ax.plot(ancs, wt, color="green", marker="v", label='WT')
     ax.plot(ancs, cl, color="orange", marker="^", label='Closest')
     ax.set_xlabel("ancestors number", fontsize=14)
-    ax.set_ylabel("Percentage [%]", color="red", fontsize=14)
-    ax.legend(loc='upper left', bbox_to_anchor=(0.3, 1.05),
-              ncol=3, fancybox=True, shadow=True)
+    ax.set_ylabel("Percentage [%]", color="red", fontsize=20)
+    ax.legend(loc='upper left', bbox_to_anchor=(0.15, 1.07),
+              ncol=3, fancybox=True, shadow=True, fontsize=18)
 
     # Second y axis
     ax2 = ax.twinx()
-    ax2.plot(ancs, res, color="blue", marker="s", label='90% residues')
+    ax2.plot(ancs, res, color="blue", marker="s", label='Cnt of residues above 90% likelihood')
     ax2.plot(ancs, inds, color="black", marker="x", label='Indel cnt')
-    ax2.set_ylabel("Residue cnt", color="blue", fontsize=14)
-    ax2.legend(loc='upper right', bbox_to_anchor=(0.8, 1.05),
-               ncol=2, fancybox=True, shadow=True)
+    ax2.set_ylabel("Residue cnt", color="blue", fontsize=20)
+    ax2.legend(loc='upper right', bbox_to_anchor=(0.8, 1.07),
+               ncol=2, fancybox=True, shadow=True, fontsize=18)
     # save the plot as a file
     name = (file.split('/')[-1]).split('.')[0] + '.jpg'
     print(" Dual axis report : saving plot into", name)
     fig.savefig(name,
                 format='jpeg',
-                dpi=100,
+                dpi=400,
                 bbox_inches='tight')
 
 
