@@ -69,9 +69,9 @@ class VAE(nn.Module):
         self.decoder_linears.append(nn.Linear(num_hidden_units[-1], dim_msa_vars))
 
     def encoder(self, x):
-        '''
+        """
         encoder transforms x into latent space z
-        '''
+        """
         
         h = x
         for T in self.encoder_linears:
@@ -82,9 +82,9 @@ class VAE(nn.Module):
         return mu, sigma
 
     def decoder(self, z):
-        '''
+        """
         decoder transforms latent space z into p, which is the log probability  of x being 1.
-        '''
+        """
         
         h = z
         for i in range(len(self.decoder_linears)-1):
@@ -95,30 +95,25 @@ class VAE(nn.Module):
         fixed_shape = tuple(h.shape[0:-1])
         h = torch.unsqueeze(h, -1)
         h = h.view(fixed_shape + (-1, self.num_aa_type))
-        
-        #h = torch.reshape(h, fixed_shape + (-1, self.num_aa_type))        
+
         log_p = F.log_softmax(h, dim = -1)
         log_p = log_p.view(fixed_shape + (-1,))
-        #log_p = torch.reshape(log_p, fixed_shape + (-1,))
-        
-        # h = h.view(h.size(0), -1, self.num_aa_type)
-        # log_p = F.log_softmax(h, dim = 2)
-        # log_p = log_p.view(log_p.size(0), -1)
         
         return log_p
 
-    def decoder_seq(self, z):
-        '''Decode VAE result to protein sequence again. Get max value indice for each position'''
-        h = z
-        for i in range(len(self.decoder_linears) - 1):
-            h = self.decoder_linears[i](h)
-            h = torch.tanh(h)
-        h = self.decoder_linears[-1](h)
-        fixed_shape = tuple(h.shape[0:-1])
+    def z_to_number_sequences(self, z):
+        """
+        Decode VAE result to protein sequence again. Get max value indices for each position.
+
+        Returns protein sequence in number representation.
+        Capable od decoding more sequence at once.
+        """
+        h = self.decoder(z)
+        # Reshape vae output
+        final_shape = () if z.dim() == 1 else tuple(z.size()[0:-1])
         h = torch.unsqueeze(h, -1)
-        h = h.view(fixed_shape + (-1, self.num_aa_type))
-        h = F.softmax(h, dim=-1)
-        idxs = (h.max(dim=-1).indices).tolist()
+        h = h.view(final_shape + (-1, self.num_aa_type))
+        idxs = h.max(dim=-1).indices.tolist()
         return idxs
 
     def decode_samples(self, mu, sigma, num_samples):
@@ -129,41 +124,34 @@ class VAE(nn.Module):
             eps = torch.randn_like(mu)
             z = mu + sigma * eps
             # Decode it
-            h = z
-            for i in range(len(self.decoder_linears) - 1):
-                h = self.decoder_linears[i](h)
-                h = torch.tanh(h)
-            h = self.decoder_linears[-1](h)
-            # And now convert to numbers from one hot encoding
-            idxs = []
+            expanded_number_sequences = self.z_to_number_sequences(z)
+            # Flat list and group same sequences in a row
+            flatten_idxs = []
             for i in range(store_shape):
-                for h_s in h:
-                    fixed_shape = tuple(h_s.shape[0:-1])
-                    h_s = torch.unsqueeze(h_s, -1)
-                    h_s = h_s.view(fixed_shape + (-1, self.num_aa_type))
-                    idxs.append((h_s.max(dim=-1).indices).tolist()[i])
-            #print(len(idxs), idxs[0], 'to je velikost po samplovani')
-            return idxs
+                for batch_of_sequences in expanded_number_sequences:
+                    flatten_idxs.append(batch_of_sequences[i])
+            return flatten_idxs
 
-    def marginal_sequence(self, x, likelihoods=False):
-        """ Return one or multiple likelihoods one by one TODO TEST IT :D """
+    def get_sequence_log_likelihood(self, x, likelihoods=False):
+        """ Return average likelihood for batch or multiple likelihoods one by one """
         with torch.no_grad():
-            ## Decode exact point in the latent space
+            # Decode exact point in the latent space
             mu, sigma = self.encoder(x)
             z = mu
 
-            ## log p(x|z)
+            # log p(x|z)
             log_p = self.decoder(z)
             log_PxGz = torch.sum(x * log_p, -1)
             # Return simple sum saying it is log probability of seeing our sequences
             if likelihoods:
-                return log_PxGz # TODO This should be checked
+                return log_PxGz
             return torch.sum(log_PxGz).double() / log_PxGz.shape[0]
 
     def residues_probabilities(self, x):
         """ Get true probability of each position to be seen on the output. Return as numpy. """
-        z, _ = self.encoder(x)
-        log_p = self.decoder(z)
+        with torch.no_grad():
+            z, _ = self.encoder(x)
+            log_p = self.decoder(z)
 
         # Reshape x
         final_shape = tuple(x.shape[0:-1])

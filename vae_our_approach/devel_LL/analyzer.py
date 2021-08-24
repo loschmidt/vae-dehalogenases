@@ -1,24 +1,26 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/07/18 09:33:12"
 
-from Bio import pairwise2
-from Bio.Align.Applications import ClustalOmegaCommandline
-from download_MSA import Downloader
-from pipeline import StructChecker
-from torch.utils.data import Dataset, DataLoader
-from VAE_model import MSA_Dataset, VAE
-from msa_prepar import MSA
-from msa_filter_scorer import MSAFilterCutOff as Convertor
-from supportscripts.animator import GifMaker
-from torch import tensor
-from scipy.spatial import distance
+import os
+import os.path as path
+import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
 import torch
-import os
-import os.path as path
+from Bio import pairwise2
+from Bio.Align.Applications import ClustalOmegaCommandline
+from scipy.spatial import distance
+from torch import tensor
+from torch.utils.data import DataLoader
+
+from VAE_model import MSA_Dataset, VAE
+from download_MSA import Downloader
+from msa_prepar import MSA
+from pipeline import StructChecker
+from project_enums import Helper
+from sequence_transformer import Transformer
+from supportscripts.animator import GifMaker
 
 
 class Highlighter:
@@ -29,6 +31,7 @@ class Highlighter:
         self.name = "class_highlight.png"
         self.setuper = setuper
         self.plt = self._init_plot()
+        self.transformer = Transformer(setuper)
 
     def _init_plot(self):
         if self.setuper.dimensionality == 3:
@@ -112,7 +115,7 @@ class Highlighter:
         names = list(msa.keys())
         if self.setuper.align:
             msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
-            binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(msa)
+            binary, weights, keys = self.transformer.prepare_aligned_msa_for_vae(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
             self._highlight(name=names, high_data=data, one_by_one=True, wait=wait, no_init=True)
         else:
@@ -133,7 +136,7 @@ class Highlighter:
         if self.setuper.align:
             msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=self.setuper.highlight_files)
             msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
-            binary, weights, keys = Convertor(self.setuper).prepare_aligned_msa_for_Vae(msa)
+            binary, weights, keys = self.transformer.prepare_aligned_msa_for_vae(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
             ## Plot data into both graphs and focus on the area
             ax[2].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3)
@@ -239,7 +242,6 @@ class Highlighter:
         return self.mu[idx, :]
 
     def _highlight_3D(self, name, high_data, color='blue'):
-        from mpl_toolkits.mplot3d import Axes3D
         if name == '':
             self.fig = plt.figure()
             self.ax = self.fig.add_subplot(111, projection='3d')
@@ -281,6 +283,7 @@ class VAEHandler:
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
         self.model_name = model_name
+        self.transformer = Transformer(setuper)
         self.vae = None
         if torch.cuda.is_available():
             self.use_cuda = True
@@ -301,17 +304,16 @@ class VAEHandler:
         ## build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
         if self.model_name:
-            vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/" + self.model_name))
+            vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/" + self.model_name + ".model"))
         else:
             vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_{}_fold_0_C_{}_D_{}_{}.model"
                                            .format(str(self.setuper.decay), self.setuper.C, self.setuper.dimensionality,
                                                    self.setuper.layersString)))
-        # vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0_C_{}_D_{}.model"
-        #                               .format(self.setuper.C, self.setuper.dimensionality)))
-        # vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_0.01_fold_0.model"))
         ## move the VAE onto a GPU
         if self.use_cuda:
             vae.cuda()
+
+        self.vae = vae
         return vae, msa_binary, num_seq
 
     def _load_pickles(self):
@@ -327,15 +329,14 @@ class VAEHandler:
     def latent_space(self, check_exists=False):
         pickle_name = self.pickle + "/latent_space.pkl"
         if check_exists and path.isfile(pickle_name):
-            print("Latent space file already exists in {0}. \n"
-                  "Loading and returning that file...".format(pickle_name))
+            print(" Latent space file already exists in {0}. \n"
+                  " Loading and returning that file...".format(pickle_name))
             with open(pickle_name, 'rb') as file_handle:
                 latent_space = pickle.load(file_handle)
             return latent_space['mu'], latent_space['sigma'], latent_space['key']
 
         msa_weight, msa_keys, _ = self._load_pickles()
         vae, msa_binary, num_seq = self._prepare_model()
-        self.vae = vae
 
         batch_size = num_seq
         train_data = MSA_Dataset(msa_binary, msa_weight, msa_keys)
@@ -363,7 +364,7 @@ class VAEHandler:
         pickle_name = "/{}latent_space.pkl".format(self.model_name + "_" if self.model_name else "")
         with open(self.pickle + pickle_name, 'wb') as file_handle:
             pickle.dump({'key': keys, 'mu': mu, 'sigma': sigma}, file_handle)
-        print('The latent space was created....')
+        print(' The latent space was created....')
         return mu, sigma, keys
 
     def propagate_through_VAE(self, binaries, weights, keys):
@@ -372,9 +373,9 @@ class VAEHandler:
         if vae is None:
             vae, _, _ = self._prepare_model()
 
-        binaries = binaries.astype(np.float32)
-        binaries = binaries.reshape((binaries.shape[0], -1))
-        weights = weights.astype(np.float32)
+        # binaries = binaries.astype(np.float32)
+        # binaries = binaries.reshape((binaries.shape[0], -1))
+        # weights = weights.astype(np.float32)
         train_data = MSA_Dataset(binaries, weights, keys)
         train_data_loader = DataLoader(train_data, batch_size=binaries.shape[0])
         mu_list = []
@@ -394,7 +395,12 @@ class VAEHandler:
         sigma = np.vstack(sigma_list)
         return mu, sigma
 
-    def decode_sequences_VAE(self, lat_sp_pos, ref_name):
+    def decode_z_to_aa_dict(self, lat_sp_pos, ref_name):
+        """
+        Methods decodes latent space coordinates to sequences in amino acid form.
+
+        Returns dictionary of decoded sequences where first sequence name is ref_name
+        """
         # check if VAE is already ready from latent space method
         vae = self.vae
         if vae is None:
@@ -405,17 +411,16 @@ class VAEHandler:
             z = tensor(z)
             if self.use_cuda:
                 z = z.cuda()
-            num_seqs[anc_name] = vae.decoder_seq(z)
-        if len(num_seqs.keys()) == 1:
-            # Special case for leangth 1
-            num_seqs[anc_name] = num_seqs[anc_name]
+            num_seqs[anc_name] = vae.z_to_number_sequences(z)
         # Convert from numbers to amino acid sequence
-        anc_dict = Convertor(self.setuper).back_to_amino(num_seqs)
+        anc_dict = self.transformer.back_to_amino(num_seqs)
         return anc_dict
 
-    def decode_for_marginal_prob(self, z, sigma, samples):
-        '''Decode binary representation of z. Method optimilized for
-         marginal probability computation'''
+    def decode_z_marginal_probability(self, z, sigma, samples):
+        """
+        Decode binary representation of z. Method optimized for
+        marginal probability computation
+        """
         vae = self.vae
         if vae is None:
             vae, _, _ = self._prepare_model()
@@ -426,16 +431,17 @@ class VAEHandler:
             # indices already on cpu(not tensor)
             if samples == -1:
                 # Decode exact value of z
-                ret = vae.decoder_seq(z)
+                ret = vae.z_to_number_sequences(z)
             else:
                 ret = vae.decode_samples(z, sigma, samples)
         return ret
 
     def get_marginal_probability(self, x, multiple_likelohoods=False):
         """
-        This method returns the exact probability as it is obtained by VAE
+        This method returns the log softmax probability as it is obtained by VAE
 
         To return log likelihoods far each sequence position set multiple_likelihoods to True
+        Otherwise it returns the average likelihood in the given batch of sequences
         """
         vae = self.vae
         if vae is None:
@@ -444,11 +450,11 @@ class VAEHandler:
             if self.use_cuda:
                 x = x.cuda()
             # indices already on cpu(not tensor)
-            ret = vae.marginal_sequence(x, multiple_likelohoods)
+            ret = vae.get_sequence_log_likelihood(x, multiple_likelohoods)
         return ret
 
     def residues_probability(self, x):
-        """ Return classic probability of each position to be seen on output """
+        """ Return classic probability of each position to be seen on output. Input binary"""
         vae = self.vae
         if vae is None:
             vae, _, _ = self._prepare_model()
@@ -492,12 +498,12 @@ class VAEHandler:
             identity - percentage sequence identity with the corresponding sequence in sequences
         Note that the order in list corresponds to the order in sequences
         """
-        identity = lambda x, query: (sum([1 if i == j else 0 for i, j in zip(x, query)]) / len(query)) * 100
+        from experiment_handler import ExperimentStatistics
 
         def closest_seq_identity(seq, dataset):
             max_identity, id_i = 0.0, 0
             for i, d in enumerate(dataset):
-                seq_identity = identity(d, seq)
+                seq_identity = ExperimentStatistics.sequence_identity(d, seq)
                 if seq_identity > max_identity:
                     max_identity = seq_identity
                     id_i = i
@@ -506,13 +512,13 @@ class VAEHandler:
         _, keys, train_dict = self._load_pickles()
         train_seqs = train_dict.values()
 
-        print("="*80)
+        print(Helper.LOG_DELIMETER.value)
         closest_sequences = []
         for iteration, sequence in enumerate(sequences):
             i_key, closest_identity = closest_seq_identity(sequence, train_seqs)
             closest_sequences.append((keys[i_key], closest_identity))
-            if (iteration) % (len(sequences) // 5) == 0:
-                print("Closest sequence search : iteration {} out of {}".format((iteration+1), len(sequences)))
+            if iteration % (len(sequences) // 5) == 0:
+                print(" Closest sequence search : iteration {} out of {}".format((iteration+1), len(sequences)))
         return closest_sequences
 
 
@@ -545,9 +551,9 @@ class AncestorsHandler:
                     best_align = alignments[0][1]
                     if len(seq) > ref_len:
                         # length of sequence is bigger than ref query, cut sequence on reference query gap positions
-                        print('AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
-                              '                         Sequence amino position'
-                              ' at reference gaps will be removed'.format(len(seq), ref_len))
+                        print(' AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
+                              '                          Sequence amino position'
+                              '  at reference gaps will be removed'.format(len(seq), ref_len))
                         tmp = ''
                         len_dif = len(best_align) - ref_len
                         aligned_query = alignments[0][0]
@@ -587,20 +593,20 @@ class AncestorsHandler:
             # check if alignment exists
             outfile = self.pickle + "/aligned_ancestors_to_MSA.fasta"
             if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
-                print('Analyzer message : Alignment file exists in {}. Using that file.'.format(outfile))
+                print(' Analyzer message : Alignment file exists in {}. Using that file.'.format(outfile))
             else:
                 # Create profile from sequences to be aligned
                 profile = self.pickle + "/ancestors_align.fasta"
                 if os.path.exists(profile) and os.path.getsize(profile) > 0:
-                    print('Analyzer message : Alignment of ancestors exists in {}. Using that file.'.format(profile))
+                    print(' Analyzer message : Alignment of ancestors exists in {}. Using that file.'.format(profile))
                 else:
                     clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
                                                                  infile=file,
                                                                  outfile=profile,
                                                                  threads=cores_count,
                                                                  verbose=True, auto=True)  # , dealign=True)
-                    print("AncestorHandler message : Aligning ancestors ...\n"
-                          "                          Running {}".format(clustalomega_cline))
+                    print(" AncestorHandler message : Aligning ancestors ...\n"
+                          "                           Running {}".format(clustalomega_cline))
                     stdout, stderr = clustalomega_cline()
 
                 clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
@@ -609,7 +615,7 @@ class AncestorsHandler:
                                                              outfile=outfile,
                                                              threads=cores_count,
                                                              verbose=True, auto=True)  # , isprofile=True)
-                print("AncestorHandler message : Running {}".format(clustalomega_cline))
+                print(" AncestorHandler message : Running {}".format(clustalomega_cline))
                 stdout, stderr = clustalomega_cline()
                 print(stdout)
             with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:

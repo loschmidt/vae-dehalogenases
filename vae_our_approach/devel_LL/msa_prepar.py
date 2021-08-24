@@ -7,33 +7,32 @@ from pipeline import StructChecker
 from download_MSA import Downloader
 from Bio import SeqIO
 
+
 class MSA:
     def __init__(self, setuper: StructChecker, processMSA=True):
         self.setup = setuper
         self.msa_file = setuper.msa_file
         self.pickle = setuper.pickles_fld
-        self.values = {"ref": setuper.ref_seq, "ref_n": setuper.ref_n, "keep_gaps": setuper.keep_gaps, "stats": setuper.stats}
+        self.values = {"ref": setuper.ref_seq, "ref_n": setuper.ref_n, "stats": setuper.stats}
         if processMSA:
             self.seq_dict = self.load_msa()
             self.amino_acid_dict()
 
     def proc_msa(self):
-        if self.values["ref"] or self.values["keep_gaps"]:
+        if self.values["ref"]:
             self._ref_filtering()
         else:
-            ## get length of first element in dictionary
+            # get length of first element in dictionary
             self._rem_seqs_on_gaps(len(self.seq_dict[next(iter(self.seq_dict))]), threshold=0.85)
         with open(self.pickle + "/seq_dict.pkl", 'wb') as file_handle:
             pickle.dump(self.seq_dict, file_handle)
 
         self._remove_unexplored_and_covert_aa()
-        if not self.values["keep_gaps"]:
-            self._rem_gaps_msa_positions()
-        else:
-            ## Keep all sequence positions
-            pos_idx = [i for i in range(self.seq_msa.shape[1])]
-            with open(self.pickle + "/seq_pos_idx.pkl", 'wb') as file_handle:
-                pickle.dump(pos_idx, file_handle)
+        self._rem_gaps_msa_positions()
+        # Keep all sequence positions
+        pos_idx = [i for i in range(self.seq_msa.shape[1])]
+        with open(self.pickle + "/seq_pos_idx.pkl", 'wb') as file_handle:
+            pickle.dump(pos_idx, file_handle)
         with open(self.pickle + "/seq_msa.pkl", 'wb') as file_handle:
             pickle.dump(self.seq_msa, file_handle)
         self._weighting_sequences()
@@ -74,21 +73,21 @@ class MSA:
         self._rem_seqs_on_gaps(len(query_seq))
 
     def _rem_seqs_on_gaps(self, seq_len, threshold=0.2):
-            ## remove sequences with too many gaps
-            seq_id = list(self.seq_dict.keys())
-            num_gaps = []
-            for k in seq_id:
-                num_gaps.append(self.seq_dict[k].count("-") + self.seq_dict[k].count("."))
-                if self.seq_dict[k].count("-") + self.seq_dict[k].count(".") > threshold * seq_len:
-                    self.seq_dict.pop(k)
+        ## remove sequences with too many gaps
+        seq_id = list(self.seq_dict.keys())
+        num_gaps = []
+        for k in seq_id:
+            num_gaps.append(self.seq_dict[k].count("-") + self.seq_dict[k].count("."))
+            if self.seq_dict[k].count("-") + self.seq_dict[k].count(".") > threshold * seq_len:
+                self.seq_dict.pop(k)
 
     def amino_acid_dict(self, export=False):
-        ## convert aa type into num 0-20
+        # convert aa type into num 0-20
         self.aa = ['R', 'H', 'K',
-              'D', 'E',
-              'S', 'T', 'N', 'Q',
-              'C', 'G', 'P',
-              'A', 'V', 'I', 'L', 'M', 'F', 'Y', 'W']
+                   'D', 'E',
+                   'S', 'T', 'N', 'Q',
+                   'C', 'G', 'P',
+                   'A', 'V', 'I', 'L', 'M', 'F', 'Y', 'W']
         self.aa_index = {}
         self.aa_index['-'] = 0
         self.aa_index['.'] = 0
@@ -133,7 +132,7 @@ class MSA:
         self.seq_msa = self.seq_msa[:, np.array(pos_idx)]
 
     def _weighting_sequences(self):
-        ## reweighting sequences
+        # reweighting sequences
         seq_weight = np.zeros(self.seq_msa.shape)
         for j in range(self.seq_msa.shape[1]):
             aa_type, aa_counts = np.unique(self.seq_msa[:, j], return_counts=True)
@@ -144,13 +143,13 @@ class MSA:
             for i in range(self.seq_msa.shape[0]):
                 seq_weight[i, j] = (1.0 / num_type) * (1.0 / aa_dict[self.seq_msa[i, j]])
         tot_weight = np.sum(seq_weight)
-        ## Normalize weights of sequences
+        # Normalize weights of sequences
         self.seq_weight = seq_weight.sum(1) / tot_weight
         with open(self.pickle + "/seq_weight.pkl", 'wb') as file_handle:
             pickle.dump(self.seq_weight, file_handle)
 
     def _to_binary(self):
-        K = len(self.aa)+1  ## num of classes of aa
+        K = len(self.aa) + 1  ## num of classes of aa
         D = np.identity(K)
         num_seq = self.seq_msa.shape[0]
         len_seq_msa = self.seq_msa.shape[1]
@@ -164,12 +163,12 @@ class MSA:
     def _stats(self):
         if self.values["stats"]:
             print("=" * 60)
-            print("Pfam ID : {0} - {2}, Reference sequence {1}".format(self.setup.pfam_id, self.values["ref"], self.setup.rp))
+            print("Pfam ID : {0}, Reference sequence {1}".format(self.setup.exp_dir, self.values["ref"]))
             print("Sequences used: {0}".format(self.seq_msa.shape[0]))
             print("Max lenght of sequence: {0}".format(max([len(i) for i in self.seq_msa])))
-            print('Sequences removed due to nnoessential AA: ', self.no_essentials)
             print("=" * 60)
             print()
+
 
 if __name__ == '__main__':
     tar_dir = StructChecker()

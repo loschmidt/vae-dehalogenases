@@ -1,25 +1,22 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2021/04/16 00:10:00"
 
+import pickle
 from itertools import product
 
-import pickle
-import torch
 import numpy as np
+import torch
 from matplotlib import pyplot as plt
-
+from scipy.stats import multivariate_normal as norm
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
-from scipy.stats import multivariate_normal as norm
-
 from EVO.create_library import CommandHandler, Curator
-from pipeline import StructChecker
-from benchmark import Benchmarker as Vae_encoder
 from analyzer import AncestorsHandler, VAEHandler
-from mutagenesis import MutagenesisGenerator as FastaStore
-
+from benchmark import Benchmarker as Vae_encoder
 from cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
+from experiment_handler import ExperimentStatistics
+from pipeline import StructChecker
 
 
 def highlight_coord(ax, mus, color='r'):
@@ -58,6 +55,7 @@ class EvolutionSearch:
         self.gp = None
         self.fitness_class_setting = (0.7, 0.25, 1.5, 0.5)
         self.log_str = ""
+        self.exp_stats_handler = ExperimentStatistics(setuper, experiment_name="cma_search")
 
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
             self.query = pickle.load(file_handle)
@@ -73,11 +71,9 @@ class EvolutionSearch:
         """
         mutants, y = self.curator.get_data()
         # Store them in the file
-        fasta = FastaStore(self.setuper)
-        fasta.anc_seqs = list(mutants.values())
         file_name = 'thermo_mutant_library.fasta'
-        fasta.store_ancestors_in_fasta(names=list(mutants.keys()), file_name=file_name)
-        print(" Evolutionary search : Mutant library saved to", self.out_dir + file_name)
+        msg = "Evolutionary search : Mutant library saved to"
+        self.exp_stats_handler.store_ancestor_dict_in_fasta(mutants, file_name, msg=msg)
 
         self.setuper.highlight_files = self.out_dir + file_name
         mutant_aligned = AncestorsHandler(setuper=self.setuper, seq_to_align=mutants).align_to_ref()
@@ -148,7 +144,7 @@ class EvolutionSearch:
     def decode(self, coords):
         """ Decode sequence from the latent space, also return log likelihood """
         vae_coord = [tuple(coord) for coord in coords]
-        seq_dict = self.handler.decode_sequences_VAE(vae_coord, "coded")
+        seq_dict = self.handler.decode_z_to_aa_dict(vae_coord, "coded")
         seqs = list(seq_dict.values())
         binary = self.get_binary(seq_dict)
         log_likelihood = self.handler.get_marginal_probability(binary, multiple_likelohoods=True)

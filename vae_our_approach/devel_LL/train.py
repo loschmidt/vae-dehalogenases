@@ -1,15 +1,17 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/07/28 13:49:00"
 
+import os
 import pickle
+
 import numpy as np
 import torch
 import torch.optim as optim
-import os
 
-from pipeline import StructChecker
+from VAE_model import VAE
 from download_MSA import Downloader
-from VAE_model import MSA_Dataset, VAE
+from pipeline import StructChecker
+
 
 class Train:
     def __init__(self, setuper: StructChecker, msa=None, benchmark=False):
@@ -128,13 +130,16 @@ class Train:
             if self.use_cuda:
                 vae.cpu()
 
-            if self.setuper.robustness_train:
-                # Save it to the special name
-                torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/{}.model".format(self.setuper.model_name))
-            else:
-                torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}_{}.model".format(
-                    str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality),
-                    self.setuper.layersString))
+            # if self.setuper.robustness_train:
+            #     # Save it to the special name
+            #     torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/{}.model".format(self.setuper.model_name))
+            # else:
+            #     torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}_{}.model".format(
+            #         str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality),
+            #         self.setuper.layersString))
+            # Save it to the special name
+            model_name = self.setuper.VAE_model_dir + "/{}_fold_{}.model".format(self.setuper.model_name, k)
+            torch.save(vae.state_dict(), model_name)
 
             print("Finish the {}th fold training".format(k))
             print("=" * 60)

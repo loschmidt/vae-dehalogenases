@@ -9,19 +9,18 @@ import urllib3
 import gzip
 import os.path as path
 
-from pipeline import StructChecker
 
 class Downloader:
     def __init__(self, setuper, all=False):
-        self.msa_dir = setuper.MSA_fld
-        self.pfam_id = setuper.pfam_id
-        self.down_seq = [setuper.rp]
+        self.pfam_id = setuper.exp_dir
+        self.down_seq = ["full"]
         if all:
             self.down_seq = ["full", "rp75", "rp55", "rp35", "rp15", "seed"]
         if setuper.in_file != '':
-            print('Using file provided in run parameter --in_file {}'.format(setuper.in_file))
+            print(' Using file provided in run parameter --in_file {}'.format(setuper.in_file))
             setuper.set_msa_file(setuper.in_file)
         else:
+            self.msa_dir = setuper.MSA_fld
             self._download()
             setuper.set_msa_file("{0}{1}_{2}.txt".format(self.msa_dir,self.pfam_id, setuper.rp))
 
@@ -46,6 +45,7 @@ class Downloader:
                     print(data, file=file_handle)
 
 if __name__ == '__main__':
+    from pipeline import StructChecker
     tar_dir = StructChecker()
     tar_dir.setup_struct()
     downloader = Downloader(tar_dir, all=True)

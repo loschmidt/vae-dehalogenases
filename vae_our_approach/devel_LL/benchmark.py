@@ -2,21 +2,23 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/09/18 13:49:00"
 
 import csv
-import numpy as np
-import pandas as pd
+import os
 import pickle
 import random
-import torch
 import warnings
-import os
 
-from download_MSA import Downloader
-from pipeline import StructChecker
-from analyzer import VAEHandler, Highlighter
-from matplotlib import pyplot as plt
-from msa_prepar import MSA
-from msa_filter_scorer import MSAFilterCutOff as BinaryCovertor
+import numpy as np
+import pandas as pd
 import seaborn as sns
+import torch
+from matplotlib import pyplot as plt
+
+from analyzer import VAEHandler, Highlighter
+from download_MSA import Downloader
+from msa_filter_scorer import MSAFilterCutOff as BinaryCovertor
+from msa_prepar import MSA
+from pipeline import StructChecker
+from sequence_transformer import Transformer
 
 ## LAMBDAS FUNCTIONS FOR CONVERSION AND PAIRWWISE COMPARISON OF SEQUENCES
 # Lambda for the calculation of the amino sequence decoded from binary
@@ -40,6 +42,7 @@ class Benchmarker:
             self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
         self.vae_handler = VAEHandler(setuper, model_name=setuper.model_name)
         self.binaryConv = BinaryCovertor(self.setuper)
+        self.transformer = Transformer(setuper)
 
         self.ancestors_probs = ancestor_probs
         # Ignore deprecated errors
@@ -77,30 +80,30 @@ class Benchmarker:
         plt.title(r'Benchmark histogram $\mu={0:.2f},{1:.2f},{2:.2f},{3:.2f}$'.format(mean_n, mean_p, mean_t, mean_a))
 
         save_path = self.setuper.high_fld + '/{}benchmark_density.png'.format(self.setuper.model_name)
-        print("Benchmark message : Class highlighter saving graph to", save_path)
+        print(" Benchmark message : Class highlighter saving graph to", save_path)
         sns_plot.figure.savefig(save_path)
         if self.setuper.stats:
-            print('Benchmark message : Benchmark results:')
+            print(' Benchmark message : Benchmark results:')
             print('\tpositive mean: \t', mean_p)
             print('\tnegative mean: \t', mean_n)
             print('\ttrain data mean: \t', mean_t)
             print('\tStraight ancestors mean: \t', mean_a)
 
         file = open(self.setuper.high_fld + '/{}benchmark_stats.txt'.format(self.setuper.model_name), 'w')
-        print('Benchmark stats saved in', self.setuper.high_fld + '/{}benchmark_stats.txt'.format(self.setuper.model_name))
-        s = 'train: '+ str(mean_t) + ' positive: ' + str(mean_p) + ' negative: ' + str(mean_n) +'ancestors'+ str(mean_a)
+        print(' Benchmark stats saved in', self.setuper.high_fld + '/{}benchmark_stats.txt'.format(self.setuper.model_name))
+        s = 'train: '+ str(mean_t) + ' positive: ' + str(mean_p) + ' negative: ' + str(mean_n) +' ancestors: '+ str(mean_a)
         file.write(s)
         file.close()
 
     def measure_seq_probability(self, seqs_dict):
         """
-        Method measures the marginal probability of
-        observation of the sequence on the output of network
+        Method measures the marginal observation probability of
+        the sequence on the output of network
         """
         # Encode sequence to binary
-        binary, _, _ = self.binaryConv.prepare_aligned_msa_for_Vae(seqs_dict)
-        probs = self._bench(binary)
-        return probs
+        binary, _, _ = self.transformer.prepare_aligned_msa_for_vae(seqs_dict)
+        observing_probs = self._bench(binary)
+        return observing_probs
 
     def prepareMusSigmas(self, data):
         msa_weight = np.ones(data.shape[0]) / data.shape[0]
@@ -115,34 +118,33 @@ class Benchmarker:
         return self._sample(mus, sigmas, data)
 
     def _sample(self, mus, sigmas, data):
-        '''
+        """
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
-        '''
-        N = 5000
+        """
+        N = 5
         probs = []  # marginal propabilities
 
-        print('=' * 60)
-        print('Benchmark message : Sampling process has begun...')
-        print('=' * 60)
+        print('=' * 80)
+        print(' Benchmark message : Sampling process has begun...')
 
         # Sample for mus and sigmas for N times
         batch_size = 32
         num_batches = mus.shape[0] // batch_size + 1
         for idx_batch in range(num_batches):
             if (idx_batch + 1) % 10 == 0:
-                print("\tidx_batch: {} out of {}".format(idx_batch, num_batches))
+                print("\t idx_batch: {} out of {}".format(idx_batch, num_batches))
             mus_b = mus[idx_batch * batch_size:(idx_batch + 1) * batch_size]
             sigmas_b = sigmas[idx_batch * batch_size:(idx_batch + 1) * batch_size]
             mus_b = torch.from_numpy(mus_b)
             sigmas_b = torch.from_numpy(sigmas_b)
             with torch.no_grad():
-                decoded_seq = self.vae_handler.decode_for_marginal_prob(mus_b, sigmas_b, N)
+                decoded_seq = self.vae_handler.decode_z_marginal_probability(mus_b, sigmas_b, N)
                 # Calculate marginal probability for each generated sequence
                 chunks = [decoded_seq[x:x + N] for x in range(0, len(decoded_seq), N)]
                 for i, ch in enumerate(chunks):
-                    #ch = list(map(get_aas, ch))
-                    orig = get_aas(data[(idx_batch * batch_size) + i]) # Remember chunks are from more than one mu so compare with correct orignal sequence
+                    # Remember chunks are from more than one mu so compare with correct orignal sequence
+                    orig = get_aas(data[(idx_batch * batch_size) + i])
                     sum_p_X_Zi = 0
                     for c in ch:
                     # SUM(p(X,Zi)/q(Zi|X))
@@ -170,11 +172,11 @@ class Benchmarker:
                         prof_seq.append(aa)
                         break
             rand_seq_binary[i, :, :] = D[prof_seq]
-        print('Benchmark message : Negative control {} samples generated...'.format(count))
+        print(' Benchmark message : Negative control {} samples generated...'.format(count))
         return rand_seq_binary
 
     def _get_profile(self, msa_binary):
-        '''
+        """
             Generate probabilistic profile of the MSA for further generation
             Profile format:
                     |-------len(msa)----|
@@ -183,15 +185,15 @@ class Benchmarker:
                     0.4 0.4 0.7  ... 0.2
 
                 columns sum to one
-        '''
+        """
         msa_prof_file = self.setuper.pickles_fld + "/msa_profile.pkl"
         # check if msa_profile exists
         if os.path.exists(msa_prof_file) and os.path.getsize(msa_prof_file) > 0:
-            print('Benchmark message : Profile file exists in {}. Loading that file.'.format(msa_prof_file))
+            print(' Benchmark message : Profile file exists in {}. Loading that file.'.format(msa_prof_file))
             with open(msa_prof_file, 'rb') as file_handle:
                 profile = pickle.load(file_handle)
             return profile
-        print('Benchmark message : Creating the profile of MSA')
+        print(' Benchmark message : Creating the profile of MSA')
         # Convert MSA from binary to number coding
         get_aas = lambda xs: [np.where(aa_bin == 1)[0] for aa_bin in xs]
         msa = []
@@ -209,8 +211,8 @@ class Benchmarker:
         return profile
 
     def _store_marginals(self, marginal_t, marginal_p, marginal_n):
-        filename = self.setuper.high_fld + '{}_marginals_benchmark.csv'.format(self.setuper.model_name)
-        print('Benchmark message: Storing marginals probabilities in {}'.format(filename))
+        filename = self.setuper.high_fld + '/{}_marginals_benchmark.csv'.format(self.setuper.model_name)
+        print(' Benchmark message: Storing marginals probabilities in {}'.format(filename))
         with open(filename, 'w', newline='') as file:
             # Store in csv file
             writer = csv.writer(file)
@@ -222,9 +224,11 @@ class Benchmarker:
                     writer.writerow([i, name, seq, prob])
 
     def model_generative_ability(self, data):
-        '''For whole training data set check how data
-         points are biased by neighbouring data points'''
-        print('Benchmark message : Measuring of model generative ability has started')
+        """
+        For whole training data set check how data
+        points are biased by neighbouring data points
+        """
+        print(' Benchmark message : Measuring of model generative ability has started')
         data = data.astype(np.float32)
         batch_size = 64
         num_batches = data.shape[0] // batch_size + 1
@@ -232,7 +236,7 @@ class Benchmarker:
         pairwise_score = []
         for idx_batch in range(num_batches):
             if (idx_batch + 1) % 10 == 0:
-                print("idx_batch: {} out of {}".format(idx_batch, num_batches))
+                print(" idx_batch: {} out of {}".format(idx_batch, num_batches))
             d = data[idx_batch * batch_size:(idx_batch + 1) * batch_size]
             # Convert original binary to AA for pairwise analyse
             originals = [get_aasR(it) for it in d]
@@ -243,15 +247,15 @@ class Benchmarker:
             # Count pairwise generative ability of sequences
             mus_b, sigmas_b = self.prepareMusSigmas(d)
             mus_b, sigmas_b = torch.from_numpy(mus_b), torch.from_numpy(sigmas_b)
-            generated = self.vae_handler.decode_for_marginal_prob(mus_b, sigmas_b, -1)
+            generated = self.vae_handler.decode_z_marginal_probability(mus_b, sigmas_b, -1)
             for orig, gen in zip(originals, generated):
                 pairwise_score.append(marginal(gen, orig))
         # Get pairwise score for query
-        ref_binary = Mutagenesis.binary_to_seq(self.setuper, seq_key='P59336_S14', return_binary=True)
+        ref_binary = self.transformer.get_binary_by_key(self.setuper.ref_n)
         orig_query = get_aasR(list(ref_binary))
         mu, sigma = self.prepareMusSigmas(ref_binary[np.newaxis, :, :])
         mu, sigma = torch.from_numpy(mu), torch.from_numpy(sigma)
-        gen_query = self.vae_handler.decode_for_marginal_prob(mu, sigma, -1)
+        gen_query = self.vae_handler.decode_z_marginal_probability(mu, sigma, -1)
         query_score = marginal(gen_query[0], orig_query)
 
         print("\tModel generative ability value:", sum(probs)/num_batches)
@@ -263,27 +267,28 @@ class Benchmarker:
             append_write = 'w'  # make a new file if not
 
         hs = open(filename, append_write)
-        hs.write("Model with C = {0}, D = {1}, generative value = {2} "
-                 "pairwise = {3}, DHAA pairwise score = {4}, layers: {5}, Decay = {6}\n".format(self.setuper.C,
-                                                               self.setuper.dimensionality,
-                                                               (sum(probs)/num_batches),
-                                                               (sum(pairwise_score)/data.shape[0]),
-                                                                query_score, self.setuper.layersString,
-                                                                self.setuper.decay))
+        hs.write(" Model with C = {0}, D = {1}, generative value = {2} "
+                 " pairwise = {3}, DHAA pairwise score = {4}, layers: {5}, Decay = {6}\n".format(self.setuper.C,
+                                                                self.setuper.dimensionality,
+                                                                (sum(probs)/num_batches),
+                                                                (sum(pairwise_score)/data.shape[0]),
+                                                                 query_score, self.setuper.layersString,
+                                                                 self.setuper.decay))
         hs.close()
 
     def test_loglikelihood(self):
         """Just pick point from the latent space and then generate sequence and compare loglikelihood"""
-        seq = self.vae_handler.decode_sequences_VAE([(float(-66), float(-66))], "testing")
+        seq = self.vae_handler.decode_z_to_aa_dict([(float(-66), float(-66))], "testing")
         binary, _, _ = self.binaryConv.prepare_aligned_msa_for_Vae(seq)
         binary = binary.astype(np.float32)
         binary = binary.reshape((binary.shape[0], -1))
         binary = torch.from_numpy(binary)
-        print("Marginal probs for test is: ", self.vae_handler.get_marginal_probability(binary))
+        print(" Marginal probs for test is: ", self.vae_handler.get_marginal_probability(binary))
         marginal = lambda gen, orig: sum([1 if g == o else 0 for g, o in zip(gen, orig)]) / len(orig)
         s = seq['testing'].copy()
         s[2] = 'X'
         print("Normal comparison", marginal(s, seq['testing']))
+
 
 if __name__ == '__main__':
     tar_dir = StructChecker()
@@ -302,7 +307,7 @@ if __name__ == '__main__':
 
     b = Benchmarker(positive, train_set, tar_dir, generate_negative=True, ancestor_probs=probs)
     #b.test_loglikelihood()
-    b.model_generative_ability(train_set)
+    # b.model_generative_ability(train_set)
     b.make_bench()
     # Highlight training , positive, straight ancestors and negative control
     neg_mus, _ = b.prepareMusSigmas(b.negative)
