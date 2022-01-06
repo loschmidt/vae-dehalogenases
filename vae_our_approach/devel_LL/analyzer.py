@@ -436,7 +436,7 @@ class VAEHandler:
                 ret = vae.decode_samples(z, sigma, samples)
         return ret
 
-    def get_marginal_probability(self, x, multiple_likelohoods=False):
+    def get_marginal_probability(self, x, multiple_likelihoods=False):
         """
         This method returns the log softmax probability as it is obtained by VAE
 
@@ -450,7 +450,7 @@ class VAEHandler:
             if self.use_cuda:
                 x = x.cuda()
             # indices already on cpu(not tensor)
-            ret = vae.get_sequence_log_likelihood(x, multiple_likelohoods)
+            ret = vae.get_sequence_log_likelihood(x, multiple_likelihoods)
         return ret
 
     def residues_probability(self, x):

@@ -147,7 +147,7 @@ class EvolutionSearch:
         seq_dict = self.handler.decode_z_to_aa_dict(vae_coord, "coded")
         seqs = list(seq_dict.values())
         binary = self.get_binary(seq_dict)
-        log_likelihood = self.handler.get_marginal_probability(binary, multiple_likelohoods=True)
+        log_likelihood = self.handler.get_marginal_probability(binary, multiple_likelihoods=True)
         return seqs, log_likelihood.numpy()
 
     def get_binary(self, seqs):
