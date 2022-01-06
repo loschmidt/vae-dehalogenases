@@ -13,3 +13,10 @@ vae_our_approach/pfam_msa/output/
 # Dont show testing scripts
 vae_our_approach/pfam_msa/script/supportClasses/graphs.py
 vae_our_approach/pfam_msa/script/supportClasses/tmp.png
+
+# Do not show generated files
+vae_our_approach/devel_LL/results
+vae_our_approach/devel_LL/supportscripts/*.jpg
+vae_our_approach/devel_LL/supportscripts/*.txt
+vae_our_approach/devel_LL/EVO/alignments
+vae_our_approach/devel_LL/EVO/CSVs
