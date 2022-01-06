@@ -74,10 +74,10 @@ class Train:
             print("Start the {}th fold training".format(k))
             print("-" * 60)
 
-            ## build a VAE model with random parameters
+            # build a VAE model with random parameters
             vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type, self.setuper.layers)
 
-            ## random initialization of weights in the case of robsutness
+            # random initialization of weights in the case of robustness
             if self.setuper.robustness_train:
                 import torch.nn as nn
                 from random import random, seed
@@ -91,15 +91,15 @@ class Train:
                 nn.init.normal_(vae.encoder_logsigma.weight, mean=0.0, std=random() * spread)
                 print("Train message : random weights init")
 
-            ## move the VAE onto a GPU
+            # move the VAE onto a GPU
             if self.use_cuda:
                 vae.cuda()
 
-            ## build the Adam optimizer
+            # build the Adam optimizer
             optimizer = optim.Adam(vae.parameters(),
                                    weight_decay=self.setuper.decay)
 
-            ## collect training and valiation data indices
+            # collect training and validation data indices
             validation_idx = idx_subset[k]
             validation_idx.sort()
 
@@ -181,11 +181,11 @@ class Train:
 
             elbo_all = np.concatenate(elbo_all_list)
             elbo_mean = np.mean(elbo_all)
-            ## the mean_elbo can approximate the quanlity of the learned model
-            ## we want a model that has high mean_elbo
-            ## different weight decay factor or different network structure
-            ## will give different mean_elbo values and we want to choose the
-            ## weight decay factor or network structure that has large mean_elbo
+            # the mean_elbo can approximate the quanlity of the learned model
+            # we want a model that has high mean_elbo
+            # different weight decay factor or different network structure
+            # will give different mean_elbo values and we want to choose the
+            # weight decay factor or network structure that has large mean_elbo
             print("mean_elbo: {:.3f}".format(elbo_mean))
 
             with open(self.setuper.pickles_fld + "/elbo_all.pkl", 'wb') as file_handle:

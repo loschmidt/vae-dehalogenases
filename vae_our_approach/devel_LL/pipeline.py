@@ -123,6 +123,7 @@ class StructChecker:
         if os.path.basename(__file__) != ScriptNames.TRAIN.value:
             self.layersString = ""
             return
+        # Decode layer setup in form [100 | 100 50]
         s_layers = 'L'
         self.layers = []
         try:

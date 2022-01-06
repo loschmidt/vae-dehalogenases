@@ -106,7 +106,7 @@ class VAE(nn.Module):
         Decode VAE result to protein sequence again. Get max value indices for each position.
 
         Returns protein sequence in number representation.
-        Capable od decoding more sequence at once.
+        Capable of decoding more sequences at once.
         """
         h = self.decoder(z)
         # Reshape vae output
@@ -167,12 +167,12 @@ class VAE(nn.Module):
         return PxGz.detach().numpy()
 
     def compute_weighted_elbo(self, x, weight, c_fx_x=2):
-        ## sample z from q(z|x)
+        # sample z from q(z|x)
         mu, sigma = self.encoder(x)
         eps = torch.randn_like(sigma)
         z = mu + sigma*eps
 
-        ## compute log p(x|z)
+        # compute log p(x|z)
         log_p = self.decoder(z)
         log_PxGz = torch.sum(x*log_p, -1)
 
@@ -184,7 +184,7 @@ class VAE(nn.Module):
         # default value is 2.0
         c = 1/c_fx_x
 
-        ## compute elbo
+        # compute elbo
         elbo = log_PxGz - torch.sum(c*(sigma**2 + mu**2 - 2*torch.log(sigma) - 1), -1)
         weight = weight / torch.sum(weight)
         elbo = torch.sum(elbo*weight)
