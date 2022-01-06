@@ -63,3 +63,4 @@ class VaePaths(Enum):
 
 class ScriptNames(Enum):
     TRAIN = "train.py"
+    MSA_PROCESS = "msa_filter_scorer.py"

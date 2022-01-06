@@ -5,6 +5,7 @@ import argparse
 import datetime
 import os
 import subprocess as sp  # command line handling
+import sys
 
 from project_enums import Helper, VaePaths, ScriptNames
 # from sequence_transformer import Transformer
@@ -175,7 +176,9 @@ class StructChecker:
         Load parameters of model given by --model_name argument options.
         Do not so in the case of training phase
         """
-        if os.path.basename(__file__) == ScriptNames.TRAIN.value:
+        # Scripts creating or working without model do not need to load its parameters
+        if os.path.basename(sys.argv[0]) in \
+                [ScriptNames.TRAIN.value, ScriptNames.MSA_PROCESS.value]:
             return
         model_params_file = self.high_fld + "/" + VaePaths.MODEL_PARAMs_FILE.value
         with open(model_params_file, "r") as file_handle:
