@@ -6,9 +6,20 @@ import numpy as np
 from parser_handler import CmdHandler
 from download_MSA import Downloader
 from Bio import SeqIO
+from VAE_logger import Logger
 
+# TODO zacistit to od nepouzivanych funkci, poupravit self parametry do init a tak
 
 class MSA:
+
+
+    # convert aa type into num 0-20
+    aa = ['R', 'H', 'K',
+          'D', 'E',
+          'S', 'T', 'N', 'Q',
+          'C', 'G', 'P',
+          'A', 'V', 'I', 'L', 'M', 'F', 'Y', 'W']
+
     def __init__(self, setuper: CmdHandler, processMSA=True):
         self.setup = setuper
         self.msa_file = setuper.msa_file
@@ -18,27 +29,6 @@ class MSA:
             self.seq_dict = self.load_msa()
             self.amino_acid_dict()
 
-    def proc_msa(self):
-        if self.values["ref"]:
-            self._ref_filtering()
-        else:
-            # get length of first element in dictionary
-            self._rem_seqs_on_gaps(len(self.seq_dict[next(iter(self.seq_dict))]), threshold=0.85)
-        with open(self.pickle + "/seq_dict.pkl", 'wb') as file_handle:
-            pickle.dump(self.seq_dict, file_handle)
-
-        self._remove_unexplored_and_covert_aa()
-        self._rem_gaps_msa_positions()
-        # Keep all sequence positions
-        pos_idx = [i for i in range(self.seq_msa.shape[1])]
-        with open(self.pickle + "/seq_pos_idx.pkl", 'wb') as file_handle:
-            pickle.dump(pos_idx, file_handle)
-        with open(self.pickle + "/seq_msa.pkl", 'wb') as file_handle:
-            pickle.dump(self.seq_msa, file_handle)
-        self._weighting_sequences()
-        self._to_binary()
-        self._stats()
-
     def load_msa(self, file=None):
         seq_dict = {}
         # Setup file path for each case
@@ -46,14 +36,15 @@ class MSA:
         # Check format of file and proceed fasta format here
         if file is not None:
             if file.endswith('.fasta') or file.endswith('.fa'):
-                print('MSA processing message: Loading fasta format file')
+                Logger.print_for_update(' MSA processing message: Loading fasta format file {}', value="in process...")
                 fasta_sequences = SeqIO.parse(open(file), 'fasta')
                 for fasta in fasta_sequences:
                     name, seq = fasta.id, str(fasta.seq)
                     seq_dict[name] = seq.upper()
+                Logger.update_msg(value="done!", new_line=True)
                 return seq_dict
+        # Handle stockholm file format
         with open(file, 'r') as file_handle:
-            # Handle stockholm file format
             for line in file_handle:
                 if line[0] == "#" or line[0] == "/" or line[0] == "":
                     continue
@@ -83,12 +74,6 @@ class MSA:
                 self.seq_dict.pop(k)
 
     def amino_acid_dict(self, export=False):
-        # convert aa type into num 0-20
-        self.aa = ['R', 'H', 'K',
-                   'D', 'E',
-                   'S', 'T', 'N', 'Q',
-                   'C', 'G', 'P',
-                   'A', 'V', 'I', 'L', 'M', 'F', 'Y', 'W']
         self.aa_index = {}
         self.aa_index['-'] = 0
         self.aa_index['.'] = 0
@@ -176,4 +161,4 @@ if __name__ == '__main__':
     tar_dir.setup_struct()
     dow = Downloader(tar_dir)
     msa = MSA(tar_dir)
-    msa.proc_msa()
+    #msa.proc_msa()

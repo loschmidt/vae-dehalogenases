@@ -215,15 +215,8 @@ if __name__ == '__main__':
     tar_dir.setup_struct()
 
     # Our modules imports
-    from download_MSA import Downloader
-    from pipeline_importer import MSA
-    from train import Train
     from analyzer import VAEHandler, Highlighter
 
-    down_MSA = Downloader(tar_dir)
-    msa = MSA(tar_dir)
-    msa.proc_msa()
-    Train(tar_dir, msa=msa, benchmark=True).train()
     # Create latent space
     VAEHandler(setuper=tar_dir).latent_space()
     # Highlight
