@@ -81,7 +81,7 @@ class MSAPreprocessor:
         if not self.setuper.ref_seq:
             return []
 
-        query_seq = msa[self.setuper.ref_n]  ## with gaps
+        query_seq = msa[self.setuper.ref_n]  # with gaps
         gaps = [s == "-" or s == "." for s in query_seq]
         print('MSA_filter message : Do not search for regions in the core')
         idx = []
