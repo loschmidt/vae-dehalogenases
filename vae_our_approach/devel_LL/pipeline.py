@@ -122,7 +122,7 @@ class StructChecker:
     def _handle_layers(self):
         """ Method decodes --layers argument and creates its string representation"""
         if os.path.basename(__file__) != ScriptNames.TRAIN.value:
-            self.layersString = ""
+            self.layersString, self.layers = "", []
             return
         # Decode layer setup in form [100 | 100 50]
         s_layers = 'L'
