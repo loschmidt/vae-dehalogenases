@@ -10,7 +10,7 @@ elif os.environ['PIP_PAPER'] == 'True' or os.environ['PIP_SCORE'] == 'False':
     # Default variant in the case of setting just --no_score_filter param
     from msa_prepar import MSA as MSA
 elif os.environ['PIP_SCORE'] == 'True':
-    from msa_filter_scorer import MSAPreprocessor as MSA
+    from msa_preprocessor import MSAPreprocessor as MSA
 
 ## Unset linux environment variable
 del os.environ['PIP_SCORE']

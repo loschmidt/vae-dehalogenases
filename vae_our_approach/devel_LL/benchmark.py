@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 
 from analyzer import VAEHandler, Highlighter
 from download_MSA import Downloader
-from msa_filter_scorer import MSAPreprocessor as BinaryCovertor
+from msa_preprocessor import MSAPreprocessor as BinaryCovertor
 from msa_prepar import MSA
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer

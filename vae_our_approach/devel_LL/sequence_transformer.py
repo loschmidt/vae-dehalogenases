@@ -5,14 +5,14 @@ import numpy as np
 import pickle
 import torch
 
-from msa_filter_scorer import MSAPreprocessor as Convertor
+from msa_preprocessor import MSAPreprocessor as Convertor
 from metaclasses import Singleton
 
 
 class Transformer(metaclass=Singleton):
     """
     Transformer class unites all method for transformation of sequence to/from binary one-hot encoding.
-    The class is implemented as Singleton design pattern initialized by the StructChecker class
+    The class is implemented as Singleton design pattern initialized by the CmdHandler class
     """
 
     def __init__(self, setuper):
