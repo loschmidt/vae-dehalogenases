@@ -1,5 +1,7 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/07/27 11:30:00"
+__description__ = " Handling command line arguments and setting up and checking the structure of result directories." \
+                  " Handles models names, loading of parameters from log files for given experiments and so on "
 
 import argparse
 import datetime
@@ -11,7 +13,7 @@ from project_enums import Helper, VaePaths, ScriptNames
 # from sequence_transformer import Transformer
 
 
-class StructChecker:
+class CmdHandler:
     def __init__(self):
         # Setup all parameters
         self.exp_dir, self.args = self.get_parser()
@@ -209,7 +211,7 @@ class StructChecker:
 if __name__ == '__main__':
 
     '''Pipeline of our VAE data preparation, training, executing'''
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
 
     # Our modules imports

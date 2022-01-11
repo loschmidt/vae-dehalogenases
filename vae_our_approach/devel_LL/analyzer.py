@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from VAE_model import MSA_Dataset, VAE
 from download_MSA import Downloader
 from msa_prepar import MSA
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 from project_enums import Helper
 from sequence_transformer import Transformer
 from supportscripts.animator import GifMaker
@@ -628,7 +628,7 @@ class AncestorsHandler:
 
 
 if __name__ == '__main__':
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     down_MSA = Downloader(tar_dir)
     ## Create latent space

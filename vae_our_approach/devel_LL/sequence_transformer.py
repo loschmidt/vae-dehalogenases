@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 import torch
 
-from msa_filter_scorer import MSAFilterCutOff as Convertor
+from msa_filter_scorer import MSAPreprocessor as Convertor
 from metaclasses import Singleton
 
 

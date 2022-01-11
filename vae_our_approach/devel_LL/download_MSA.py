@@ -45,7 +45,7 @@ class Downloader:
                     print(data, file=file_handle)
 
 if __name__ == '__main__':
-    from pipeline import StructChecker
-    tar_dir = StructChecker()
+    from parser_handler import CmdHandler
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     downloader = Downloader(tar_dir, all=True)

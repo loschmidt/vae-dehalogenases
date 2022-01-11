@@ -3,13 +3,13 @@ __date__ = "2020/07/28 11:30:00"
 
 import pickle
 import numpy as np
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 from download_MSA import Downloader
 from Bio import SeqIO
 
 
 class MSA:
-    def __init__(self, setuper: StructChecker, processMSA=True):
+    def __init__(self, setuper: CmdHandler, processMSA=True):
         self.setup = setuper
         self.msa_file = setuper.msa_file
         self.pickle = setuper.pickles_fld
@@ -46,13 +46,14 @@ class MSA:
         # Check format of file and proceed fasta format here
         if file is not None:
             if file.endswith('.fasta') or file.endswith('.fa'):
-                print('Loading fasta format file')
+                print('MSA processing message: Loading fasta format file')
                 fasta_sequences = SeqIO.parse(open(file), 'fasta')
                 for fasta in fasta_sequences:
                     name, seq = fasta.id, str(fasta.seq)
                     seq_dict[name] = seq.upper()
                 return seq_dict
         with open(file, 'r') as file_handle:
+            # Handle stockholm file format
             for line in file_handle:
                 if line[0] == "#" or line[0] == "/" or line[0] == "":
                     continue
@@ -73,7 +74,7 @@ class MSA:
         self._rem_seqs_on_gaps(len(query_seq))
 
     def _rem_seqs_on_gaps(self, seq_len, threshold=0.2):
-        ## remove sequences with too many gaps
+        # remove sequences with too many gaps
         seq_id = list(self.seq_dict.keys())
         num_gaps = []
         for k in seq_id:
@@ -171,7 +172,7 @@ class MSA:
 
 
 if __name__ == '__main__':
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     dow = Downloader(tar_dir)
     msa = MSA(tar_dir)

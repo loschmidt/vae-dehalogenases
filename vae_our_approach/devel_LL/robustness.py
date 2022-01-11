@@ -4,9 +4,9 @@ __date__ = "2021/03/23 10:26:00"
 import os
 import pickle
 
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 from analyzer import VAEHandler, Highlighter
-from msa_filter_scorer import MSAFilterCutOff as Convertor
+from msa_filter_scorer import MSAPreprocessor as Convertor
 from math import sqrt
 
 
@@ -144,6 +144,6 @@ class Robustness:
 
 
 if __name__ == '__main__':
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     Robustness(setuper=tar_dir)

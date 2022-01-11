@@ -5,15 +5,15 @@ from download_MSA import Downloader
 from copy import deepcopy
 from msa_prepar import MSA
 from random import randint
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 
 import numpy as np
 import pickle
 import pandas as pd
 
 
-class MSAFilterCutOff:
-    def __init__(self, setuper):
+class MSAPreprocessor:
+    def __init__(self, setuper: CmdHandler):
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
         self.msa_obj = MSA(setuper=self.setuper, processMSA=False)
@@ -31,7 +31,7 @@ class MSAFilterCutOff:
         self._stats(msa_overlap)
 
     def prepare_aligned_msa_for_Vae(self, msa):
-        '''Prepares MSA for VAE, msa aligned'''
+        """ Prepares MSA for VAE, msa aligned """
         seqs, keys = self._remove_unexplored_and_covert_aa(msa)
         dataframe = pd.DataFrame(seqs.tolist(), dtype=int)
         seqs = np.array(dataframe.fillna(0).values, dtype=int)
@@ -130,7 +130,7 @@ class MSAFilterCutOff:
         for key_idx, seq in enumerate(trans_arr):
             overlap = 0
             for i in range(len_seq):
-                ## Simply gaps or anything else
+                # Simply gaps or anything else
                 if (ref_seq[i] == 0 and seq[i] == 0) or (ref_seq[i] != 0 and seq[i] != 0):
                     overlap += 1
             if overlap >= threshold * len_seq:
@@ -164,7 +164,7 @@ class MSAFilterCutOff:
         return np.array(seq_msa), keys_list
 
     def _weighting_sequences(self, msa, gen_pickle=True):
-        ## reweighting sequences
+        # reweighting sequences
         seq_weight = np.zeros(msa.shape)
         for j in range(msa.shape[1]):
             aa_type, aa_counts = np.unique(msa[:, j], return_counts=True)
@@ -228,7 +228,7 @@ class MSAFilterCutOff:
         return sampled_dict
 
     def phylo_clustering(self, msa, threshold=0.9):
-        '''If query sequence is given hold it in dataset and filter it by threshold identity'''
+        """ If query sequence is given hold it in dataset and filter it by threshold identity """
         identity = lambda seq1, seq2: sum([1 if g == o else 0 for g, o in zip(seq1, seq2)]) / len(seq2)
 
         if self.setuper.ref_seq:
@@ -288,8 +288,8 @@ class MSAFilterCutOff:
 
 
 if __name__ == '__main__':
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     dow = Downloader(tar_dir)
-    msa = MSAFilterCutOff(tar_dir)
+    msa = MSAPreprocessor(tar_dir)
     msa.proc_msa()

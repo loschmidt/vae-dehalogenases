@@ -3,7 +3,7 @@ __date__ = "2020/08/10 11:30:00"
 
 from download_MSA import Downloader
 from msa_prepar import MSA
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
@@ -306,7 +306,7 @@ class Alignmer:
 
 
 if __name__ == '__main__':
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     dow = Downloader(tar_dir)
     msa = CatalyticMSAPreprocessor(tar_dir)

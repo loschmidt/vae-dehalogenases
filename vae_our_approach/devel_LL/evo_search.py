@@ -16,7 +16,7 @@ from analyzer import AncestorsHandler, VAEHandler
 from benchmark import Benchmarker as Vae_encoder
 from cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
 from experiment_handler import ExperimentStatistics
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 
 
 def highlight_coord(ax, mus, color='r'):
@@ -322,7 +322,7 @@ class EvolutionSearch:
 
 
 if __name__ == "__main__":
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     cmd_line = CommandHandler()
 

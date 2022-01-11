@@ -15,9 +15,9 @@ from matplotlib import pyplot as plt
 
 from analyzer import VAEHandler, Highlighter
 from download_MSA import Downloader
-from msa_filter_scorer import MSAFilterCutOff as BinaryCovertor
+from msa_filter_scorer import MSAPreprocessor as BinaryCovertor
 from msa_prepar import MSA
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 from sequence_transformer import Transformer
 
 ## LAMBDAS FUNCTIONS FOR CONVERSION AND PAIRWWISE COMPARISON OF SEQUENCES
@@ -291,7 +291,7 @@ class Benchmarker:
 
 
 if __name__ == '__main__':
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     down_MSA = Downloader(tar_dir)
     with open(tar_dir.pickles_fld + '/positive_control.pkl', 'rb') as file_handle:

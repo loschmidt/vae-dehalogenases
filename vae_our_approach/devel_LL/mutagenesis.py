@@ -9,7 +9,7 @@ from analyzer import VAEHandler, Highlighter, AncestorsHandler
 from download_MSA import Downloader
 from experiment_handler import ExperimentStatistics
 from msa_prepar import MSA
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 from sequence_transformer import Transformer
 
 
@@ -150,7 +150,7 @@ class MutagenesisGenerator:
 
 
 if __name__ == '__main__':
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     dow = Downloader(tar_dir)
 

@@ -29,7 +29,7 @@ conda activate #vae-env
 echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 ## Run pipeline
 cd $DATADIR
-## python3 pipeline.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats --highlight_seqs ${QUERY}
+## python3 parser_handler.py --Pfam_id $PFAMSEQ --ref ${QUERY} --output_dir ${QUERY} --stats --highlight_seqs ${QUERY}
 
 echo "========================================================================"
 echo "Training model for given decay factor = 0.0, dimensionality = ${D}, C = ${C}"

@@ -145,7 +145,9 @@ class VAE(nn.Module):
             weight = torch.exp(log_weight)
             elbo = torch.log(torch.mean(weight, 0)) + log_weight_max
             return elbo        
-    
+
+    #def Wasserstein_distance_objective(self, x, weight):
+        
     # def sample_latent_var(self, mu, sigma):
     #     eps = torch.ones_like(sigma).normal_()
     #     z = mu + sigma * eps

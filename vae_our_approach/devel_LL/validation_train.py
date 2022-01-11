@@ -6,13 +6,13 @@ import numpy as np
 import torch
 import torch.optim as optim
 
-from pipeline import StructChecker
+from parser_handler import CmdHandler
 from download_MSA import Downloader
 from VAE_model import MSA_Dataset, VAE
 from matplotlib import pyplot as plt
 
 class Train:
-    def __init__(self, setuper: StructChecker, msa=None, benchmark=False):
+    def __init__(self, setuper: CmdHandler, msa=None, benchmark=False):
         self.setuper = setuper
         if msa is None:
             ## Run just train script, pickles files should be ready load them
@@ -177,7 +177,7 @@ class Train:
             self.seq_keys = pickle.load(file_handle)
 
 if __name__ == '__main__':
-    tar_dir = StructChecker()
+    tar_dir = CmdHandler()
     tar_dir.setup_struct()
     Downloader(tar_dir)
     Train(tar_dir, benchmark=True).train()
