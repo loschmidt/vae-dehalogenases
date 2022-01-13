@@ -4,7 +4,7 @@ __date__ = "2022/01/06 14:33:00"
 text_keeper, text_len = "", 0
 
 
-# python3 msa_preprocessor.py --exp_dir simple --experiment refactor --in_file results/PF00561/MSA/identified_targets_msa.fa
+# python3 msa_preprocessor.py --exp_dir simple --ref P59336_S14 --experiment refactor --in_file results/PF00561/MSA/identified_targets_msa.fa
 class Logger:
     """
     Logger class for all classes.
