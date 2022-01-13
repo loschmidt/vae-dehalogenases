@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 
 from VAE_model import MSA_Dataset, VAE
 from download_MSA import Downloader
-from msa_prepar import MSA
+from msa_preparation import MSA
 from parser_handler import CmdHandler
 from project_enums import Helper
 from sequence_transformer import Transformer
@@ -110,7 +110,7 @@ class Highlighter:
         self._highlight(name=file_name, high_data=points, no_init=True, color='red')
 
     def highlight_file(self, file_name, wait=False):
-        msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=file_name)
+        msa = MSA.load_msa(file=file_name)
         name = (file_name.split("/")[-1]).split(".")[0]
         names = list(msa.keys())
         if self.setuper.align:
@@ -134,7 +134,7 @@ class Highlighter:
         fig.tight_layout()
         ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
         if self.setuper.align:
-            msa = MSA(setuper=self.setuper, processMSA=False).load_msa(file=self.setuper.highlight_files)
+            msa = MSA.load_msa(file=self.setuper.highlight_files)
             msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
             binary, weights, keys = self.transformer.prepare_aligned_msa_for_vae(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
@@ -586,9 +586,8 @@ class AncestorsHandler:
             import multiprocessing
             cores_count = min(multiprocessing.cpu_count(), 8)
             file = self.setuper.highlight_files
-            from msa_prepar import MSA
-            m = MSA(self.setuper, processMSA=False)
-            ancs = m.load_msa(file)
+            from msa_preparation import MSA
+            ancs = MSA.load_msa(file)
             ancestral_names = list(ancs.keys())
             # check if alignment exists
             outfile = self.pickle + "/aligned_ancestors_to_MSA.fasta"
@@ -621,7 +620,7 @@ class AncestorsHandler:
             with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
                 pos_idx = pickle.load(file_handle)
             # Find sequences from file and process them in the same way as during MSA processing
-            alignment = m.load_msa(outfile)
+            alignment = MSA.load_msa(outfile)
             for name in ancestral_names:
                 aligned[name] = [item for i, item in enumerate(alignment[name]) if i in pos_idx]
         return aligned

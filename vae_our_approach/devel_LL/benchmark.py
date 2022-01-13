@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 from analyzer import VAEHandler, Highlighter
 from download_MSA import Downloader
 from msa_preprocessor import MSAPreprocessor as BinaryCovertor
-from msa_prepar import MSA
+from msa_preparation import MSA
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer
 
@@ -33,10 +33,6 @@ class Benchmarker:
         self.positive = positive_control
         if train_data is not None:
             self.train_data = train_data[random.sample(range(0, train_data.shape[0]), positive_control.shape[0])] # Same amount of samples
-
-        # Get amino acids coding
-        self.msa_obj = MSA(setuper=self.setuper, processMSA=False)
-        self.aa, self.aa_index = self.msa_obj.amino_acid_dict(export=True)
 
         if generate_negative:
             self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)

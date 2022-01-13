@@ -3,7 +3,7 @@ __date__ = "2020/08/24 11:30:00"
 
 from download_MSA import Downloader
 from copy import deepcopy
-from msa_prepar import MSA
+from msa_preparation import MSA
 from random import randint
 from parser_handler import CmdHandler
 
@@ -16,18 +16,17 @@ class MSAPreprocessor:
     def __init__(self, setuper: CmdHandler):
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
-        self.msa_obj = MSA(setuper=self.setuper, processMSA=False)
-        self.aa, self.aa_index = self.msa_obj.amino_acid_dict(export=True)
+        self.aa_index = MSA.amino_acid_dict(self.pickle)
 
     def proc_msa(self):
-        msa = self.msa_obj.load_msa()
+        msa = MSA.load_msa(self.setuper.msa_file)
         msa_col_num = self._remove_cols_with_gaps(msa)  # converted to numbers
         msa_no_gaps = self._remove_seqs_with_gaps(msa_col_num, threshold=0.4)
         self._save_reference_sequence(msa_no_gaps)
         msa_filtered = self.identity_filtering(msa_no_gaps)
         msa_overlap, self.keys_list = self._get_seqs_overlap_ref(msa_filtered)
         self.seq_weight = self._weighting_sequences(msa_overlap)
-        self.seq_msa_binary = self._to_binary(msa_overlap)
+        self.seq_msa_binary = MSA.number_to_binary(msa_overlap, self.pickle)
         self._stats(msa_overlap)
 
     def prepare_aligned_msa_for_Vae(self, msa):
@@ -36,7 +35,7 @@ class MSAPreprocessor:
         dataframe = pd.DataFrame(seqs.tolist(), dtype=int)
         seqs = np.array(dataframe.fillna(0).values, dtype=int)
         weights = self._weighting_sequences(msa=seqs, gen_pickle=False)
-        binary = self._to_binary(seqs, gen_pickle=False)
+        binary = MSA.number_to_binary(seqs, self.pickle, gen_pickle=False)
         return binary, weights, keys
 
     def _save_reference_sequence(self, msa):
@@ -44,7 +43,7 @@ class MSAPreprocessor:
             return None
         ref_seq = {}
         ref_seq[self.setuper.ref_n] = msa[self.setuper.ref_n]
-        ref_seq = self.back_to_amino(ref_seq)
+        ref_seq = MSA.number_to_amino(ref_seq)
         with open(self.pickle + "/reference_seq.pkl", 'wb') as file_handle:
             pickle.dump(ref_seq, file_handle)
 
@@ -139,7 +138,7 @@ class MSAPreprocessor:
                 training_alignment[key_list[key_idx]] = seq
         with open(self.pickle + "/keys_list.pkl", 'wb') as file_handle:
             pickle.dump(final_keys, file_handle)
-        training_converted = self.back_to_amino(training_alignment)
+        training_converted = MSA.number_to_amino(training_alignment)
         with open(self.pickle + "/training_alignment.pkl", 'wb') as file_handle:
             pickle.dump(training_converted, file_handle)
         return np.array(overlap_seqs), final_keys
@@ -181,19 +180,6 @@ class MSAPreprocessor:
             with open(self.pickle + "/seq_weight.pkl", 'wb') as file_handle:
                 pickle.dump(seq_weight, file_handle)
         return seq_weight
-
-    def _to_binary(self, msa, gen_pickle=True):
-        K = len(self.aa) + 1  ## num of classes of aa
-        D = np.identity(K)
-        num_seq = msa.shape[0]
-        len_seq_msa = msa.shape[1]
-        seq_msa_binary = np.zeros((num_seq, len_seq_msa, K))
-        for i in range(num_seq):
-            seq_msa_binary[i, :, :] = D[msa[i]]
-        if gen_pickle:
-            with open(self.pickle + "/seq_msa_binary.pkl", 'wb') as file_handle:
-                pickle.dump(seq_msa_binary, file_handle)
-        return seq_msa_binary
 
     def identity_filtering(self, msa):
         ''' Cluster sequences by the 90 % identity'''
@@ -257,23 +243,6 @@ class MSAPreprocessor:
                 del msa[k]
 
         return clusters
-
-    def back_to_amino(self, msa):
-        # Reverse transformation
-        # exports function out due to analyzer decode to sequences
-        reverse_index = {}
-        reverse_index[0] = '-'
-        i = 1
-        for a in self.aa:
-            reverse_index[i] = a
-            i += 1
-        transformed = {}
-        # Sequences back to amino acid representation
-        for k in msa.keys():
-            to_amino = msa[k]
-            amino_seq = [reverse_index[s] for s in to_amino]
-            transformed[k] = amino_seq
-        return transformed
 
     def _stats(self, msa):
         if self.setuper.stats:

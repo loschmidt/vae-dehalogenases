@@ -8,7 +8,7 @@ if os.environ['PIP_CAT'] == 'True':
     from catalytic_res_msa_filter import CatalyticMSAPreprocessor as MSA
 elif os.environ['PIP_PAPER'] == 'True' or os.environ['PIP_SCORE'] == 'False':
     # Default variant in the case of setting just --no_score_filter param
-    from msa_prepar import MSA as MSA
+    from msa_preparation import MSA as MSA
 elif os.environ['PIP_SCORE'] == 'True':
     from msa_preprocessor import MSAPreprocessor as MSA
 

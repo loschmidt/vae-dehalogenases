@@ -6,6 +6,7 @@ import pickle
 import torch
 
 from msa_preprocessor import MSAPreprocessor as Convertor
+from msa_preparation import MSA
 from metaclasses import Singleton
 
 
@@ -60,14 +61,14 @@ class Transformer(metaclass=Singleton):
         """
         if seq_key is None:
             seq_key = "key_placeholder"
-        return self.convector.back_to_amino({seq_key: number_coding})
+        return MSA.number_to_amino({seq_key: number_coding})
 
     def back_to_amino(self, seq_dict):
         """
-        Just call back_to_amino method of Convector. This method is uniting import in other files.
+        Just call back_to_amino method of MSA. This method is uniting import in other files.
         Input : seq_dict = dictionary of sequences in number coding
         """
-        return self.convector.back_to_amino(seq_dict)
+        return MSA.number_to_amino(seq_dict)
 
     def prepare_aligned_msa_for_vae(self, seq_dict):
         """

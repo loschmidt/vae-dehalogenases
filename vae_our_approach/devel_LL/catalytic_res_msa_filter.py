@@ -2,7 +2,7 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/08/10 11:30:00"
 
 from download_MSA import Downloader
-from msa_prepar import MSA
+from msa_preparation import MSA
 from parser_handler import CmdHandler
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
@@ -195,7 +195,7 @@ class CatalyticMSAPreprocessor:
             print("Closing connection to Uniprot browser")
             page.close()
         ## Find pfam alignment in dataset
-        msa = MSA(setuper=self.setuper, processMSA=False).load_msa()
+        msa = MSA.load_msa()
         pfam_sequences = {}
         for k in msa.keys():
             for p in pfam_names:

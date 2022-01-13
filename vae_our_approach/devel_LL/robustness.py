@@ -114,10 +114,9 @@ class Robustness:
         if not os.path.isfile(filename):
             print("Robustness message : Not find reference straight ancestors in file", filename)
             exit(0)
-        from msa_prepar import MSA
+        from msa_preparation import MSA
         self.setuper.set_msa_file("tmp")  # Secure that msa file attribute exists
-        m = MSA(self.setuper, processMSA=False)
-        ancs = m.load_msa(filename)
+        ancs = MSA.load_msa(filename)
         return ancs
 
     def _get_successful_models(self, filename="ModelsRobustnessLosses.txt"):

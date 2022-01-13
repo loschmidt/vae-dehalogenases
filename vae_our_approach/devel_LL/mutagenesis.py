@@ -8,7 +8,7 @@ from random import randrange, sample
 from analyzer import VAEHandler, Highlighter, AncestorsHandler
 from download_MSA import Downloader
 from experiment_handler import ExperimentStatistics
-from msa_prepar import MSA
+from msa_preparation import MSA
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer
 
@@ -23,7 +23,7 @@ class MutagenesisGenerator:
         self.anc_seqs = []
         self.transformer = Transformer(setuper)
 
-        self.msa_obj = MSA(setuper=self.setuper, processMSA=False)
+        self.msa_obj = MSA(setuper=self.setuper)
         self.aa, self.aa_index = self.msa_obj.amino_acid_dict(export=True)
 
         if ref_dict is None:
@@ -135,7 +135,7 @@ class MutagenesisGenerator:
     def measure_probability_given_ancestors(self):
         """ Measure probability of ancestors given in file """
         if self.setuper.align:
-            ancestors = MSA(setuper=self.setuper, processMSA=False).load_msa(file=self.setuper.highlight_files)
+            ancestors = MSA.load_msa(file=self.setuper.highlight_files)
             ancestors = AncestorsHandler(setuper=self.setuper, seq_to_align=ancestors).align_to_ref()
             # probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(
             #     ancestors)
