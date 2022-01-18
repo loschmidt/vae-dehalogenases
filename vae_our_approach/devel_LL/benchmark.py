@@ -247,7 +247,7 @@ class Benchmarker:
             for orig, gen in zip(originals, generated):
                 pairwise_score.append(marginal(gen, orig))
         # Get pairwise score for query
-        ref_binary = self.transformer.get_binary_by_key(self.setuper.ref_n)
+        ref_binary = self.transformer.get_binary_by_key(self.setuper.query_id)
         orig_query = get_aasR(list(ref_binary))
         mu, sigma = self.prepareMusSigmas(ref_binary[np.newaxis, :, :])
         mu, sigma = torch.from_numpy(mu), torch.from_numpy(sigma)
@@ -288,7 +288,6 @@ class Benchmarker:
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
     down_MSA = Downloader(tar_dir)
     with open(tar_dir.pickles_fld + '/positive_control.pkl', 'rb') as file_handle:
         positive = pickle.load(file_handle)

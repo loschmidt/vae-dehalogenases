@@ -12,6 +12,8 @@ import pandas as pd
 from download_MSA import Downloader
 from msa_preparation import MSA
 from parser_handler import CmdHandler
+from project_enums import Helper
+from VAE_logger import Logger
 
 
 class MSAPreprocessor:
@@ -27,9 +29,9 @@ class MSAPreprocessor:
         msa_no_gaps = self.filter_many_gap_sequences(msa_col_num, threshold=0.4)
         self.save_query_sequence(msa_no_gaps)
         msa_filtered = self.identity_filtering(msa_no_gaps)
-        msa_overlap, self.keys_list = self.filter_query_no_overlap_sequences(msa_filtered)
-        self.seq_weight = self._weighting_sequences(msa_overlap)
-        self.seq_msa_binary = MSA.number_to_binary(msa_overlap, self.pickle)
+        msa_overlap = self.filter_query_no_overlap_sequences(msa_filtered)
+        self.weight_sequences(msa_overlap)
+        MSA.number_to_binary(msa_overlap, self.pickle)
         self._stats(msa_overlap)
 
     def prepare_aligned_msa_for_Vae(self, msa: Dict[str, str]):
@@ -37,15 +39,13 @@ class MSAPreprocessor:
         seqs, keys = self.filter_sequences_by_aa_and_transform_to_number(msa)
         dataframe = pd.DataFrame(seqs.tolist(), dtype=int)
         seqs = np.array(dataframe.fillna(0).values, dtype=int)
-        weights = self._weighting_sequences(msa=seqs, gen_pickle=False)
+        weights = self.weight_sequences(msa=seqs, gen_pickle=False)
         binary = MSA.number_to_binary(seqs, self.pickle, gen_pickle=False)
         return binary, weights, keys
 
     def save_query_sequence(self, msa: Dict[str, List[int]]):
         """ Save MSA query sequence to pickle in dictionary AA alphabet coding """
-        if not self.setuper.ref_seq:
-            return None
-        ref_seq = {self.setuper.ref_n: msa[self.setuper.ref_n]}
+        ref_seq = {self.setuper.query_id: msa[self.setuper.query_id]}
         ref_seq = MSA.number_to_amino(ref_seq)
         with open(self.pickle + "/reference_seq.pkl", 'wb') as file_handle:
             pickle.dump(ref_seq, file_handle)
@@ -63,7 +63,7 @@ class MSAPreprocessor:
 
         # Calculate which position to keep
         for i in range(np_msa.shape[1]):
-            if i in query_no_gap_positions: # Hold all position as in reference sequence
+            if i in query_no_gap_positions:  # Hold all position as in reference sequence
                 pos_idx.append(i)
             elif np.sum(np_msa[:, i] == 0) <= np_msa.shape[0] * threshold:
                 pos_idx.append(i)
@@ -85,11 +85,8 @@ class MSAPreprocessor:
         return msa_dict
 
     def query_no_gaps_positions(self, msa: Dict[str, str]) -> List[int]:
-        """ Returns no gap position indexes of reference sequence """
-        if not self.setuper.ref_seq:
-            return []
-
-        query_seq = msa[self.setuper.ref_n]  # with gaps
+        """ Returns no gap position indexes of query sequence """
+        query_seq = msa[self.setuper.query_id]  # with gaps
         gaps = [s == "-" or s == "." for s in query_seq]
         idx = []
         for i, gap in enumerate(gaps):
@@ -117,57 +114,59 @@ class MSAPreprocessor:
     def filter_many_gap_sequences(self, msa: Dict[str, List[np.array]], threshold=0.2) -> Dict[str, List[np.array]]:
         """ Remove sequences with too many gaps """
         seq_len = len(list(msa.values())[0])  # All seqs same len, select first
-        for k in msa.keys():
-            if self.setuper.ref_seq and self.setuper.ref_n == k:
+        for k in list(msa.keys()):
+            if self.setuper.query_id == k:
                 continue  # keep query sequence in msa
             unique, counts = np.unique(msa[k], return_counts=True)
             cnt_gaps = dict(zip(unique, counts))
             try:
                 if cnt_gaps[0] > threshold * seq_len:
                     msa.pop(k)
-            except KeyError: # No gaps in that sequence, keep it in
+            except KeyError:  # No gaps in that sequence, keep it in
                 pass
         return msa
 
-    def filter_query_no_overlap_sequences(self, msa: Dict[str, List[np.array]], threshold=0.5):
+    def filter_query_no_overlap_sequences(self, msa: Dict[str, List[np.array]], threshold: int = 0.5) -> np.array:
         """
-        Left only sequence having threshold overlap with reference seq.
-        Default 50 % overlap with query sequence.
+        In the final MSA only sequences with significant overlap with the query are left.
+        The default overlap is 0.5
+        Return np ndarray of sequence encoded in numbers
         """
-        # TODO reference sequence always have
-        trans_arr = []
-        key_list = []
-        for k in msa.keys():
-            trans_arr.append(list(msa[k]))
-            key_list.append(k)
-        if not self.setuper.ref_seq:
-            with open(self.pickle + "/keys_list.pkl", 'wb') as file_handle:
-                pickle.dump(key_list, file_handle)
-            return np.array(trans_arr), key_list
-        ref_seq = msa[self.setuper.ref_n]
+        ref_seq = msa[self.setuper.query_id]
         len_seq = len(ref_seq)
         overlap_seqs = []
         final_keys = []
         training_alignment = {}
-        for key_idx, seq in enumerate(trans_arr):
+
+        for k, seq in msa.items():
             overlap = 0
-            for i in range(len_seq):
-                # Simply gaps or anything else
+            for i in range(len_seq): # Simply gaps or anything else
                 if (ref_seq[i] == 0 and seq[i] == 0) or (ref_seq[i] != 0 and seq[i] != 0):
                     overlap += 1
             if overlap >= threshold * len_seq:
                 overlap_seqs.append(seq)
-                final_keys.append(key_list[key_idx])
-                training_alignment[key_list[key_idx]] = seq
+                final_keys.append(k)
+                training_alignment[k] = seq
+
         with open(self.pickle + "/keys_list.pkl", 'wb') as file_handle:
             pickle.dump(final_keys, file_handle)
         training_converted = MSA.number_to_amino(training_alignment)
         with open(self.pickle + "/training_alignment.pkl", 'wb') as file_handle:
             pickle.dump(training_converted, file_handle)
-        return np.array(overlap_seqs), final_keys
+        return np.array(overlap_seqs)
 
-    def _weighting_sequences(self, msa, gen_pickle=True):
-        # reweighting sequences
+    def weight_sequences(self, msa: np.array, gen_pickle=True) -> np.array:
+        """
+        Get sequences weights by the formula:
+            w{n}_j = 1/C_j x 1/C{n}_j
+
+            where C_j is the number of unique amino acid types at the jth position of the MSA
+            and C{n}_j is the number of sequences in the MSA that has the same amino acid
+            type at the jth position as the nth sequence. Then the weight of the nth sequence
+            is the sum of its position weights, i.e., w{n} = SUM(j=1 -> L) w{n}_j. Finally,
+            the weights are renormalized as w{~n} = SUM(i=1 -> N) w{i} such that the sum of
+            the normalized weights w{~n} is one.
+        """
         seq_weight = np.zeros(msa.shape)
         for j in range(msa.shape[1]):
             aa_type, aa_counts = np.unique(msa[:, j], return_counts=True)
@@ -178,7 +177,7 @@ class MSAPreprocessor:
             for i in range(msa.shape[0]):
                 seq_weight[i, j] = (1.0 / num_type) * (1.0 / aa_dict[msa[i, j]])
         tot_weight = np.sum(seq_weight)
-        ## Normalize weights of sequences
+        # Normalize weights of sequences
         seq_weight = seq_weight.sum(1) / tot_weight
         if gen_pickle:
             with open(self.pickle + "/seq_weight.pkl", 'wb') as file_handle:
@@ -186,25 +185,26 @@ class MSAPreprocessor:
         return seq_weight
 
     def identity_filtering(self, msa):
-        ''' Cluster sequences by the 90 % identity'''
+        """ Cluster sequences by the 90 % identity """
         thresholds = [0.2, 0.4, 0.6, 0.8, 0.9]
         clusters = []
         inputs = [msa]
         # Secure that query will stay in clustered MSA
-        sampled_dict = {} if not self.setuper.ref_seq \
-            else {self.setuper.ref_n: msa[self.setuper.ref_n]}
+        sampled_dict = {self.setuper.query_id: msa[self.setuper.query_id]}
 
         # Run through threshold to decrease computational cost
         for th in thresholds:
             clusters = []
+            Logger.print_for_update(" Identity filtering : "
+                                    "Clusters proceeded {}/"+str(len(inputs)), value='0')
             for i, input in enumerate(inputs):
                 ret_clusters = self.phylo_clustering(input, threshold=th)
                 clusters.extend(ret_clusters)
                 if (i + 1) % max(50, len(inputs) // 10) == 0:
-                    print("\tClusters proceeded {}/{}".format(i + 1, len(inputs)), flush=True)
+                    Logger.update_msg(value=str(i + 1), new_line=False)
+            Logger.update_msg(value=str(len(inputs)), new_line=True)
             inputs = clusters
-            print('MSA_filter message : Clustering with identity {} done, number of clusters {}'.format(th,
-                                                                                                        len(clusters)))
+            print(' Identity filtering : Clustering with {} identity done'.format(th))
 
         for cluster in clusters:
             key, k_len = list(cluster.keys()), len(list(cluster.keys())) - 1
@@ -221,13 +221,11 @@ class MSAPreprocessor:
         """ If query sequence is given hold it in dataset and filter it by threshold identity """
         identity = lambda seq1, seq2: sum([1 if g == o else 0 for g, o in zip(seq1, seq2)]) / len(seq2)
 
-        if self.setuper.ref_seq:
-            try:
-                seed = msa[self.setuper.ref_n]
-            except KeyError:
-                seed = (list(msa.values())[0])
-        else:
+        try:
+            seed = msa[self.setuper.query_id]
+        except KeyError:
             seed = (list(msa.values())[0])
+
         clusters = []
 
         while len(seed) != 0:
@@ -250,19 +248,17 @@ class MSAPreprocessor:
 
     def _stats(self, msa):
         if self.setuper.stats:
-            name = self.setuper.ref_n if self.setuper.ref_seq else 'No reference sequence'
-            print("=" * 60)
-            print("Pfam ID : {0} - {2}, Reference sequence {1}".format(self.setuper.exp_dir, name, self.setuper.rp))
-            print("Sequences used: {0}".format(msa.shape[0]))
-            print("Max lenght of sequence: {0}".format(max([len(i) for i in msa])))
-            print('Sequences removed due to nnoessential AA: ', self.no_essentials)
-            print("=" * 60)
+            print(Helper.LOG_DELIMETER.value)
+            print(" MSA preparetion statistics:")
+            print(" \tSequences used: {0}".format(msa.shape[0]))
+            print(" \tMax lenght of sequence: {0}".format(max([len(i) for i in msa])))
+            print(' \tSequences removed due to noessential AA: ', self.no_essentials)
+            print(Helper.LOG_DELIMETER.value)
             print()
 
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
     dow = Downloader(tar_dir)
     msa_proc = MSAPreprocessor(tar_dir)
     msa_proc.proc_msa()

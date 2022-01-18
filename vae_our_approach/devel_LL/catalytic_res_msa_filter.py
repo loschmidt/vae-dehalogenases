@@ -307,7 +307,6 @@ class Alignmer:
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
     dow = Downloader(tar_dir)
     msa = CatalyticMSAPreprocessor(tar_dir)
     msa.proc_msa()

@@ -178,6 +178,5 @@ class Train:
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
     Downloader(tar_dir)
     Train(tar_dir, benchmark=True).train()

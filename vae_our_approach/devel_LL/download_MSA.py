@@ -47,5 +47,4 @@ class Downloader:
 if __name__ == '__main__':
     from parser_handler import CmdHandler
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
     downloader = Downloader(tar_dir, all=True)

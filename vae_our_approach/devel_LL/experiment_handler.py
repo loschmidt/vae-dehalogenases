@@ -28,7 +28,7 @@ class ExperimentStatistics:
 
         self.logged_items = 0
         self.log_msg = ""
-        self.query_name = setuper.ref_n
+        self.query_name = setuper.query_id
 
     def set_experiment_name(self, experiment_name):
         self.exp_name = experiment_name

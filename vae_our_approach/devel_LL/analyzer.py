@@ -628,7 +628,6 @@ class AncestorsHandler:
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
     down_MSA = Downloader(tar_dir)
     ## Create latent space
     mus, _, _ = VAEHandler(setuper=tar_dir).latent_space()

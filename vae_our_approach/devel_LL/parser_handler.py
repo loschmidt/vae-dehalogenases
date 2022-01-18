@@ -6,9 +6,11 @@ __description__ = " Handling command line arguments and setting up and checking 
 import argparse
 import datetime
 import os
+import pickle
 import subprocess as sp  # command line handling
 import sys
 
+from typing import Dict
 from project_enums import Helper, VaePaths, ScriptNames
 # from sequence_transformer import Transformer
 
@@ -17,12 +19,7 @@ class CmdHandler:
     def __init__(self):
         # Setup all parameters
         self.exp_dir, self.args = self.get_parser()
-        if self.args.ref is not None:
-            self.ref_seq = True
-            self.ref_n = self.args.ref
-        else:
-            self.ref_seq = False
-            self.ref_n = ""
+
         self.msa_file = ""
         self.stats = self.args.stats
         self.epochs = self.args.num_epoch
@@ -58,6 +55,17 @@ class CmdHandler:
         os.environ['PIP_PAPER'] = str(self.paper_pipe)
         os.environ['PIP_SCORE'] = str(self.filter_score)
 
+        # Prepare project structure
+        self.setup_struct()
+
+        # Load ref sequence if not specified
+        if self.args.query is not None:
+            self.query_id = self.args.query
+        else:
+            query = self.load_reference_sequence()
+            self.query_id = list(query.keys())[0]
+
+
     def set_msa_file(self, file_name):
         self.msa_file = file_name
 
@@ -67,7 +75,7 @@ class CmdHandler:
         parser.add_argument("--exp_dir", help=Helper.EXP_DIR.value, type=str, default="default")
         parser.add_argument('--experiment', type=str, default="default", help=Helper.EXPERIMENT.value)
         # MSA options
-        parser.add_argument("--ref", help=Helper.REF.value)
+        parser.add_argument("--query", help=Helper.REF.value)
         parser.add_argument("--stats", action='store_true', help=Helper.STATS.value, default=False)
         parser.add_argument('--align', action='store_true', default=False, help=Helper.ALIGN.value)
         # Mutagenesis options
@@ -110,7 +118,8 @@ class CmdHandler:
         self._setup_experimental_paths()
         self._log_run_setup_into_file()
         self._load_model_params()
-        print(" StructChecker message : running with parameters\n"
+        print("\n" + Helper.LOG_DELIMETER.value)
+        print(" Parser Handler message: : running with parameters\n"
               "                         weight decay   : {}\n"
               "                         layers setup   : {}\n"
               "                         dimensionality : {}\n"
@@ -120,6 +129,17 @@ class CmdHandler:
                                                                     self.C, self.epochs, self.model_name))
         print(Helper.LOG_DELIMETER.value)
         # Transformer(setuper=self)
+
+    def load_reference_sequence(self) -> Dict[str, str]:
+        """ If in passed command line arguments ref option is missing try to find query in folder """
+        query_file = self.pickles_fld + "/reference_seq.pkl"
+        if not os.path.exists(query_file):
+            print(" Parser_handler ERROR: The query sequence is neither provided via --ref option nor \n"
+                  "                       stored in {}".format(query_file))
+        with open(query_file, 'rb') as file_handle:
+            query_dict = pickle.load(file_handle)
+        print(" Parser Handler message: The query {} loaded". format(list(query_dict.keys()[0])))
+        return query_dict
 
     def _handle_layers(self):
         """ Method decodes --layers argument and creates its string representation"""
@@ -212,7 +232,6 @@ if __name__ == '__main__':
 
     '''Pipeline of our VAE data preparation, training, executing'''
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
 
     # Our modules imports
     from analyzer import VAEHandler, Highlighter

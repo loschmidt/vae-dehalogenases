@@ -144,5 +144,4 @@ class Robustness:
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
     Robustness(setuper=tar_dir)

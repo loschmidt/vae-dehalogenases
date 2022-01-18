@@ -151,7 +151,6 @@ class MutagenesisGenerator:
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
-    tar_dir.setup_struct()
     dow = Downloader(tar_dir)
 
     # ref = MutagenesisGenerator.binary_to_seq(tar_dir,seq_key='P27652.1')
