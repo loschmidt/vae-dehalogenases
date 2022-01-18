@@ -48,7 +48,7 @@ class CmdHandler:
 
         self._handle_layers()
 
-        self.model_name = self.args.model_name + Helper.MODEL_FOLD.value
+        self.model_name = self.args.model_name # + Helper.MODEL_FOLD.value
 
         ## Setup enviroment variable
         os.environ['PIP_CAT'] = str(self.preserve_catalytic)
@@ -65,6 +65,9 @@ class CmdHandler:
             query = self.load_reference_sequence()
             self.query_id = list(query.keys())[0]
 
+    def get_model_to_load(self):
+        """ Get name of the model and we are loading zero fold """
+        return self.model_name + Helper.MODEL_FOLD.value + ".model"
 
     def set_msa_file(self, file_name):
         self.msa_file = file_name

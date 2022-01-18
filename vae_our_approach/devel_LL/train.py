@@ -11,18 +11,14 @@ import torch.optim as optim
 from VAE_model import VAE
 from download_MSA import Downloader
 from parser_handler import CmdHandler
+from project_enums import Helper
 
 
 class Train:
-    def __init__(self, setuper: CmdHandler, msa=None, benchmark=False):
+    def __init__(self, setuper: CmdHandler, benchmark=False):
         self.setuper = setuper
-        if msa is None:
-            ## Run just train script, pickles files should be ready load them
-            self._load_pickles()
-        else:
-            self.seq_msa_binary = msa.seq_msa_binary
-            self.seq_weight = msa.seq_weight
-            self.seq_keys = msa.keys_list
+        self.seq_msa_binary, self.seq_weight, self.seq_keys = self.load_pickles()
+
         self.num_seq = self.seq_msa_binary.shape[0]
         self.len_protein = self.seq_msa_binary.shape[1]
         self.num_res_type = self.seq_msa_binary.shape[2]
@@ -64,18 +60,18 @@ class Train:
         for i in range(self.K):
             idx_subset.append(random_idx[i * num_seq_subset:(i + 1) * num_seq_subset])
 
-        ## the following list holds the elbo values on validation data
+        # the following list holds the elbo values on validation data
         elbo_all_list = []
 
         # Count of validations run is for robustness just one
         K = 1 if self.setuper.robustness_train else self.K
-        K = 1        
         for k in range(K):
             print("Start the {}th fold training".format(k))
             print("-" * 60)
 
             # build a VAE model with random parameters
-            vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type, self.setuper.layers)
+            vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type,
+                      self.setuper.layers)
 
             # random initialization of weights in the case of robustness
             if self.setuper.robustness_train:
@@ -111,7 +107,7 @@ class Train:
                 train_msa = train_msa.cuda()
 
             train_weight = torch.from_numpy(self.seq_weight[train_idx])
-            #train_weight = train_weight / torch.sum(train_weight) #Already done
+            # train_weight = train_weight / torch.sum(train_weight) #Already done
             if self.use_cuda:
                 train_weight = train_weight.cuda()
 
@@ -130,39 +126,33 @@ class Train:
             if self.use_cuda:
                 vae.cpu()
 
-            # if self.setuper.robustness_train:
-            #     # Save it to the special name
-            #     torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/{}.model".format(self.setuper.model_name))
-            # else:
-            #     torch.save(vae.state_dict(), self.setuper.VAE_model_dir + "/vae_{}_fold_{}_C_{}_D_{}_{}.model".format(
-            #         str(self.setuper.decay), k, str(self.setuper.C), str(self.setuper.dimensionality),
-            #         self.setuper.layersString))
             # Save it to the special name
             model_name = self.setuper.VAE_model_dir + "/{}_fold_{}.model".format(self.setuper.model_name, k)
             torch.save(vae.state_dict(), model_name)
 
             print("Finish the {}th fold training".format(k))
-            print("=" * 60)
+            print(Helper.LOG_DELIMETER.value)
             print('')
 
             print("Start the {}th fold validation".format(k))
-            print("-" * 60)
-            ## evaluate the trained model
+            print(Helper.LOG_DELIMETER.value)
+            # evaluate the trained model
             if self.use_cuda:
                 print("Cleaning CUDA cache")
                 torch.cuda.empty_cache()
                 vae.cuda()
 
             elbo_on_validation_data_list = []
-            ## because the function vae.compute_elbo_with_multiple samples uses
-            ## a large amount of memory on GPUs. we have to split validation data
-            ## into batches.
+            # because the function vae.compute_elbo_with_multiple samples uses
+            # a large amount of memory on GPUs. we have to split validation data
+            # into batches.
             batch_size = 20
             num_batches = len(validation_idx) // batch_size + 1
             for idx_batch in range(num_batches):
                 if (idx_batch + 1) % 50 == 0:
                     print("idx_batch: {} out of {}".format(idx_batch, num_batches))
-                validation_msa = self.seq_msa_binary[validation_idx[idx_batch * batch_size:(idx_batch + 1) * batch_size]]
+                validation_msa = self.seq_msa_binary[
+                    validation_idx[idx_batch * batch_size:(idx_batch + 1) * batch_size]]
                 validation_msa = torch.from_numpy(validation_msa)
                 with torch.no_grad():
                     if self.use_cuda:
@@ -174,7 +164,7 @@ class Train:
             elbo_all_list.append(elbo_on_validation_data)
 
             print("Finish the {}th fold validation".format(k))
-            print("=" * 60)
+            print(Helper.LOG_DELIMETER.value)
 
             if self.use_cuda:
                 torch.cuda.empty_cache()
@@ -203,14 +193,16 @@ class Train:
                 hs.write("Model name,{},loss,{}\n".format(self.setuper.model_name, train_loss_list[-1]))
                 hs.close()
 
-    def _load_pickles(self):
+    def load_pickles(self):
         with open(self.setuper.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
-            self.seq_msa_binary = pickle.load(file_handle)
+            seq_msa_binary = pickle.load(file_handle)
         with open(self.setuper.pickles_fld + "/seq_weight.pkl", 'rb') as file_handle:
             seq_weight = pickle.load(file_handle)
-        self.seq_weight = seq_weight.astype(np.float32)
+        seq_weight = seq_weight.astype(np.float32)
         with open(self.setuper.pickles_fld + "/keys_list.pkl", 'rb') as file_handle:
-            self.seq_keys = pickle.load(file_handle)
+            seq_keys = pickle.load(file_handle)
+        return seq_msa_binary, seq_weight, seq_keys
+
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
