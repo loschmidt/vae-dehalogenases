@@ -5,7 +5,8 @@ import os
 import pickle
 
 from parser_handler import CmdHandler
-from analyzer import VAEHandler, Highlighter
+from analyzer import Highlighter
+from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
 from msa_preprocessor import MSAPreprocessor as Convertor
 from math import sqrt
 
@@ -79,7 +80,7 @@ class Robustness:
 
         for model, loss in zip(models, losses):
             # Get positions of straight ancestors in model and compute derivation
-            vae = VAEHandler(self.setuper, model_name=model)
+            vae = VAEAccessor(self.setuper, model_name=model)
             mu, _, _ = vae.latent_space(check_exists=False)
             query_pos, _ = vae.propagate_through_VAE(query_bin, query_w, query_k)
             data, _ = vae.propagate_through_VAE(binary, weights, keys)

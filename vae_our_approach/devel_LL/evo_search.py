@@ -12,7 +12,8 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
 from EVO.create_library import CommandHandler, Curator
-from analyzer import AncestorsHandler, VAEHandler
+from analyzer import AncestorsHandler
+from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
 from benchmark import Benchmarker as Vae_encoder
 from cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
 from experiment_handler import ExperimentStatistics
@@ -51,7 +52,7 @@ class EvolutionSearch:
         self.pickle = setuper.pickles_fld
         self.vae = Vae_encoder(None, None, self.setuper, generate_negative=False)
         self.out_dir = setuper.high_fld + '/'
-        self.handler = VAEHandler(setuper)
+        self.handler = VAEAccessor(setuper)
         self.gp = None
         self.fitness_class_setting = (0.7, 0.25, 1.5, 0.5)
         self.log_str = ""

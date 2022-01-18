@@ -237,10 +237,11 @@ if __name__ == '__main__':
     tar_dir = CmdHandler()
 
     # Our modules imports
-    from analyzer import VAEHandler, Highlighter
+    from analyzer import Highlighter
+    from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
 
     # Create latent space
-    VAEHandler(setuper=tar_dir).latent_space()
+    VAEAccessor(setuper=tar_dir).latent_space()
     # Highlight
     highlighter = Highlighter(tar_dir)
     if tar_dir.highlight_files is not None:

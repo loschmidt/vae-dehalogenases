@@ -13,7 +13,8 @@ import seaborn as sns
 import torch
 from matplotlib import pyplot as plt
 
-from analyzer import VAEHandler, Highlighter
+from analyzer import Highlighter
+from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
 from download_MSA import Downloader
 from msa_preprocessor import MSAPreprocessor as BinaryCovertor
 from parser_handler import CmdHandler
@@ -35,7 +36,7 @@ class Benchmarker:
 
         if generate_negative:
             self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
-        self.vae_handler = VAEHandler(setuper, model_name=setuper.model_name)
+        self.vae_handler = VAEAccessor(setuper, model_name=setuper.model_name)
         self.binaryConv = BinaryCovertor(self.setuper)
         self.transformer = Transformer(setuper)
 

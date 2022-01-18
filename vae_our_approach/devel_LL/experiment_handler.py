@@ -4,7 +4,7 @@ __date__ = "2021/06/10 11:05:00"
 import csv
 import numpy as np
 
-from analyzer import VAEHandler
+from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
 from benchmark import Benchmarker as ProbabilityMaker
 from sequence_transformer import Transformer
 
@@ -23,7 +23,7 @@ class ExperimentStatistics:
         self.exp_name = experiment_name + "_"
 
         self.transformer = Transformer(setuper)
-        self.vae_handler = VAEHandler(setuper, model_name=setuper.model_name)
+        self.vae_handler = VAEAccessor(setuper, model_name=setuper.model_name)
         self.probability_maker = ProbabilityMaker(None, None, setuper, generate_negative=False)
 
         self.logged_items = 0

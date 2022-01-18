@@ -5,7 +5,8 @@ import pickle
 from math import sqrt
 from random import randrange, sample
 
-from analyzer import VAEHandler, Highlighter, AncestorsHandler
+from analyzer import Highlighter, AncestorsHandler
+from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
 from download_MSA import Downloader
 from experiment_handler import ExperimentStatistics
 from msa_preparation import MSA
@@ -16,7 +17,7 @@ from sequence_transformer import Transformer
 class MutagenesisGenerator:
     def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2, model_name=None):
         self.num_mutations = num_point_mut
-        self.handler = VAEHandler(setuper, model_name=model_name)
+        self.handler = VAEAccessor(setuper, model_name=model_name)
         self.threshold = distance_threshold
         self.pickle = setuper.pickles_fld
         self.setuper = setuper
