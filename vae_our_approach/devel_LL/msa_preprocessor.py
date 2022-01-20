@@ -72,7 +72,8 @@ class MSAPreprocessor:
         for i in range(np_msa.shape[1]):
             if i in query_no_gap_positions:  # Hold all position as in query
                 if np.sum(np_msa[:, i] == 0) > ((1 - threshold) * np_msa.shape[0]):  # if in column is 80% of gaps
-                    query_excluded_pos_aa.append((i, no_gap_query[i]))               # exclude this positions, save AA
+                    no_gap_index = query_no_gap_positions.index(i)  # store index from beginning of query no MSA
+                    query_excluded_pos_aa.append((no_gap_index, no_gap_query[no_gap_index]))  # store also aa type
                 else:
                     pos_idx.append(i)
             elif np.sum(np_msa[:, i] == 0) <= np_msa.shape[0] * threshold:
