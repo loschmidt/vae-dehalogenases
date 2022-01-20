@@ -23,6 +23,8 @@ class Transformer(metaclass=Singleton):
             self.keys_list = pickle.load(file_handle)
         with open(self.pickles + "/seq_msa_binary.pkl", 'rb') as file_handle:
             self.msa_binary = pickle.load(file_handle)
+        with open(self.pickles + "/query_excluded_pos_and_aa.pkl", 'rb') as file_handle:
+            self.excluded_query_pos_and_aa = pickle.load(file_handle)
 
     def sequences_dict_to_binary(self, seqs_dict):
         """ Prepare sequence dictionary to be one hot encoded and retyped for VAE """
@@ -69,6 +71,12 @@ class Transformer(metaclass=Singleton):
         Input : seq_dict = dictionary of sequences in number coding
         """
         return MSA.number_to_amino(seq_dict)
+
+    def add_excluded_query_residues(self, aa_sequence):
+        """ Adds excluded Amino acids from query in MSA preprocessing """
+        for query_pos, query_aa in self.excluded_query_pos_and_aa:
+            aa_sequence = aa_sequence[:query_pos] + query_aa + aa_sequence[query_pos:]
+        return aa_sequence
 
     def prepare_aligned_msa_for_vae(self, seq_dict):
         """
