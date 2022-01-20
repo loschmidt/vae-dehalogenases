@@ -74,6 +74,7 @@ class Transformer(metaclass=Singleton):
 
     def add_excluded_query_residues(self, aa_sequence):
         """ Adds excluded Amino acids from query in MSA preprocessing """
+        aa_sequence = "".join(aa_sequence)  # Secure string format
         for query_pos, query_aa in self.excluded_query_pos_and_aa:
             aa_sequence = aa_sequence[:query_pos] + query_aa + aa_sequence[query_pos:]
         return aa_sequence
