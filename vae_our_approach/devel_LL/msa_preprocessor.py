@@ -24,6 +24,7 @@ class MSAPreprocessor:
         self.aa_index = MSA.amino_acid_dict(self.pickle)
 
     def proc_msa(self):
+        """ This method modify input MSA for training of the model """
         msa = MSA.load_msa(self.setuper.msa_file)
         msa_col_num = self.filter_gap_positions(msa)  # converted to numbers
         msa_no_gaps = self.filter_many_gap_sequences(msa_col_num, threshold=0.4)
@@ -35,7 +36,10 @@ class MSAPreprocessor:
         self._stats(msa_overlap)
 
     def prepare_aligned_msa_for_Vae(self, msa: Dict[str, str]):
-        """ Prepares MSA for VAE, msa aligned """
+        """
+        Prepares MSA for VAE, msa aligned. Only creates weight and binary encoding,
+        so we can see the encoding of the molecules in the latent space
+        """
         seqs, keys = self.filter_sequences_by_aa_and_transform_to_number(msa)
         dataframe = pd.DataFrame(seqs.tolist(), dtype=int)
         seqs = np.array(dataframe.fillna(0).values, dtype=int)
@@ -52,24 +56,33 @@ class MSAPreprocessor:
 
     def filter_gap_positions(self, msa: Dict[str, str], threshold: int = 0.2) -> Dict[str, List[np.array]]:
         """
-        Remove positions with too many gaps. All columns with query no gap position are held.
+        Remove positions with too many gaps. All columns with query no gap position are held
+        except those including (1 - threshold) gaps in other sequences. These query positions
+        are then artificially added while reconstructing sequence from the latent space. By this
+        step, we want to reduce indels introduction during reconstruction.
         The columns with proportion of gaps lower than threshold * num_msa_seqs will be held
         even if there is gap in the query.
         Returns modified dictionary with translate sequences AA to numbers
         """
-        pos_idx = []
-        query_no_gap_positions = self.query_no_gaps_positions(msa)
+        pos_idx, query_excluded_pos_aa = [], []
+        no_gap_query, query_no_gap_positions = self.get_no_gap_query_and_no_gaps_positions(msa)
         np_msa, key_list = self.filter_sequences_by_aa_and_transform_to_number(msa)
 
         # Calculate which position to keep
         for i in range(np_msa.shape[1]):
-            if i in query_no_gap_positions:  # Hold all position as in reference sequence
-                pos_idx.append(i)
+            if i in query_no_gap_positions:  # Hold all position as in query
+                if np.sum(np_msa[:, i] == 0) > ((1 - threshold) * np_msa.shape[0]):  # if in column is 80% of gaps
+                    query_excluded_pos_aa.append((i, no_gap_query[i]))               # exclude this positions, save AA
+                else:
+                    pos_idx.append(i)
             elif np.sum(np_msa[:, i] == 0) <= np_msa.shape[0] * threshold:
                 pos_idx.append(i)
 
         with open(self.pickle + "/seq_pos_idx.pkl", 'wb') as file_handle:
             pickle.dump(pos_idx, file_handle)
+
+        with open(self.pickle + "/query_excluded_pos_and_aa.pkl", 'wb') as file_handle:
+            pickle.dump(query_excluded_pos_aa, file_handle)
 
         # Apply selected positions and connect keys to the sequences in dictionary
         np_msa = np_msa[:, np.array(pos_idx)]
@@ -78,13 +91,14 @@ class MSAPreprocessor:
             msa_dict[key_list[i]] = np_msa[i]  # without columns with many gaps
 
         print(' MSA_filter message : The MSA is cleared by gaps columns. Width: {}, \n'
-              '                      added gaps columns by threshold: {}'.format(len(pos_idx),
-                                                                                 len(pos_idx) - len(
-                                                                                     query_no_gap_positions)))
+              '                      added gaps columns by threshold: {}\n'
+              '                      query excluded positions: {}'.format(len(pos_idx),
+                                                                          len(pos_idx) - len(query_no_gap_positions),
+                                                                          len(query_excluded_pos_aa)))
 
         return msa_dict
 
-    def query_no_gaps_positions(self, msa: Dict[str, str]) -> List[int]:
+    def get_no_gap_query_and_no_gaps_positions(self, msa: Dict[str, str]) -> Tuple[List[str], List[int]]:
         """ Returns no gap position indexes of query sequence """
         query_seq = msa[self.setuper.query_id]  # with gaps
         gaps = [s == "-" or s == "." for s in query_seq]
@@ -92,7 +106,7 @@ class MSAPreprocessor:
         for i, gap in enumerate(gaps):
             if not gap:
                 idx.append(i)
-        return idx
+        return [aa for i, aa in enumerate(query_seq) if not gaps[i]], idx
 
     def filter_sequences_by_aa_and_transform_to_number(self, msa: Dict[str, str]) -> Tuple[np.ndarray, List[str]]:
         """
@@ -140,7 +154,7 @@ class MSAPreprocessor:
 
         for k, seq in msa.items():
             overlap = 0
-            for i in range(len_seq): # Simply gaps or anything else
+            for i in range(len_seq):  # Simply gaps or anything else
                 if (ref_seq[i] == 0 and seq[i] == 0) or (ref_seq[i] != 0 and seq[i] != 0):
                     overlap += 1
             if overlap >= threshold * len_seq:
@@ -196,7 +210,7 @@ class MSAPreprocessor:
         for th in thresholds:
             clusters = []
             Logger.print_for_update(" Identity filtering : "
-                                    "Clusters proceeded {}/"+str(len(inputs)), value='0')
+                                    "Clusters proceeded {}/" + str(len(inputs)), value='0')
             for i, input in enumerate(inputs):
                 ret_clusters = self.phylo_clustering(input, threshold=th)
                 clusters.extend(ret_clusters)
