@@ -20,3 +20,10 @@ vae_our_approach/devel_LL/supportscripts/*.jpg
 vae_our_approach/devel_LL/supportscripts/*.txt
 vae_our_approach/devel_LL/EVO/alignments
 vae_our_approach/devel_LL/EVO/CSVs
+
+# Ignore swp
+*.swp
+vae_our_approach/pfam_msa/FastTree/*
+vae_our_approach/devel_LL/run_scripts/*.[e|o]*
+DEADJOE
+vae_our_approach/pfam_msa/*
