@@ -16,8 +16,8 @@ else
 
   # move into data directory
   cd $DATADIR_BASE
-  source $DATADIR_BASE/.bashrc
-  conda activate #vae-env
+  #source $DATADIR_BASE/.bashrc
+  #conda activate #vae-env
   echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 
   cd $PYTHONSCRIPTS

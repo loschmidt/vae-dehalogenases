@@ -111,6 +111,8 @@ class MutagenesisGenerator:
          metric that int the randomly initialized weights od encoder has no
          effect on latent space if the radiuses of differently init models
          are almost same.
+         Also reconstructs 30 successor sequences.
+         The class returns only ancestors!!!
         """
         print(" Mutagenesis message : Straight ancestors generating process started")
         ref_pos = self._mutants_positions(self.cur)
@@ -119,6 +121,14 @@ class MutagenesisGenerator:
         step_list = [0.0 for _ in tuple_dim]
         for i in tuple_dim:
             step_list[i] = (coor_tuple[i] / cnt_of_anc)
+        i = 30
+        successors = []
+        while i > 0:
+            cur_coor = [0.0 for _ in tuple_dim]
+            for s_i in tuple_dim:
+                cur_coor[s_i] = coor_tuple[s_i] + (step_list[s_i] * i)
+            successors.append(tuple(cur_coor))
+            i -= 1
         i = 1
         to_highlight = [coor_tuple]
         while i <= cnt_of_anc:
@@ -127,10 +137,13 @@ class MutagenesisGenerator:
                 cur_coor[s_i] = coor_tuple[s_i] - (step_list[s_i] * i)
             to_highlight.append(tuple(cur_coor))
             i += 1
-        ancestors_to_store = self.handler.decode_z_to_aa_dict(to_highlight, self.cur_name)
+
+        successors.extend(to_highlight)
+        # to_highlight = successors
+        ancestors_to_store = self.handler.decode_z_to_aa_dict(successors, self.cur_name)
         file_name = '{}straight_ancestors.fasta'.format(self.setuper.model_name)
         observing_probs = self.exp_handler.create_and_store_ancestor_statistics(ancestors_to_store, file_name,
-                                                                                coords=to_highlight)
+                                                                                coords=successors)
         return list(ancestors_to_store.keys()), to_highlight, observing_probs
 
     def measure_probability_given_ancestors(self):

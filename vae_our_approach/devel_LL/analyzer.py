@@ -271,7 +271,6 @@ class Highlighter:
         print("Class highlighter saving graph to", save_to)
         fig.savefig(save_to)
 
-
 class AncestorsHandler:
     def __init__(self, setuper, seq_to_align):
         self.sequences = seq_to_align
