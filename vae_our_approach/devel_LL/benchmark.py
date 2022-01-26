@@ -28,7 +28,7 @@ get_aasR = lambda xs: [np.where(aa_bin == 1)[0][0] for aa_bin in xs]
 marginal = lambda gen, orig: sum([1 if g == o else 0 for g, o in zip(gen, orig)]) / len(orig)
 
 class Benchmarker:
-    def __init__(self, positive_control, train_data, setuper, generate_negative=True, ancestor_probs=[]):
+    def __init__(self, positive_control, train_data, setuper: CmdHandler, generate_negative=True, ancestor_probs=[]):
         self.setuper = setuper
         self.positive = positive_control
         if train_data is not None:
@@ -36,7 +36,7 @@ class Benchmarker:
 
         if generate_negative:
             self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
-        self.vae_handler = VAEAccessor(setuper, model_name=setuper.model_name)
+        self.vae_handler = VAEAccessor(setuper, model_name=setuper.get_model_to_load())
         self.binaryConv = BinaryCovertor(self.setuper)
         self.transformer = Transformer(setuper)
 
