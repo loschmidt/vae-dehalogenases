@@ -203,7 +203,7 @@ class CmdHandler:
         """
         # Scripts creating or working without model do not need to load its parameters
         if os.path.basename(sys.argv[0]) in \
-                [ScriptNames.TRAIN.value, ScriptNames.MSA_PROCESS.value]:
+                [ScriptNames.TRAIN.value, ScriptNames.MSA_PROCESS.value, ScriptNames.VALIDATION.value]:
             return
         model_params_file = self.high_fld + "/" + VaePaths.MODEL_PARAMs_FILE.value
         with open(model_params_file, "r") as file_handle:
