@@ -172,9 +172,9 @@ class CmdHandler:
         # Prepare logs into file
         model_str = "weight decay {},layer {},Dim {},C {},epochs {}".format(self.decay, self.layersString,
                                                                             self.dimensionality, self.C, self.epochs)
-        running_script = os.path.basename(__file__)
+        running_script = os.path.basename(sys.argv[0])
         log_str = running_script + ";" + timestamp + ";"
-        if running_script == ScriptNames.TRAIN.value:
+        if running_script in [ScriptNames.TRAIN.value, ScriptNames.MSA_PROCESS.value, ScriptNames.VALIDATION.value]:
             log_str += "Model name;{}; training with parameters;{}\n".format(self.model_name, model_str)
         else:
             log_str += "Model name;{}; run with script {}\n".format(self.model_name, running_script)
