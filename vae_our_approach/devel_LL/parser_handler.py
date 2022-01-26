@@ -146,9 +146,9 @@ class CmdHandler:
 
     def _handle_layers(self):
         """ Method decodes --layers argument and creates its string representation"""
-        if sys.argv[0] != ScriptNames.TRAIN.value:
-            self.layersString, self.layers = "", []
-            return
+        # if sys.argv[0] != ScriptNames.TRAIN.value:
+        #     self.layersString, self.layers = "", []
+        #     return
         # Decode layer setup in form [100 | 100 50]
         s_layers = 'L'
         self.layers = []
