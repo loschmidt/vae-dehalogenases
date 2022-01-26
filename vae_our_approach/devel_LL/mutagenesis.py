@@ -6,7 +6,7 @@ from math import sqrt
 from random import randrange, sample
 
 from analyzer import Highlighter, AncestorsHandler
-from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
+from VAE_accessor import VAEAccessor
 from download_MSA import Downloader
 from experiment_handler import ExperimentStatistics
 from msa_preparation import MSA

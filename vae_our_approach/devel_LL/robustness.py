@@ -6,7 +6,7 @@ import pickle
 
 from parser_handler import CmdHandler
 from analyzer import Highlighter
-from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
+from VAE_accessor import VAEAccessor
 from msa_preprocessor import MSAPreprocessor as Convertor
 from math import sqrt
 

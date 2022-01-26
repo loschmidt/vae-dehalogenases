@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
     # Our modules imports
     from analyzer import Highlighter
-    from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
+    from VAE_accessor import VAEAccessor
 
     # Create latent space
     VAEAccessor(setuper=tar_dir).latent_space()

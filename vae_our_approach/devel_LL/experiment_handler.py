@@ -4,7 +4,7 @@ __date__ = "2021/06/10 11:05:00"
 import csv
 import numpy as np
 
-from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
+from VAE_accessor import VAEAccessor
 from benchmark import Benchmarker as ProbabilityMaker
 from sequence_transformer import Transformer
 

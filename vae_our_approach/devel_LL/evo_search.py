@@ -13,7 +13,7 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
 from EVO.create_library import CommandHandler, Curator
 from analyzer import AncestorsHandler
-from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
+from VAE_accessor import VAEAccessor
 from benchmark import Benchmarker as Vae_encoder
 from cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
 from experiment_handler import ExperimentStatistics

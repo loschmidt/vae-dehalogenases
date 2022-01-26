@@ -14,7 +14,7 @@ from msa_preparation import MSA
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer
 from supportscripts.animator import GifMaker
-from vae_our_approach.devel_LL.VAE_accessor import VAEAccessor
+from VAE_accessor import VAEAccessor
 
 
 class Highlighter:
