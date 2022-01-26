@@ -150,16 +150,16 @@ class MSAPreprocessor:
         """
         ref_seq = msa[self.setuper.query_id]
         len_seq = len(ref_seq)
-        overlap_seqs = []
-        final_keys = []
-        training_alignment = {}
+        overlap_seqs = [msa[self.setuper.query_id]]
+        final_keys = [self.setuper.query_id]
+        training_alignment = {self.setuper.query_id: msa[self.setuper.query_id]}
 
         for k, seq in msa.items():
             overlap = 0
             for i in range(len_seq):  # Simply gaps or anything else
                 if (ref_seq[i] == 0 and seq[i] == 0) or (ref_seq[i] != 0 and seq[i] != 0):
                     overlap += 1
-            if overlap >= threshold * len_seq:
+            if overlap >= threshold * len_seq and k != self.setuper.query_id:
                 overlap_seqs.append(seq)
                 final_keys.append(k)
                 training_alignment[k] = seq
