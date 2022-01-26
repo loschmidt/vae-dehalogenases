@@ -24,8 +24,7 @@ class MutagenesisGenerator:
         self.anc_seqs = []
         self.transformer = Transformer(setuper)
 
-        self.msa_obj = MSA(setuper=self.setuper)
-        self.aa, self.aa_index = self.msa_obj.amino_acid_dict(export=True)
+        self.aa, self.aa_index = MSA.aa, MSA.amino_acid_dict(self.pickle)
 
         if ref_dict is None:
             with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
