@@ -15,9 +15,9 @@ from sequence_transformer import Transformer
 
 
 class MutagenesisGenerator:
-    def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2, model_name=None):
+    def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2):
         self.num_mutations = num_point_mut
-        self.handler = VAEAccessor(setuper, model_name=model_name)
+        self.handler = VAEAccessor(setuper, model_name=setuper.get_model_to_load())
         self.threshold = distance_threshold
         self.pickle = setuper.pickles_fld
         self.setuper = setuper

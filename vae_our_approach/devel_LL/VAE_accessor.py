@@ -29,7 +29,7 @@ class VAEAccessor:
             self.use_cuda = False
 
     def _prepare_model(self):
-        ## prepare model to mapping from highlighting files
+        # prepare model to mapping from highlighting files
         with open(self.pickle + "/seq_msa_binary.pkl", 'rb') as file_handle:
             msa_original_binary = pickle.load(file_handle)
         num_seq = msa_original_binary.shape[0]
@@ -39,15 +39,13 @@ class VAEAccessor:
         msa_binary = msa_original_binary.reshape((num_seq, -1))
         msa_binary = msa_binary.astype(np.float32)
 
-        ## build a VAE model
+        # build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
+        print(self.model_name, "\n\n\n\n")
         if self.model_name:
-            vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/" + self.model_name + ".model"))
-        else:
-            vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/vae_{}_fold_0_C_{}_D_{}_{}.model"
-                                           .format(str(self.setuper.decay), self.setuper.C, self.setuper.dimensionality,
-                                                   self.setuper.layersString)))
-        ## move the VAE onto a GPU
+            vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/" + self.model_name))
+
+        # move the VAE onto a GPU
         if self.use_cuda:
             vae.cuda()
 
