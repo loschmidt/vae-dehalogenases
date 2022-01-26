@@ -94,7 +94,8 @@ class MSAPreprocessor:
         print(' MSA_filter message : The MSA is cleared by gaps columns. Width: {}, \n'
               '                      added gaps columns by threshold: {}\n'
               '                      query excluded positions: {}'.format(len(pos_idx),
-                                                                          len(pos_idx) - len(query_no_gap_positions),
+                                                                          len(pos_idx) - len(query_no_gap_positions) +
+                                                                          len(query_excluded_pos_aa),
                                                                           len(query_excluded_pos_aa)))
 
         return msa_dict
@@ -227,7 +228,7 @@ class MSAPreprocessor:
             sampled_dict[random_key] = cluster[random_key]
         if self.setuper.stats:
             print("=" * 60)
-            print("Statistics for clustering")
+            print(" Statistics for clustering")
             print("\t Cluster: {}".format(len(clusters)))
 
         return sampled_dict
