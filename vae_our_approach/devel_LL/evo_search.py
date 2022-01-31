@@ -52,7 +52,7 @@ class EvolutionSearch:
         self.pickle = setuper.pickles_fld
         self.vae = Vae_encoder(None, None, self.setuper, generate_negative=False)
         self.out_dir = setuper.high_fld + '/'
-        self.handler = VAEAccessor(setuper)
+        self.handler = VAEAccessor(setuper, model_name=setuper.get_model_to_load())
         self.gp = None
         self.fitness_class_setting = (0.7, 0.25, 1.5, 0.5)
         self.log_str = ""

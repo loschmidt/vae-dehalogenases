@@ -26,14 +26,6 @@ class Transformer(metaclass=Singleton):
         with open(self.pickles + "/query_excluded_pos_and_aa.pkl", 'rb') as file_handle:
             self.excluded_query_pos_and_aa = pickle.load(file_handle)
 
-    def sequences_dict_to_binary(self, seqs_dict):
-        """ Prepare sequence dictionary to be one hot encoded and retyped for VAE """
-        binaries, _, _ = self.convector.prepare_aligned_msa_for_Vae(seqs_dict)
-        binaries = binaries.astype(np.float32)
-        binaries = binaries.reshape((binaries.shape[0], -1))
-        binaries = torch.from_numpy(binaries)
-        return binaries
-
     def get_binary_by_key(self, seq_key):
         """ Method returns the binary of given sequence by """
         try:
@@ -79,7 +71,7 @@ class Transformer(metaclass=Singleton):
             aa_sequence = aa_sequence[:query_pos] + query_aa + aa_sequence[query_pos:]
         return aa_sequence
 
-    def prepare_aligned_msa_for_vae(self, seq_dict):
+    def sequence_dict_to_binary(self, seq_dict):
         """
         Applies same steps for preprocessing as for the whole MSA
         Return (binary, weight, keys)
@@ -97,3 +89,15 @@ class Transformer(metaclass=Singleton):
         [[0,1,0],[0,0,1]] -> [1,2]
         """
         return [np.where(one_hot_AA == 1)[0][0] for one_hot_AA in binary]
+
+    @staticmethod
+    def shape_binary_for_vae(binary):
+        """
+        Use in the case having binary not shaped for VAE, also prepares artificial weights
+        Return (binary, weight)
+        """
+        weights = np.ones(binary.shape[0]) / binary.shape[0]
+        weights = weights.astype(np.float32)
+        binary = binary.reshape((binary.shape[0], -1))
+        binary = binary.astype(np.float32)
+        return binary, weights

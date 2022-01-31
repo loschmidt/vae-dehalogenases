@@ -241,7 +241,7 @@ if __name__ == '__main__':
     from VAE_accessor import VAEAccessor
 
     # Create latent space
-    VAEAccessor(setuper=tar_dir).latent_space()
+    VAEAccessor(setuper=tar_dir,model_name=tar_dir.get_model_to_load()).latent_space()
     # Highlight
     highlighter = Highlighter(tar_dir)
     if tar_dir.highlight_files is not None:

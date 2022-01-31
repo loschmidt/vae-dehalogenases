@@ -19,8 +19,8 @@ from VAE_accessor import VAEAccessor
 
 class Highlighter:
     def __init__(self, setuper):
-        self.handler = VAEAccessor(setuper)
-        self.mu, self.sigma, self.latent_keys = self.handler.latent_space(check_exists=True)
+        self.handler = VAEAccessor(setuper, setuper.get_model_to_load())
+        self.mu, self.sigma, self.latent_keys = self.handler.latent_space(check_exists=False)
         self.out_dir = setuper.high_fld + '/'
         self.name = "class_highlight.png"
         self.setuper = setuper
@@ -31,7 +31,7 @@ class Highlighter:
         if self.setuper.dimensionality == 3:
             return self._highlight_3D(name='', high_data=self.mu)
         self.fig, ax = plt.subplots()
-        ax.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
+        ax.plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='training')
         ax.set_xlim([-7, 7])
         ax.set_ylim([-7, 7])
         ax.set_xlabel("$Z_1$")
@@ -78,7 +78,7 @@ class Highlighter:
             self.fig.savefig(save_path, bbox_inches='tight')
 
     def highlight_mutants(self, ancs, names, mutants, mut_names=None, file_name='mutants', focus=False):
-        colors = ['green', 'red', 'salmon', 'blue', 'coral', 'chocolate', 'tomato', 'orangered', 'sienna']
+        colors = ['green', 'red', 'blue', 'black', 'magenta', 'chocolate', 'tomato', 'orangered', 'sienna']
         self.plt = self._init_plot()
         # Check if names at mutants are given, otherwise init them
         if mut_names is None:
@@ -109,7 +109,7 @@ class Highlighter:
         names = list(msa.keys())
         if self.setuper.align:
             msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
-            binary, weights, keys = self.transformer.prepare_aligned_msa_for_vae(msa)
+            binary, weights, keys = self.transformer.sequence_dict_to_binary(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
             self._highlight(name=names, high_data=data, one_by_one=True, wait=wait, no_init=True)
         else:
@@ -130,7 +130,7 @@ class Highlighter:
         if self.setuper.align:
             msa = MSA.load_msa(file=self.setuper.highlight_files)
             msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
-            binary, weights, keys = self.transformer.prepare_aligned_msa_for_vae(msa)
+            binary, weights, keys = self.transformer.sequence_dict_to_binary(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
             ## Plot data into both graphs and focus on the area
             ax[2].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3)
@@ -379,7 +379,7 @@ if __name__ == '__main__':
     tar_dir = CmdHandler()
     down_MSA = Downloader(tar_dir)
     ## Create latent space
-    mus, _, _ = VAEAccessor(setuper=tar_dir).latent_space()
+    mus, _, _ = VAEAccessor(setuper=tar_dir, model_name=    tar_dir.get_model_to_load()).latent_space()
     ## Highlight
     highlighter = Highlighter(tar_dir)
     if tar_dir.highlight_files is not None:

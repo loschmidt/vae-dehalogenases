@@ -65,3 +65,4 @@ class ScriptNames(Enum):
     TRAIN = "train.py"
     MSA_PROCESS = "msa_preprocessor.py"
     VALIDATION = "validation_train.py"
+    BENCH = "benchmark.py"

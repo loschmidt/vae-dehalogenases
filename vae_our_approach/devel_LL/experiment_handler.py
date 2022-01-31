@@ -2,6 +2,7 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2021/06/10 11:05:00"
 
 import csv
+import torch
 import numpy as np
 
 from VAE_accessor import VAEAccessor
@@ -23,7 +24,7 @@ class ExperimentStatistics:
         self.exp_name = experiment_name + "_"
 
         self.transformer = Transformer(setuper)
-        self.vae_handler = VAEAccessor(setuper, model_name=setuper.model_name)
+        self.vae_handler = VAEAccessor(setuper, model_name=setuper.get_model_to_load())
         self.probability_maker = ProbabilityMaker(None, None, setuper, generate_negative=False)
 
         self.logged_items = 0
@@ -46,7 +47,8 @@ class ExperimentStatistics:
         Compute likelihood of each residue in sequence
         and count those having probability above threshold
         """
-        binaries = self.transformer.sequences_dict_to_binary(seqs_dict)
+        binaries, _, _ = self.transformer.sequence_dict_to_binary(seqs_dict)
+        binaries = torch.from_numpy(binaries)
         p_seqs_residues = self.vae_handler.residues_probability(binaries)
         sequences_res_above = np.zeros(p_seqs_residues.shape[0], dtype=int)
         for i, seq_res_p in enumerate(p_seqs_residues):
@@ -103,10 +105,10 @@ class ExperimentStatistics:
         """ Logger collects all file accesses and prints it out at the end of program run """
 
         def add_record(record: str):
-            self.log_msg += "#" + record + "\n"
+            self.log_msg += "   " + record + "\n"
 
         if self.logged_items == 0:
-            add_record("#" * 99)
+            add_record("=" * 99)
             add_record("   ExperimentStatistics log")
         add_record(" " + msg)
         self.logged_items += 1

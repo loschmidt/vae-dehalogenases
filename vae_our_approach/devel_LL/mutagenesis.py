@@ -83,7 +83,7 @@ class MutagenesisGenerator:
         return mutant_seqs
 
     def _mutants_positions(self, seqs):
-        binary, weights, keys = self.transformer.prepare_aligned_msa_for_vae(seqs)
+        binary, weights, keys = self.transformer.sequence_dict_to_binary(seqs)
         data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
         return data
 
@@ -138,7 +138,6 @@ class MutagenesisGenerator:
             i += 1
 
         successors.extend(to_highlight)
-        # to_highlight = successors
         ancestors_to_store = self.handler.decode_z_to_aa_dict(successors, self.cur_name)
         file_name = '{}straight_ancestors.fasta'.format(self.setuper.model_name)
         observing_probs = self.exp_handler.create_and_store_ancestor_statistics(ancestors_to_store, file_name,

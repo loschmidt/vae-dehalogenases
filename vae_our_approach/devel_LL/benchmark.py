@@ -5,6 +5,7 @@ import csv
 import os
 import pickle
 import random
+import sys
 import warnings
 
 import numpy as np
@@ -19,6 +20,7 @@ from download_MSA import Downloader
 from msa_preprocessor import MSAPreprocessor as BinaryCovertor
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer
+from project_enums import ScriptNames
 
 ## LAMBDAS FUNCTIONS FOR CONVERSION AND PAIRWWISE COMPARISON OF SEQUENCES
 # Lambda for the calculation of the amino sequence decoded from binary
@@ -41,13 +43,15 @@ class Benchmarker:
         self.transformer = Transformer(setuper)
 
         self.ancestors_probs = ancestor_probs
+        # Print holder
+        self.dataset_str = ""
         # Ignore deprecated errors
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
 
     def make_bench(self):
-        marginals_train = self._bench(self.train_data)
-        marginals_positive = self._bench(self.positive)
-        marginals_negative = self._bench(self.negative)
+        marginals_train, self.dataset_str = self._bench(self.train_data), "Training"
+        marginals_positive, self.dataset_str = self._bench(self.positive), "Positive"
+        marginals_negative, self.dataset_str = self._bench(self.negative), "Negative"
         self._store_marginals(marginals_train, marginals_positive, marginals_negative)
 
         mean_p = sum(marginals_positive) / len(marginals_positive)
@@ -97,14 +101,12 @@ class Benchmarker:
         the sequence on the output of network
         """
         # Encode sequence to binary
-        binary, _, _ = self.transformer.prepare_aligned_msa_for_vae(seqs_dict)
+        binary, _, _ = self.transformer.sequence_dict_to_binary(seqs_dict)
         observing_probs = self._bench(binary)
         return observing_probs
 
     def prepareMusSigmas(self, data):
-        msa_weight = np.ones(data.shape[0]) / data.shape[0]
-        msa_weight = msa_weight.astype(np.float32)
-        data_t = data.astype(np.float32)
+        data_t, msa_weight = Transformer.shape_binary_for_vae(data)
         rand_keys = ['k_'.format(i) for i in range(data.shape[0])]
         mus, sigmas = self.vae_handler.propagate_through_VAE(data_t, weights=msa_weight, keys=rand_keys)
         return mus, sigmas
@@ -121,8 +123,9 @@ class Benchmarker:
         N = 5
         probs = []  # marginal propabilities
 
-        print('=' * 80)
-        print(' Benchmark message : Sampling process has begun...')
+        if sys.argv[0] == ScriptNames.BENCH.value:
+            print('=' * 80)
+            print(' Benchmark message : Sampling process of {} with {} samples has begun...'.format(self.dataset_str,N))
 
         # Sample for mus and sigmas for N times
         batch_size = 32

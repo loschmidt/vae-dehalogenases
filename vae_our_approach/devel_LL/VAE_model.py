@@ -73,7 +73,7 @@ class VAE(nn.Module):
         encoder transforms x into latent space z
         """
         
-        h = x
+        h = x.to(torch.float32)
         for T in self.encoder_linears:
             h = T(h)
             h = torch.tanh(h)
@@ -86,7 +86,7 @@ class VAE(nn.Module):
         decoder transforms latent space z into p, which is the log probability  of x being 1.
         """
         
-        h = z
+        h = z.to(torch.float32)
         for i in range(len(self.decoder_linears)-1):
             h = self.decoder_linears[i](h)
             h = torch.tanh(h)
@@ -163,6 +163,9 @@ class VAE(nn.Module):
         p = torch.exp(log_p)
 
         PxGz = torch.sum(p * x, dim=-1)
+
+        if torch.cuda.is_available():
+            PxGz = PxGz.cpu()
 
         return PxGz.detach().numpy()
 

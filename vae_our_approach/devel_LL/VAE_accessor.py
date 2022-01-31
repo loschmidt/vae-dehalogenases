@@ -12,6 +12,7 @@ from torch import tensor
 from torch.utils.data import DataLoader
 
 from VAE_model import MSA_Dataset, VAE
+from VAE_logger import Logger
 from project_enums import Helper
 from sequence_transformer import Transformer
 
@@ -36,12 +37,8 @@ class VAEAccessor:
         len_protein = msa_original_binary.shape[1]
         num_res_type = msa_original_binary.shape[2]
 
-        msa_binary = msa_original_binary.reshape((num_seq, -1))
-        msa_binary = msa_binary.astype(np.float32)
-
         # build a VAE model
         vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
-        print(self.model_name, "\n\n\n\n")
         if self.model_name:
             vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/" + self.model_name))
 
@@ -50,7 +47,7 @@ class VAEAccessor:
             vae.cuda()
 
         self.vae = vae
-        return vae, msa_binary, num_seq
+        return vae, num_seq
 
     def _load_pickles(self):
         """ """
@@ -71,43 +68,22 @@ class VAEAccessor:
                 latent_space = pickle.load(file_handle)
             return latent_space['mu'], latent_space['sigma'], latent_space['key']
 
-        msa_weight, msa_keys, _ = self._load_pickles()
-        vae, msa_binary, num_seq = self._prepare_model()
-
-        batch_size = num_seq
-        train_data = MSA_Dataset(msa_binary, msa_weight, msa_keys)
-        train_data_loader = DataLoader(train_data, batch_size=batch_size)
-
-        mu_list = []
-        sigma_list = []
-        keys_list = []
-        for idx, data in enumerate(train_data_loader):
-            msa, weight, key = data
-            with torch.no_grad():
-                if self.use_cuda:
-                    msa = msa.cuda()
-                mu, sigma = vae.encoder(msa)
-                if self.use_cuda:
-                    mu = mu.cpu().data.numpy()
-                    sigma = sigma.cpu().data.numpy()
-                mu_list.append(mu)
-                sigma_list.append(sigma)
-                keys_list.append(key)
-        mu = np.vstack(mu_list)
-        sigma = np.vstack(sigma_list)
-        keys = np.vstack(keys_list)
+        msa_weight, msa_keys, training_dict = self._load_pickles()
+        msa_binary, weights, _ = self.transformer.sequence_dict_to_binary(training_dict)
+        msa_binary = torch.from_numpy(msa_binary)
+        mu, sigma = self.propagate_through_VAE(msa_binary, weights, msa_keys)
 
         pickle_name = "/{}latent_space.pkl".format(self.model_name + "_" if self.model_name else "")
         with open(self.pickle + pickle_name, 'wb') as file_handle:
-            pickle.dump({'key': keys, 'mu': mu, 'sigma': sigma}, file_handle)
+            pickle.dump({'key': msa_keys, 'mu': mu, 'sigma': sigma}, file_handle)
         print(' The latent space was created....')
-        return mu, sigma, keys
+        return mu, sigma, msa_keys
 
     def propagate_through_VAE(self, binaries, weights, keys):
         # check if VAE is already ready from latent space method
         vae = self.vae
         if vae is None:
-            vae, _, _ = self._prepare_model()
+            vae, _ = self._prepare_model()
 
         train_data = MSA_Dataset(binaries, weights, keys)
         train_data_loader = DataLoader(train_data, batch_size=binaries.shape[0])
@@ -137,7 +113,7 @@ class VAEAccessor:
         # check if VAE is already ready from latent space method
         vae = self.vae
         if vae is None:
-            vae, msa_binary, num_seq = self._prepare_model()
+            vae, num_seq = self._prepare_model()
         num_seqs = {}
         for i, z in enumerate(lat_sp_pos, 1):
             anc_name = 'ancestor_{}'.format(i) if i > 1 else ref_name
@@ -156,7 +132,7 @@ class VAEAccessor:
         """
         vae = self.vae
         if vae is None:
-            vae, _, _ = self._prepare_model()
+            vae, _ = self._prepare_model()
         with torch.no_grad():
             if self.use_cuda:
                 z = z.cuda()
@@ -178,7 +154,7 @@ class VAEAccessor:
         """
         vae = self.vae
         if vae is None:
-            vae, _, _ = self._prepare_model()
+            vae, _ = self._prepare_model()
         with torch.no_grad():
             if self.use_cuda:
                 x = x.cuda()
@@ -190,7 +166,9 @@ class VAEAccessor:
         """ Return classic probability of each position to be seen on output. Input binary"""
         vae = self.vae
         if vae is None:
-            vae, _, _ = self._prepare_model()
+            vae, _ = self._prepare_model()
+        if self.use_cuda:
+            x = x.cuda()
         return vae.residues_probabilities(x)
 
     def get_closest_dataset_sequence(self, x_coords):
@@ -246,10 +224,13 @@ class VAEAccessor:
         train_seqs = train_dict.values()
 
         print(Helper.LOG_DELIMETER.value)
+        print("  Searching for the closest sequences from the input dataset")
+        Logger.print_for_update(" Closest sequence search : iteration {} out of " + str(len(sequences)), value='0')
         closest_sequences = []
         for iteration, sequence in enumerate(sequences):
             i_key, closest_identity = closest_seq_identity(sequence, train_seqs)
             closest_sequences.append((keys[i_key], closest_identity))
             if iteration % (len(sequences) // 5) == 0:
-                print(" Closest sequence search : iteration {} out of {}".format((iteration+1), len(sequences)))
+                Logger.update_msg(value=str((iteration+1)), new_line=False)
+        Logger.update_msg(value=str(len(sequences)), new_line=True)
         return closest_sequences

@@ -4,7 +4,7 @@ __date__ = "2022/01/06 14:33:00"
 text_keeper, text_len = "", 0
 
 
-# python3 msa_preprocessor.py --exp_dir simple --ref P59336_S14 --experiment refactor --in_file results/PF00561/MSA/identified_targets_msa.fa
+# $python3 benchmark.py --model_name bench --exp_dir simple --query DhaA_S19 --experiment dhlA_LinB_DhaA_S19 --in_file results/PF00561/MSA/dhlA_LinB.fa --stats --num_epoch 5000 --layers 291 --robustness_train
 class Logger:
     """
     Logger class for all classes.
