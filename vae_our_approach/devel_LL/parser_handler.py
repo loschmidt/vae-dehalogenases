@@ -141,7 +141,7 @@ class CmdHandler:
                   "                       stored in {}".format(query_file))
         with open(query_file, 'rb') as file_handle:
             query_dict = pickle.load(file_handle)
-        print(" Parser Handler message: The query {} loaded". format(list(query_dict.keys()[0])))
+        print(" Parser Handler message: The query {} loaded". format(list(query_dict.keys())[0]))
         return query_dict
 
     def _handle_layers(self):
