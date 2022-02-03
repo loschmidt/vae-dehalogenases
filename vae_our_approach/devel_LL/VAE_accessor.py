@@ -23,7 +23,7 @@ class VAEAccessor:
         self.pickle = setuper.pickles_fld
         self.model_name = model_name
         self.transformer = Transformer(setuper)
-        self.vae = None
+        self.vae, self.seq_cnt = self._prepare_model()
         if torch.cuda.is_available():
             self.use_cuda = True
         else:
@@ -46,7 +46,6 @@ class VAEAccessor:
         if self.use_cuda:
             vae.cuda()
 
-        self.vae = vae
         return vae, num_seq
 
     def _load_pickles(self):
@@ -124,6 +123,14 @@ class VAEAccessor:
         # Convert from numbers to amino acid sequence
         anc_dict = self.transformer.back_to_amino(num_seqs)
         return anc_dict
+
+    def decode_z_to_number(self, z: np.ndarray) -> np.ndarray:
+        """ Decode z from latent space and return amino acid in numbers """
+        z = tensor(z)
+        if self.use_cuda:
+            z = z.cuda()
+        sequences_in_numbers = self.vae.z_to_number_sequences(z)
+        return sequences_in_numbers
 
     def decode_z_marginal_probability(self, z, sigma, samples):
         """
