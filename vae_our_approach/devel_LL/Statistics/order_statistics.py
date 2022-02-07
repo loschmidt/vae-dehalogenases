@@ -93,21 +93,21 @@ class OrderStatistics:
         I = np.zeros(n * (n - 1) / 2)
 
         alphabet = list(MSA.amino_acid_dict(self.pickle).values())
-        column_jk_p = np.zeros(len(alphabet)**2)
+        column_jk_p = np.zeros(len(alphabet) ** 2)
 
         # prepare amino acids pairs
         pairs = []
         for a in alphabet:
             pairs = [(a, b) for b in alphabet]
 
-        for j in range(msa.shape[0]-1):
-            for k in range(j+1, msa.shape[0]):
+        for j in range(msa.shape[0] - 1):
+            for k in range(j + 1, msa.shape[0]):
                 # calculate H_j,k
                 for a, b in pairs:
                     vec_a, vec_b = np.where(msa[:, j] == a)[0], np.where(msa[:, k] == b)[0]
-                    column_jk_p[a*len(alphabet) + b] = sum([a in vec_b for a in vec_a]) / msa.shape[0]
+                    column_jk_p[a * len(alphabet) + b] = sum([a in vec_b for a in vec_a]) / msa.shape[0]
                 H_j_k = -np.sum(column_jk_p)
-                I[j*msa.shape[1] + k] = shannon[j] + shannon[k] - H_j_k
+                I[j * msa.shape[1] + k] = shannon[j] + shannon[k] - H_j_k
         return I
 
     def sample_dataset_from_normal(self, origin: np.ndarray, scale: float, N: int) -> np.ndarray:
@@ -128,7 +128,8 @@ class OrderStatistics:
         return my_rho[0, 1]
 
 
-if __name__ == "__main__":
+def run_setup():
+    """ Design the run setup for this package """
     cmdline = CmdHandler()
 
     with open(cmdline.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
@@ -152,3 +153,7 @@ if __name__ == "__main__":
                                    'first_order.png')
     stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Training Mutual Information',
                                    'Generated Mutual Information', 'second_order.png')
+
+
+if __name__ == "__main__":
+    run_setup()
