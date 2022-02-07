@@ -91,6 +91,15 @@ class Transformer(metaclass=Singleton):
         return [np.where(one_hot_AA == 1)[0][0] for one_hot_AA in binary]
 
     @staticmethod
+    def binaries_to_numbers_coding(binaries):
+        """
+        Convert binaries form into number coding
+        [[0,1,0],[0,0,1],
+         [0,1,0],[0,0,1]] -> [[1,2],[1,2]]
+        """
+        return np.array([Transformer.binary_to_numbers_coding(binary) for binary in binaries])
+
+    @staticmethod
     def shape_binary_for_vae(binary):
         """
         Use in the case having binary not shaped for VAE, also prepares artificial weights

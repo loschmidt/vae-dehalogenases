@@ -23,11 +23,13 @@ class VAEAccessor:
         self.pickle = setuper.pickles_fld
         self.model_name = model_name
         self.transformer = Transformer(setuper)
-        self.vae, self.seq_cnt = self._prepare_model()
+
         if torch.cuda.is_available():
             self.use_cuda = True
         else:
             self.use_cuda = False
+
+        self.vae, self.seq_cnt = self._prepare_model()
 
     def _prepare_model(self):
         # prepare model to mapping from highlighting files
@@ -130,7 +132,7 @@ class VAEAccessor:
         if self.use_cuda:
             z = z.cuda()
         sequences_in_numbers = self.vae.z_to_number_sequences(z)
-        return sequences_in_numbers
+        return np.array(sequences_in_numbers)
 
     def decode_z_marginal_probability(self, z, sigma, samples):
         """

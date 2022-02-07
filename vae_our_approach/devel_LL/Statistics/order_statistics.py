@@ -21,6 +21,14 @@ from sequence_transformer import Transformer
 from VAE_accessor import VAEAccessor
 
 
+def safe_log(x, eps=1e-10):
+    """ Calculate numerically stable log """
+    result = np.where(x > eps, x, -10)
+
+    np.log(result, out=result, where=result > 0)
+    return result
+
+
 class OrderStatistics:
     """
     Class gather methods responsible for creating first and second order statistics in sequence analyses
@@ -44,7 +52,7 @@ class OrderStatistics:
         self.vae = VAEAccessor(setuper, self.model_name)
         self.dimensions = self.vae.vae.dim_latent_vars
         self.pickle = setuper.pickles_fld
-        self.target_dir = setuper.high_fld + "/" + VaePaths.STATISTICS_DIR + "/"
+        self.target_dir = setuper.high_fld + "/" + VaePaths.STATISTICS_DIR.value + "/"
         self.setup_output_folder()
 
         # Keep calculations of amino appearances in columns, reshape later
@@ -75,13 +83,13 @@ class OrderStatistics:
         alphabet = list(MSA.amino_acid_dict(self.pickle).values())
         column_p = np.zeros(len(alphabet))
 
-        self.msa_profile = np.zeros(column_p.shape[0], msa.shape[1])
+        self.msa_profile = np.zeros((column_p.shape[0], msa.shape[1]))
 
-        for j in range(msa.shape[0]):
+        for j in range(msa.shape[1]):
             column_j = msa[:, j]
             for a in alphabet:
                 column_p[a] = np.where(column_j == a)[0].shape[0] / msa.shape[0]
-            H[j] = -np.sum(column_p * np.log(column_p))
+            H[j] = -np.sum(column_p * safe_log(column_p))
             # Store MSA profile for the future
             self.msa_profile[:, j] = column_p
         return H
@@ -98,7 +106,7 @@ class OrderStatistics:
         n = msa.shape[0]
 
         # Shape according number of unique pairs in set
-        I = np.zeros(n * (n - 1) / 2)
+        I = np.zeros(n * (n - 1) // 2)
 
         alphabet = list(MSA.amino_acid_dict(self.pickle).values())
         column_jk_p = np.zeros(len(alphabet) ** 2)
@@ -108,8 +116,8 @@ class OrderStatistics:
         for a in alphabet:
             pairs = [(a, b) for b in alphabet]
 
-        for j in range(msa.shape[0] - 1):
-            for k in range(j + 1, msa.shape[0]):
+        for j in range(msa.shape[1] - 1):
+            for k in range(j + 1, msa.shape[1]):
                 # calculate H_j,k
                 for a, b in pairs:
                     vec_a, vec_b = np.where(msa[:, j] == a)[0], np.where(msa[:, k] == b)[0]
@@ -128,9 +136,9 @@ class OrderStatistics:
         my_rho = np.corrcoef(train, sampled)
 
         fig, ax = plt.subplots()
-        ax[0, 0].scatter(train, sampled)
-        ax[0, 0].title.set_text('Correlation = ' + "{:.2f}".format(my_rho[0, 1]))
-        ax[0, 0].set(xlabel=label_x, ylabel=label_y)
+        ax.scatter(train, sampled)
+        ax.title.set_text('Correlation = ' + "{:.4f}".format(my_rho[0, 1]))
+        ax.set(xlabel=label_x, ylabel=label_y)
 
         plt.savefig(self.target_dir + file_name, dpi=400)
         return my_rho[0, 1]
@@ -143,7 +151,7 @@ def run_setup():
     with open(cmdline.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
         msa_original_binary = pickle.load(file_handle)
 
-    msa_dataset = Transformer.binary_to_numbers_coding(msa_original_binary)
+    msa_dataset = Transformer.binaries_to_numbers_coding(msa_original_binary)
 
     stat_obj = OrderStatistics(cmdline)
     sampled_dataset = stat_obj.sample_dataset_from_normal(np.zeros(stat_obj.dimensions), 1.5, msa_dataset.shape[0])
@@ -157,6 +165,8 @@ def run_setup():
     mutual_sampled = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
 
     # plot 1st order data statistics
+    print("=" * 80)
+    print(" Creating first and second order statistics to  {}".format(stat_obj.target_dir))
     stat_obj.plot_order_statistics(msa_shannon, sampled_shannon, 'Training Data Entropy', 'VAE Sampled Entropy',
                                    'first_order.png')
     stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Training Mutual Information',

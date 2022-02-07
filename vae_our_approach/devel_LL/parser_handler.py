@@ -111,7 +111,8 @@ class CmdHandler:
         parser.add_argument('--robustness_train', action='store_true', default=False, help=Helper.ROB_TRAIN.value)
         parser.add_argument('--robustness_measure', action='store_true', default=False, help=Helper.ROB_MEA.value)
         args, unknown = parser.parse_known_args()
-        if '--source_txt' not in unknown and len(unknown) > 0:
+        if ('--source_txt' not in unknown and len(unknown) > 0) and \
+                ('--run_package_stats' not in unknown and len(unknown) > 0):
             print(' Parser error : unrecognized parameters', unknown)
             exit(1)
         return args.exp_dir, args

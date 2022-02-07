@@ -11,13 +11,13 @@ def get_package_parser() -> ArgumentParser:
     """ Creates Argument parser """
     parser = ArgumentParser()
     parser.add_argument("--run_package_stats", action='store_true', default=False,
-                        description="Runs 1st and 2nd order statistics over model.")
+                        help="Runs 1st and 2nd order statistics over model.")
     return parser
 
 
 def run_package(parser: ArgumentParser):
     """ Run package according to the choice """
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
     if args.run_package_stats:
         model_statistics_run()
 
