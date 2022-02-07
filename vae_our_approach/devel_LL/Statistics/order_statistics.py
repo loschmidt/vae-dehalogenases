@@ -6,11 +6,19 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ..parser_handler import CmdHandler
-from ..project_enums import VaePaths
-from ..msa_preparation import MSA
-from ..sequence_transformer import Transformer
-from ..VAE_accessor import VAEAccessor
+import os
+import sys
+import inspect
+
+currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentDir = os.path.dirname(currentDir)
+sys.path.insert(0, parentDir)
+
+from parser_handler import CmdHandler
+from project_enums import VaePaths
+from msa_preparation import MSA
+from sequence_transformer import Transformer
+from VAE_accessor import VAEAccessor
 
 
 class OrderStatistics:
