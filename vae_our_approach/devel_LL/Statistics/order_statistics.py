@@ -4,6 +4,7 @@ __date__ = "2022/01/25 00:30:00"
 import os
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
 
 from ..parser_handler import CmdHandler
 from ..project_enums import VaePaths
@@ -35,7 +36,7 @@ class OrderStatistics:
         self.vae = VAEAccessor(setuper, self.model_name)
         self.dimensions = self.vae.vae.dim_latent_vars
         self.pickle = setuper.pickles_fld
-        self.target_dir = setuper.high_fld + "/" + VaePaths.STATISTICS_DIR
+        self.target_dir = setuper.high_fld + "/" + VaePaths.STATISTICS_DIR + "/"
         self.setup_output_folder()
 
         # Keep calculations of amino appearances in columns, reshape later
@@ -114,6 +115,19 @@ class OrderStatistics:
         z = np.random.multivariate_normal(origin, np.identity(self.dimensions) * scale, N)
         return self.vae.decode_z_to_number(z)
 
+    def plot_order_statistics(self, train, sampled, label_x, label_y, file_name) -> float:
+        """ Plots the order statistics of data, returns Pearson correlation coefficient """
+        my_rho = np.corrcoef(train, sampled)
+
+        fig, ax = plt.subplots()
+        ax[0, 0].scatter(train, sampled)
+        ax[0, 0].title.set_text('Correlation = ' + "{:.2f}".format(my_rho[0, 1]))
+        ax[0, 0].set(xlabel=label_x, ylabel=label_y)
+
+        plt.savefig(self.target_dir + file_name, dpi=400)
+        return my_rho[0, 1]
+
+
 if __name__ == "__main__":
     cmdline = CmdHandler()
 
@@ -132,3 +146,9 @@ if __name__ == "__main__":
     # 2nd order statistics
     mutual_msa = stat_obj.mutual_information(msa_dataset, msa_shannon)
     mutual_sampled = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
+
+    # plot 1st order data statistics
+    stat_obj.plot_order_statistics(msa_shannon, sampled_shannon, 'Training Data Entropy', 'VAE Sampled Entropy',
+                                   'first_order.png')
+    stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Training Mutual Information',
+                                   'Generated Mutual Information', 'second_order.png')
