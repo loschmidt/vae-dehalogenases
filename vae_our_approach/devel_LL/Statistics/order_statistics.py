@@ -1,15 +1,14 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2022/01/25 00:30:00"
 
+import inspect
 import os
 import pickle
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy import stats
-
-import os
 import sys
-import inspect
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy import stats
 
 currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentDir = os.path.dirname(currentDir)
@@ -136,7 +135,7 @@ class OrderStatistics:
         """ Plots the order statistics of data, returns Pearson correlation coefficient """
         my_rho = np.corrcoef(train, sampled)
         pearson_coef, p_value = stats.pearsonr(train, sampled)
-        print("Comparison of np vs scipy: {}, {} with p-value".format(my_rho[0, 1], pearson_coef, p_value))
+
         fig, ax = plt.subplots()
         ax.scatter(train, sampled, s=0.5)
         ax.title.set_text('Correlation = ' + "{:.4f}".format(my_rho[0, 1]))
