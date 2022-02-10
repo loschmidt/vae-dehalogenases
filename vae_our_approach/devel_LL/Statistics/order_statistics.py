@@ -5,6 +5,7 @@ import os
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import stats
 
 import os
 import sys
@@ -134,9 +135,11 @@ class OrderStatistics:
     def plot_order_statistics(self, train, sampled, label_x, label_y, file_name) -> float:
         """ Plots the order statistics of data, returns Pearson correlation coefficient """
         my_rho = np.corrcoef(train, sampled)
-
+        pearson_coef, p_value = stats.pearsonr(train, sampled)
+        print("Comparison of np vs scipy: {}, {} with p-value".format(my_rho[0, 1], pearson_coef, p_value))
+        
         fig, ax = plt.subplots()
-        ax.scatter(train, sampled)
+        ax.scatter(train, sampled, s=0.5)
         ax.title.set_text('Correlation = ' + "{:.4f}".format(my_rho[0, 1]))
         ax.set(xlabel=label_x, ylabel=label_y)
 
@@ -154,7 +157,7 @@ def run_setup():
     msa_dataset = Transformer.binaries_to_numbers_coding(msa_original_binary)
 
     stat_obj = OrderStatistics(cmdline)
-    sampled_dataset = stat_obj.sample_dataset_from_normal(np.zeros(stat_obj.dimensions), 1.5, msa_dataset.shape[0])
+    sampled_dataset = stat_obj.sample_dataset_from_normal(np.zeros(stat_obj.dimensions), 2.5, msa_dataset.shape[0])
 
     # 1st order stats
     msa_shannon = stat_obj.shannon_entropy(msa_dataset)
