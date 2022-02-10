@@ -12,8 +12,8 @@ currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentDir = os.path.dirname(currentDir)
 sys.path.insert(0, parentDir)
 
-from ..parser_handler import CmdHandler
-from ..project_enums import VaePaths
+from parser_handler import CmdHandler
+from project_enums import VaePaths
 
 
 class MSASubsampler:
@@ -34,13 +34,13 @@ class MSASubsampler:
     def sample_msa(self, n: int, seq_cnt: int = 100):
         """ Sample MSA from training input space """
 
-        def fasta_record(file_handle, key, seq):
+        def fasta_record(file, key, seq):
             n = 80
-            file_handle.write(">" + key + "\n")
+            file.write(">" + key + "\n")
             for i in range(0, len(seq), n):
-                file_handle.write(seq[i:i + n] + "\n")
+                file.write(seq[i:i + n] + "\n")
 
-        with open(self.pickle + "training_alignment.pkl", "rb") as file_handle:
+        with open(self.pickle + "/training_alignment.pkl", "rb") as file_handle:
             msa = pickle.load(file_handle)
         msa_keys = np.array(list(msa.keys()))
         query = msa[self.query_id]
@@ -48,10 +48,13 @@ class MSASubsampler:
 
         for msa_i in range(n):
             file_name = file_templ.format(msa_i)
+            print("   ", file_name)
 
             with open(file_name, 'w') as file_handle:
                 fasta_record(file_handle, self.query_id, "".join(query))  # Store query
-                for key in msa_keys[np.random.randint(1, msa_keys.shape[0], dtype=np.int)]:
+                selected_seqs = msa_keys[np.random.randint(1, msa_keys.shape[0], seq_cnt, dtype=np.int)]
+
+                for key in selected_seqs:
                     fasta_record(file_handle, key, "".join(msa[key]))
 
 
