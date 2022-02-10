@@ -127,7 +127,11 @@ def run_tree_highlighter():
     cmdline = CmdHandler()
     file_name_templ = "msa_tree{}.nwk"
 
+    print("=" * 80)
+    print("   Mapping trees for {} MSAs".format(n))
+
     anc_tree_handler = AncestralTree(cmdline)
     for i in range(n):
+        print("   Level parsing and plotting tree for ", file_name_templ.format(i))
         levels = anc_tree_handler.get_tree_levels(file_name_templ.format(i))
         print(levels)
