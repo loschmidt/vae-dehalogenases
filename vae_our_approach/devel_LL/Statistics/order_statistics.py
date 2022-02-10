@@ -137,7 +137,6 @@ class OrderStatistics:
         my_rho = np.corrcoef(train, sampled)
         pearson_coef, p_value = stats.pearsonr(train, sampled)
         print("Comparison of np vs scipy: {}, {} with p-value".format(my_rho[0, 1], pearson_coef, p_value))
-        
         fig, ax = plt.subplots()
         ax.scatter(train, sampled, s=0.5)
         ax.title.set_text('Correlation = ' + "{:.4f}".format(my_rho[0, 1]))
