@@ -105,7 +105,7 @@ class CmdHandler:
         parser.add_argument('--layers', nargs='+', type=int, default=100, help=Helper.LAYERS.value)
         parser.add_argument('--dimensionality', type=int, default=2, help=Helper.DIMS.value)
         # Clustal path option
-        parser.add_argument('--clustalo_path', type=str, default='/storage/brno2/xkohou15/bin/clustalo',
+        parser.add_argument('--clustalo_path', type=str, default='/storage/brno2/home/xkohou15/bin/clustalo',
                             help=Helper.CLUSTAL.value)
         # Robustness options
         parser.add_argument('--robustness_train', action='store_true', default=False, help=Helper.ROB_TRAIN.value)
