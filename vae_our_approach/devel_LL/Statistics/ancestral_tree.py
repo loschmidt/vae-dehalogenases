@@ -190,6 +190,34 @@ class AncestralTree:
         plt.savefig(self.target_dir + file_name, dpi=600)
 
 
+class LatentSpaceMapper:
+    """
+    The purpose of this class is to highlight sequences in the latent space with value labels
+    The class expect having these sequences (or its names having it in training dataset) and
+    values in the file in the following format:
+        ProteinName;ProteinIdentificator;InSilicoVal;WetLabVal
+    example:
+        DfxA;WP_071046332.1;73.4;24.2
+    """
+    def __init__(self, setuper : CmdHandler):
+        self.model_name = setuper.get_model_to_load()
+        self.vae = VAEAccessor(setuper, self.model_name)
+        self.transformer = Transformer(setuper)
+        self.target_dir = setuper.high_fld + "/" + VaePaths.MAPPING_DIR.value + "/"
+        self.setup_output_folder()
+
+    def setup_output_folder(self):
+        """ Creates directory in Highlight results directory """
+        os.makedirs(self.target_dir, exist_ok=True)
+
+    def load_training_sequence_labels(self, file_name: str):
+        """ Loads training sequence binaries and label them from file """
+        with open(self.target_dir + file_name, "r") as lines:
+            for line in lines:
+
+
+
+
 # Number of randomly created MSAs and then trees
 n = 2
 

@@ -58,6 +58,7 @@ class VaePaths(Enum):
     HIGHLIGHT_DIR = "highlight"
     STATISTICS_DIR = "Latent_space_stats"
     TREE_EVALUATION_DIR = "Tree_evaluation"
+    MAPPING_DIR = "Mapping_to_latent_space"
     # Files names
     MODEL_PARAMs_FILE = "ModelsParameters.txt"
     TRAIN_MSA_FILE = "training_alignment.pkl"
