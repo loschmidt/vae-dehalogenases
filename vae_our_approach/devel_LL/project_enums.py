@@ -57,6 +57,7 @@ class VaePaths(Enum):
     PICKLE_DIR = "pickles"
     HIGHLIGHT_DIR = "highlight"
     STATISTICS_DIR = "Latent_space_stats"
+    TREE_EVALUATION_DIR = "Tree_evaluation"
     # Files names
     MODEL_PARAMs_FILE = "ModelsParameters.txt"
     TRAIN_MSA_FILE = "training_alignment.pkl"

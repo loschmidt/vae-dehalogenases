@@ -120,6 +120,7 @@ class OrderStatistics:
         # Row for pairs of amino acids
         frequencies = np.zeros((shannon.shape[0]-1, column_jk_p.shape[0]))
 
+        index_counter = 0
         for j in range(msa.shape[1] - 1):
             for k in range(j + 1, msa.shape[1]):
                 # calculate H_j,k
@@ -128,8 +129,9 @@ class OrderStatistics:
                     frequencies[j, a * len(alphabet) + b] = sum([a in vec_b for a in vec_a])
                 column_jk_p[:] = frequencies[j, :] / msa.shape[0]
                 H_j_k = -np.sum(column_jk_p)
-                I[j * msa.shape[1] + k] = shannon[j] + shannon[k] - H_j_k
-        return I, frequencies
+                I[index_counter] = shannon[j] + shannon[k] - H_j_k
+                index_counter += 1
+        return I[:index_counter], frequencies
 
     def sample_dataset_from_normal(self, origin: np.ndarray, scale: float, N: int) -> np.ndarray:
         """ Sample from the model N data points and transform them to ndarray """
@@ -139,7 +141,6 @@ class OrderStatistics:
     def plot_order_statistics(self, train, sampled, label_x, label_y, file_name) -> float:
         """ Plots the order statistics of data, returns Pearson correlation coefficient """
         my_rho = np.corrcoef(train, sampled)
-        pearson_coef, p_value = stats.pearsonr(train, sampled)
 
         fig, ax = plt.subplots()
         ax.scatter(train, sampled, s=0.5)
@@ -178,7 +179,7 @@ def run_setup():
     stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Training Mutual Information',
                                    'Generated Mutual Information', 'second_order.png')
     stat_obj.plot_order_statistics(msa_frequencies.flatten(), sampled_frequencies.flatten(),
-                                   'Training Data Frequencies', 'VAE Sampled Frequencie', 'first_order_frequencies.png')
+                                   'Training Data Frequencies', 'VAE Sampled Frequencies', 'first_order_frequencies.png')
     stat_obj.plot_order_statistics(mutual_msa_frequencies.flatten(), mutual_sampled_frequencies.flatten(),
                                    'Training Mutual Frequencies', 'Generated Mutual Frequencies',
                                    'second_order_frequencies.png')

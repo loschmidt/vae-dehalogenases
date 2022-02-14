@@ -73,7 +73,7 @@ class AncestralTree:
         self.vae = VAEAccessor(setuper, self.model_name)
         self.aligner_obj = AncestorsHandler(setuper)
         self.transformer = Transformer(setuper)
-        self.target_dir = setuper.high_fld + "/" + VaePaths.STATISTICS_DIR.value + "/"
+        self.target_dir = setuper.high_fld + "/" + VaePaths.TREE_EVALUATION_DIR.value + "/"
         self.setup_output_folder()
 
         self.max_depth = 6
