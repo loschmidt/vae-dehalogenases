@@ -148,7 +148,7 @@ class MutagenesisGenerator:
         """ Measure probability of ancestors given in file """
         if self.setuper.align:
             ancestors = MSA.load_msa(file=self.setuper.highlight_files)
-            ancestors = AncestorsHandler(setuper=self.setuper, seq_to_align=ancestors).align_to_ref()
+            ancestors = AncestorsHandler(setuper=self.setuper).align_to_ref(ancestors)
             # probs = ProbabilityMaker(None, None, self.setuper, generate_negative=False).measure_seq_probability(
             #     ancestors)
             file_name = '{}sebestova_ancestors.fasta'.format(self.setuper.model_name)

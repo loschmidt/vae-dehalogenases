@@ -108,7 +108,7 @@ class Highlighter:
         name = (file_name.split("/")[-1]).split(".")[0]
         names = list(msa.keys())
         if self.setuper.align:
-            msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
+            msa = AncestorsHandler(setuper=self.setuper).align_to_ref(msa=msa)
             binary, weights, keys = self.transformer.sequence_dict_to_binary(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
             self._highlight(name=names, high_data=data, one_by_one=True, wait=wait, no_init=True)
@@ -129,7 +129,7 @@ class Highlighter:
         ax[0].plot(self.mu[:, 0], self.mu[:, 1], '.', alpha=0.1, markersize=3, label='full')
         if self.setuper.align:
             msa = MSA.load_msa(file=self.setuper.highlight_files)
-            msa = AncestorsHandler(setuper=self.setuper, seq_to_align=msa).align_to_ref()
+            msa = AncestorsHandler(setuper=self.setuper).align_to_ref(msa=msa)
             binary, weights, keys = self.transformer.sequence_dict_to_binary(msa)
             data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
             ## Plot data into both graphs and focus on the area
@@ -271,55 +271,54 @@ class Highlighter:
         print("Class highlighter saving graph to", save_to)
         fig.savefig(save_to)
 
+
 class AncestorsHandler:
-    def __init__(self, setuper, seq_to_align):
-        self.sequences = seq_to_align
+    def __init__(self, setuper):
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
 
-    def align_to_ref(self, msa_align=True):
-        '''
+    def align_to_ref(self, msa: dict = None):
+        """
             Align sequences to original MSA and then apply
             the same position removal as in MSA processing.
             In the case of msa_align False do iterative alignment
             to only query sequence. This may not be optimal solution
-        '''
+        """
         aligned = {}
-        if not msa_align:
-            # Do iterative alignment only to query (not optimal solution)
-            with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
-                ref = pickle.load(file_handle)
-                ref_name = list(ref.keys())[0]
-                ref_seq = "".join(ref[ref_name])
-                aligned, ref_len = {}, len(ref_seq)
-                i = 0
-                for k in self.sequences.keys():
-                    i += 1
-                    seq = self.sequences[k]
-                    alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
-                    best_align = alignments[0][1]
-                    if len(seq) > ref_len:
-                        # length of sequence is bigger than ref query, cut sequence on reference query gap positions
-                        print(' AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
-                              '                          Sequence amino position'
-                              '  at reference gaps will be removed'.format(len(seq), ref_len))
-                        tmp = ''
-                        len_dif = len(best_align) - ref_len
-                        aligned_query = alignments[0][0]
-                        idx_to_remove = []
-                        # Remove gap positions when occur in both query and aligned sequence
+        # Do iterative alignment only to query (not optimal solution)
+        with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
+            ref = pickle.load(file_handle)
+            ref_name = list(ref.keys())[0]
+            ref_seq = "".join(ref[ref_name])
+            aligned, ref_len = {}, len(ref_seq)
+            i = 0
+            for k in msa.keys():
+                i += 1
+                seq = msa[k]
+                alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
+                best_align = alignments[0][1]
+                if len(seq) > ref_len:
+                    # length of sequence is bigger than ref query, cut sequence on reference query gap positions
+                    print(' AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
+                          '                          Sequence amino position'
+                          '  at reference gaps will be removed'.format(len(seq), ref_len))
+                    tmp = ''
+                    len_dif = len(best_align) - ref_len
+                    aligned_query = alignments[0][0]
+                    idx_to_remove = []
+                    # Remove gap positions when occur in both query and aligned sequence
+                    for i in range(len(aligned_query)):
+                        if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
+                            len_dif -= 1
+                            idx_to_remove.append(i)
+                    if len_dif > 0:
+                        # Remove positions where aligned query has gaps
                         for i in range(len(aligned_query)):
                             if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
                                 len_dif -= 1
                                 idx_to_remove.append(i)
-                        if len_dif > 0:
-                            # Remove positions where aligned query has gaps
-                            for i in range(len(aligned_query)):
-                                if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
-                                    len_dif -= 1
-                                    idx_to_remove.append(i)
-                                len_dif -= 1
-                        aligned[k] = tmp.join([best_align[i] for i in range(len(best_align)) if i not in idx_to_remove])
+                            len_dif -= 1
+                    aligned[k] = tmp.join([best_align[i] for i in range(len(best_align)) if i not in idx_to_remove])
                 else:
                     # try 3 iteration to fit ref query
                     open_gap_pen, gap_pen = -7, -1
@@ -328,50 +327,62 @@ class AncestorsHandler:
                         alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
                         best_align = alignments[0][1]
                     aligned[k] = alignments[0][1]
-                if self.setuper.stats:
-                    print(k, ':', alignments[0][2], len(aligned[k]))
+            if self.setuper.stats:
+                print(k, ':', alignments[0][2], len(aligned[k]))
+        return aligned
+
+    def align_fasta_to_original_msa(self, msa_file, verbose=True):
+        """
+        Align msa passed via fasta file to original MSA using ClustalOmega
+        Align sequences to the profile of original MSA and filter by same protocol
+        """
+        aligned = {}
+
+        import multiprocessing
+        cores_count = min(multiprocessing.cpu_count(), 8)
+
+        msa = MSA.load_msa(msa_file)
+
+        ancestral_names = list(msa.keys())
+
+        # check if alignment exists
+        file_name = (msa_file.split("/")[-1]).split(".")[0]
+        outfile = self.pickle + "/{}_aligned_to_MSA.fasta".format(file_name)
+        if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
+            print(' Analyzer message : Alignment file exists in {}. Using that file.'.format(outfile))
         else:
-            # Align sequences to the profile of original MSA and filter by same protocol
-            import multiprocessing
-            cores_count = min(multiprocessing.cpu_count(), 8)
-            file = self.setuper.highlight_files
-            from msa_preparation import MSA
-            ancs = MSA.load_msa(file)
-            ancestral_names = list(ancs.keys())
-            # check if alignment exists
-            outfile = self.pickle + "/aligned_ancestors_to_MSA.fasta"
-            if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
-                print(' Analyzer message : Alignment file exists in {}. Using that file.'.format(outfile))
+            # Create profile from sequences to be aligned
+            profile = self.pickle + "/ancestors_align.fasta"
+            if os.path.exists(profile) and os.path.getsize(profile) > 0:
+                print(' Analyzer message : Alignment of ancestors exists in {}. Using that file.'.format(profile))
             else:
-                # Create profile from sequences to be aligned
-                profile = self.pickle + "/ancestors_align.fasta"
-                if os.path.exists(profile) and os.path.getsize(profile) > 0:
-                    print(' Analyzer message : Alignment of ancestors exists in {}. Using that file.'.format(profile))
-                else:
-                    clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                                 infile=file,
-                                                                 outfile=profile,
-                                                                 threads=cores_count,
-                                                                 verbose=True, auto=True)  # , dealign=True)
+                clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                             infile=msa_file,
+                                                             outfile=profile,
+                                                             threads=cores_count,
+                                                             verbose=verbose, auto=True)  # , dealign=True)
+                if verbose:
                     print(" AncestorHandler message : Aligning ancestors ...\n"
                           "                           Running {}".format(clustalomega_cline))
-                    stdout, stderr = clustalomega_cline()
-
-                clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                             profile1=self.setuper.in_file,
-                                                             profile2=profile,
-                                                             outfile=outfile,
-                                                             threads=cores_count,
-                                                             verbose=True, auto=True)  # , isprofile=True)
-                print(" AncestorHandler message : Running {}".format(clustalomega_cline))
                 stdout, stderr = clustalomega_cline()
+
+            clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                         profile1=self.setuper.in_file,
+                                                         profile2=profile,
+                                                         outfile=outfile,
+                                                         threads=cores_count,
+                                                         verbose=verbose, auto=True, isprofile=True)
+            if verbose:
+                print(" AncestorHandler message : Running {}".format(clustalomega_cline))
+            stdout, stderr = clustalomega_cline()
+            if verbose:
                 print(stdout)
-            with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
-                pos_idx = pickle.load(file_handle)
-            # Find sequences from file and process them in the same way as during MSA processing
-            alignment = MSA.load_msa(outfile)
-            for name in ancestral_names:
-                aligned[name] = [item for i, item in enumerate(alignment[name]) if i in pos_idx]
+        with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
+            pos_idx = pickle.load(file_handle)
+        # Find sequences from file and process them in the same way as during MSA processing
+        alignment = MSA.load_msa(outfile)
+        for name in ancestral_names:
+            aligned[name] = [item for i, item in enumerate(alignment[name]) if i in pos_idx]
         return aligned
 
 
@@ -379,7 +390,7 @@ if __name__ == '__main__':
     tar_dir = CmdHandler()
     down_MSA = Downloader(tar_dir)
     ## Create latent space
-    mus, _, _ = VAEAccessor(setuper=tar_dir, model_name=    tar_dir.get_model_to_load()).latent_space()
+    mus, _, _ = VAEAccessor(setuper=tar_dir, model_name=tar_dir.get_model_to_load()).latent_space()
     ## Highlight
     highlighter = Highlighter(tar_dir)
     if tar_dir.highlight_files is not None:

@@ -77,7 +77,7 @@ class EvolutionSearch:
         self.exp_stats_handler.store_ancestor_dict_in_fasta(mutants, file_name, msg=msg)
 
         self.setuper.highlight_files = self.out_dir + file_name
-        mutant_aligned = AncestorsHandler(setuper=self.setuper, seq_to_align=mutants).align_to_ref()
+        mutant_aligned = AncestorsHandler(setuper=self.setuper).align_to_ref(msa=mutants)
         X = self.encode(mutant_aligned)
 
         # Input space
