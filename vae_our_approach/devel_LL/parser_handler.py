@@ -114,7 +114,8 @@ class CmdHandler:
         if ('--source_txt' not in unknown and len(unknown) > 0) and \
                 ('--run_package_stats_order' not in unknown and len(unknown) > 0) and \
                 ('--run_package_stats_fireprot' not in unknown and len(unknown) > 0) and \
-                ('--run_package_stats_tree' not in unknown and len(unknown) > 0):
+                ('--run_package_stats_tree' not in unknown and len(unknown) > 0) and \
+                ('--run_package_stats_mapper' not in unknown and len(unknown) > 0):
             print(' Parser error : unrecognized parameters', unknown)
             exit(1)
         return args.exp_dir, args

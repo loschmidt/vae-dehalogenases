@@ -33,7 +33,7 @@ class Transformer(metaclass=Singleton):
             return self.msa_binary[key_index]
         except ValueError:
             print(" Sequence transformer : ERROR in get_binary_by_key method the key {} not found!".format(seq_key))
-            exit(0)
+            return None
 
     def get_seq_dict_by_key(self, seq_key):
         """ Method returns the sequence dictionary with sequence in the form of amino acid """
@@ -81,6 +81,19 @@ class Transformer(metaclass=Singleton):
         binaries = binaries.reshape((binaries.shape[0], -1))
         weights = weights.astype(np.float32)
         return binaries, weights, keys
+
+    def slice_msa_by_pos_indexes(self, msa_dict):
+        """
+        In the msa keeps only columns kept during original preprocessing
+        Useful for sequence remove during clustering in preprocessing from training msa
+        ,and now you would like to highlight them
+        """
+        with open(self.pickles + "/seq_pos_idx.pkl", 'rb') as file_handle:
+            pos_idx = pickle.load(file_handle)
+        sliced_msa = {}
+        for name, sequence in msa_dict.items():
+            sliced_msa[name] = [item for i, item in enumerate(sequence) if i in pos_idx]
+        return sliced_msa
 
     @staticmethod
     def binary_to_numbers_coding(binary):
