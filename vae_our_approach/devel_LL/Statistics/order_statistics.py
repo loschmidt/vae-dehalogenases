@@ -92,7 +92,7 @@ class OrderStatistics:
                 frequencies[a, j] = np.where(column_j == a)[0].shape[0]
             column_p = frequencies[:, j] / msa.shape[0]
             H[j] = -np.sum(column_p * safe_log(column_p))
-        return H, frequencies
+        return H, frequencies / msa.shape[0]
 
     def mutual_information(self, msa: np.ndarray, shannon: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -131,21 +131,29 @@ class OrderStatistics:
                 H_j_k = -np.sum(column_jk_p)
                 I[index_counter] = shannon[j] + shannon[k] - H_j_k
                 index_counter += 1
-        return I[:index_counter], frequencies
+        return I[:index_counter], frequencies / msa.shape[0]
 
     def sample_dataset_from_normal(self, origin: np.ndarray, scale: float, N: int) -> np.ndarray:
         """ Sample from the model N data points and transform them to ndarray """
         z = np.random.multivariate_normal(origin, np.identity(self.dimensions) * scale, N)
         return self.vae.decode_z_to_number(z)
 
-    def plot_order_statistics(self, train, sampled, label_x, label_y, file_name) -> float:
-        """ Plots the order statistics of data, returns Pearson correlation coefficient """
-        my_rho = np.corrcoef(train, sampled)
+    def plot_order_statistics(self, train, sampled, label_x, label_y, file_name, show_gap) -> float:
+        """
+        Plots the order statistics of data, returns Pearson correlation coefficient
+        show_gap - True if you want highlight gap frequencies in red dots
+        """
+        my_rho = np.corrcoef(train.flatten(), sampled.flatten())
 
         fig, ax = plt.subplots()
-        ax.scatter(train, sampled, s=0.5)
+        ax.scatter(train.flatten(), sampled.flatten(), s=0.5)
         ax.title.set_text('Correlation = ' + "{:.4f}".format(my_rho[0, 1]))
         ax.set(xlabel=label_x, ylabel=label_y)
+
+        if show_gap:
+            gaps_msa_frequencies = train[0, :]
+            gaps_sampled_frequencies = sampled[0, :]
+            ax.scatter(gaps_msa_frequencies, gaps_sampled_frequencies, s=0.5, c='red')
 
         plt.savefig(self.target_dir + file_name, dpi=400)
         return my_rho[0, 1]
@@ -175,14 +183,15 @@ def run_setup():
     print("=" * 80)
     print(" Creating first and second order statistics to  {}".format(stat_obj.target_dir))
     stat_obj.plot_order_statistics(msa_shannon, sampled_shannon, 'Training Data Entropy', 'VAE Sampled Entropy',
-                                   'first_order.png')
+                                   'first_order.png', show_gap=False)
     stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Training Mutual Information',
-                                   'Generated Mutual Information', 'second_order.png')
-    stat_obj.plot_order_statistics(msa_frequencies.flatten(), sampled_frequencies.flatten(),
-                                   'Training Data Frequencies', 'VAE Sampled Frequencies', 'first_order_frequencies.png')
-    stat_obj.plot_order_statistics(mutual_msa_frequencies.flatten(), mutual_sampled_frequencies.flatten(),
+                                   'Generated Mutual Information', 'second_order.png', show_gap=False)
+    stat_obj.plot_order_statistics(msa_frequencies, sampled_frequencies,
+                                   'Training Data Frequencies', 'VAE Sampled Frequencies',
+                                   'first_order_frequencies.png', show_gap=True)
+    stat_obj.plot_order_statistics(mutual_msa_frequencies, mutual_sampled_frequencies,
                                    'Training Mutual Frequencies', 'Generated Mutual Frequencies',
-                                   'second_order_frequencies.png')
+                                   'second_order_frequencies.png', show_gap=False)
 
 
 if __name__ == "__main__":
