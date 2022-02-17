@@ -222,12 +222,11 @@ class Benchmarker:
                 else:
                     writer.writerow([i, name, seq, prob])
 
-    def model_generative_ability(self, data):
+    def model_generative_ability(self, data, log=False):
         """
         For whole training data set check how data
         points are biased by neighbouring data points
         """
-        print(' Benchmark message : Measuring of model generative ability has started')
         data = data.astype(np.float32)
         batch_size = 64
         num_batches = data.shape[0] // batch_size + 1
@@ -257,23 +256,26 @@ class Benchmarker:
         gen_query = self.vae_handler.decode_z_marginal_probability(mu, sigma, -1)
         query_score = marginal(gen_query[0], orig_query)
 
-        print("\tModel generative ability value:", sum(probs)/num_batches)
+        if log:
+            print("\tModel generative ability value:", sum(probs)/num_batches)
 
-        filename = self.setuper.high_fld + '/generative.txt'
-        if os.path.exists(filename):
-            append_write = 'a'  # append if already exists
-        else:
-            append_write = 'w'  # make a new file if not
+            filename = self.setuper.high_fld + '/generative.txt'
+            if os.path.exists(filename):
+                append_write = 'a'  # append if already exists
+            else:
+                append_write = 'w'  # make a new file if not
 
-        hs = open(filename, append_write)
-        hs.write(" Model with C = {0}, D = {1}, generative value = {2} "
-                 " pairwise = {3}, DHAA pairwise score = {4}, layers: {5}, Decay = {6}\n".format(self.setuper.C,
-                                                                self.setuper.dimensionality,
-                                                                (sum(probs)/num_batches),
-                                                                (sum(pairwise_score)/data.shape[0]),
-                                                                 query_score, self.setuper.layersString,
-                                                                 self.setuper.decay))
-        hs.close()
+            hs = open(filename, append_write)
+            hs.write(" Model with C = {0}, D = {1}, generative value = {2} "
+                     " pairwise = {3}, DHAA pairwise score = {4}, layers: {5}, Decay = {6}\n".format(self.setuper.C,
+                                                                    self.setuper.dimensionality,
+                                                                    (sum(probs)/num_batches),
+                                                                    (sum(pairwise_score)/data.shape[0]),
+                                                                     query_score, self.setuper.layersString,
+                                                                     self.setuper.decay))
+            hs.close()
+
+        return
 
     def test_loglikelihood(self):
         """Just pick point from the latent space and then generate sequence and compare loglikelihood"""
