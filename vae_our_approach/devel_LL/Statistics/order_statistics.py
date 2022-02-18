@@ -118,7 +118,7 @@ class OrderStatistics:
 
         # Matrix, row number of MSA columns except last column which is included in previous frequencies count
         # Row for pairs of amino acids
-        frequencies = np.zeros((shannon.shape[0]-1, column_jk_p.shape[0]))
+        frequencies = np.zeros((shannon.shape[0] - 1, column_jk_p.shape[0]))
 
         index_counter = 0
         for j in range(msa.shape[1] - 1):
@@ -138,7 +138,8 @@ class OrderStatistics:
         z = np.random.multivariate_normal(origin, np.identity(self.dimensions) * scale, N)
         return self.vae.decode_z_to_number(z)
 
-    def plot_order_statistics(self, train, sampled, label_x, label_y, file_name, show_gap) -> float:
+    def plot_order_statistics(self, train, sampled, label_x, label_y, file_name, show_gap,
+                              frequencies: bool = False) -> float:
         """
         Plots the order statistics of data, returns Pearson correlation coefficient
         show_gap - True if you want highlight gap frequencies in red dots
@@ -149,6 +150,10 @@ class OrderStatistics:
         ax.scatter(train.flatten(), sampled.flatten(), s=0.5)
         ax.title.set_text('Correlation = ' + "{:.4f}".format(my_rho[0, 1]))
         ax.set(xlabel=label_x, ylabel=label_y)
+
+        if frequencies:
+            ax.set_xlim([0, 1])
+            ax.set_ylim([0, 1])
 
         if show_gap:
             gaps_msa_frequencies = train[0, :]
@@ -188,10 +193,10 @@ def run_setup():
                                    'Generated Mutual Information', 'second_order.png', show_gap=False)
     stat_obj.plot_order_statistics(msa_frequencies, sampled_frequencies,
                                    'Training Data Frequencies', 'VAE Sampled Frequencies',
-                                   'first_order_frequencies.png', show_gap=True)
+                                   'first_order_frequencies.png', show_gap=True, frequencies=True)
     stat_obj.plot_order_statistics(mutual_msa_frequencies, mutual_sampled_frequencies,
                                    'Training Mutual Frequencies', 'Generated Mutual Frequencies',
-                                   'second_order_frequencies.png', show_gap=False)
+                                   'second_order_frequencies.png', show_gap=False, frequencies=True)
 
 
 if __name__ == "__main__":

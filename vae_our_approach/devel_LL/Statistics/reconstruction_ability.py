@@ -67,7 +67,7 @@ class Reconstructor:
         ax.hist(data, bins=100)
         ax.set_title(title)
         ax.set(xlabel="%", ylabel="Quantity")
-        ax.axvline(x=query_identity, color='r', linestyle='dashed',linewidth=2)
+        ax.axvline(x=query_identity, color='r', linestyle='dashed', linewidth=2)
         plt.text(query_identity + 0.2, 0, "Query({:.2f})".format(query_identity), rotation=90)
         plt.savefig(self.target_dir + file_name, dpi=400)
 
