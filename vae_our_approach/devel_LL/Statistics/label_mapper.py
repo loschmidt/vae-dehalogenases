@@ -54,7 +54,7 @@ class LatentSpaceMapper:
             for line in lines:
                 prot_id, seq_id, soluprot, experimental = line.split(";")
                 experimental = float(experimental.split("\n")[0])
-                sequences.append([seq_id, experimental])
+                sequences.append([seq_id, experimental, float(soluprot)])
         return sequences
 
     def map_sequences_with_labels_to_space(self, seq_labels: list, hts_project_fasta: str):
@@ -62,28 +62,30 @@ class LatentSpaceMapper:
         whole_msa = MSA.load_msa(self.in_file)
         hts_msa = self.aligner_obj.align_fasta_to_original_msa(self.input_dir + hts_project_fasta, already_msa=False,
                                                                verbose=True)
-        labels = []
+        labels, soluprot_labels = [], []
         selected_sequences_dict = {}
-        for seq_id, label in seq_labels:
+        for seq_id, label, soluprot_label in seq_labels:
             try:
                 selected_sequences_dict[seq_id] = whole_msa[seq_id]
                 labels.append(label)
+                soluprot_labels.append(soluprot_label)
             except KeyError:
                 # not found in Input MSA, look for it in hts sequences
                 try:
                     selected_sequences_dict[seq_id] = hts_msa[seq_id]
                     labels.append(label)
+                    soluprot_labels.append(soluprot_label)
                 except KeyError:
                     print("    Key {} not found in hts project".format(seq_id))
 
         sliced_selected = self.transformer.slice_msa_by_pos_indexes(selected_sequences_dict)
         binaries, weights, keys = self.transformer.sequence_dict_to_binary(sliced_selected)
         mus, _ = self.vae.propagate_through_VAE(binaries, weights, keys)
-        return mus, labels
+        return mus, labels, soluprot_labels
 
     def plot_labels(self, z: np.ndarray, labels: list, latent_space: bool):
         """ Plot depth into latent space """
-        plt.scatter(z[:, 0], z[:, 1], c=labels, s=1.5, cmap='jet', vmin=0, vmax=max(labels))
+        plt.scatter(z[:, 0], z[:, 1], c=labels, s=1.5, cmap='jet', vmin=min(labels), vmax=max(labels))
 
         if latent_space:
             binaries = self.transformer.msa_binary
@@ -96,6 +98,7 @@ class LatentSpaceMapper:
         color_bar = plt.colorbar()
         color_bar.set_label(axis_label)
         plt.savefig(self.target_dir + file_name, dpi=600)
+        plt.clf()
 
 
 def run_latent_mapper():
@@ -104,13 +107,17 @@ def run_latent_mapper():
     label_file = "hts_project.txt"
     hts_fasta = "hts_project.fasta"
     plot_file = "mapped_hts_solubility.png"
+    plot_soluprot_file = "mapped_soluprot_vals.png"
 
     print("=" * 80)
     print("   Mapping sequence with labels to latent space")
 
     latent_mapper = LatentSpaceMapper(cmdline)
     labels_with_sequences = latent_mapper.load_training_sequence_labels(label_file)
-    z, labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta)
+    z, labels, soluprot_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta)
     latent_mapper.plot_labels(z, labels, True)
     latent_mapper.finalize_plot(plot_file, "Solubility")
-    print("Storing mapped plot in ", latent_mapper.target_dir + plot_file)
+    print("  Storing mapped plot in ", latent_mapper.target_dir + plot_file)
+    latent_mapper.plot_labels(z, soluprot_labels, True)
+    latent_mapper.finalize_plot(plot_soluprot_file, "Solubility")
+    print("  Storing mapped soluprot plot in ", latent_mapper.target_dir + plot_soluprot_file)
