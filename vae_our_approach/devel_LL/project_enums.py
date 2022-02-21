@@ -57,6 +57,7 @@ class VaePaths(Enum):
     PICKLE_DIR = "pickles"
     HIGHLIGHT_DIR = "highlight"
     STATS_DATA_SOURCE = "./Statistics/data_source/"
+    STATS_MAPPING_SOURCE = STATS_DATA_SOURCE + "/mapping_values/"
     FREQUENCIES_STATS = "Latent_space_stats"
     TREE_EVALUATION_DIR = "Tree_evaluation"
     MAPPING_DIR = "Mapping_to_latent_space"
