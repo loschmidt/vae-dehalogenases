@@ -331,33 +331,36 @@ class AncestorsHandler:
                 print(k, ':', alignments[0][2], len(aligned[k]))
         return aligned
 
-    def align_fasta_to_original_msa(self, msa_file, verbose=True):
+    def align_fasta_to_original_msa(self, seq_file, already_msa, verbose=True):
         """
-        Align msa passed via fasta file to original MSA using ClustalOmega
-        Align sequences to the profile of original MSA and filter by same protocol
+        Align sequences passed via fasta file to original MSA using ClustalOmega.
+        If sequences in 'seq_file' file are already MSA set 'already_msa' param to True.
+        Sequences in 'seq_file' file are aligned to the profile of original MSA and
+        only the same indexes as left by MSA preprocessing are left in the result.
         """
         aligned = {}
 
         import multiprocessing
         cores_count = min(multiprocessing.cpu_count(), 8)
 
-        msa = MSA.load_msa(msa_file)
+        msa = MSA.load_msa(seq_file)
 
         ancestral_names = list(msa.keys())
 
         # check if alignment exists
-        file_name = (msa_file.split("/")[-1]).split(".")[0]
+        file_name = (seq_file.split("/")[-1]).split(".")[0]
         outfile = self.pickle + "/{}_aligned_to_MSA.fasta".format(file_name)
         if os.path.exists(outfile) and os.path.getsize(outfile) > 0:
-            print(' Analyzer message : Alignment file exists in {}. Using that file.'.format(outfile))
+            print(' AncestorHandler message : Alignment file exists in {}. Using that file.'.format(outfile))
         else:
             # Create profile from sequences to be aligned
-            profile = self.pickle + "/ancestors_align.fasta"
-            if os.path.exists(profile) and os.path.getsize(profile) > 0:
-                print(' Analyzer message : Alignment of ancestors exists in {}. Using that file.'.format(profile))
+            profile = seq_file
+            if already_msa:
+                print(' AncestorHandler message : Input {} is already MSA. Using that MSA.'.format(profile))
             else:
+                profile = self.pickle + "/{}_aligned_profile.fasta".format(file_name)
                 clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
-                                                             infile=msa_file,
+                                                             infile=seq_file,
                                                              outfile=profile,
                                                              threads=cores_count,
                                                              verbose=verbose, auto=True)  # , dealign=True)
@@ -377,6 +380,7 @@ class AncestorsHandler:
             stdout, stderr = clustalomega_cline()
             if verbose:
                 print(stdout)
+                print("  Error Output:\n", stderr)
         with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
             pos_idx = pickle.load(file_handle)
         # Find sequences from file and process them in the same way as during MSA processing

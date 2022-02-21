@@ -25,7 +25,7 @@ class Reconstructor:
         self.vae = VAEAccessor(setuper, setuper.get_model_to_load())
         self.aligner_obj = AncestorsHandler(setuper)
         self.pickle = setuper.pickles_fld
-        self.target_dir = setuper.high_fld + "/" + VaePaths.STATISTICS_DIR.value + "/" + VaePaths.RECONSTRUCTOR.value
+        self.target_dir = setuper.high_fld + "/" + VaePaths.FREQUENCIES_STATS.value + "/" + VaePaths.RECONSTRUCTOR.value
         self.setup_output_folder()
 
         self.query_id = setuper.query_id
@@ -37,7 +37,7 @@ class Reconstructor:
     def get_sequences_to_reconstruct(self, fasta_msa_file: str, realign: bool) -> Dict[str, str]:
         """ Get sequences which will be highlighted in the latent space """
         if realign:
-            return self.aligner_obj.align_fasta_to_original_msa(fasta_msa_file, verbose=False)
+            return self.aligner_obj.align_fasta_to_original_msa(fasta_msa_file, True, verbose=False)
         # else input is original msa, we need to slice it
         ret = self.transformer.slice_msa_by_pos_indexes(MSA.load_msa(fasta_msa_file))
         return ret

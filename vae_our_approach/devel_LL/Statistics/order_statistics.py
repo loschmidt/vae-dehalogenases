@@ -53,7 +53,7 @@ class OrderStatistics:
         self.vae = VAEAccessor(setuper, self.model_name)
         self.dimensions = self.vae.vae.dim_latent_vars
         self.pickle = setuper.pickles_fld
-        self.target_dir = setuper.high_fld + "/" + VaePaths.STATISTICS_DIR.value + "/"
+        self.target_dir = setuper.high_fld + "/" + VaePaths.FREQUENCIES_STATS.value + "/"
         self.setup_output_folder()
 
         # Keep calculations of amino appearances in columns, reshape later
