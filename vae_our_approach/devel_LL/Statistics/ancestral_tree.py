@@ -203,9 +203,9 @@ class AncestralTree:
         for name in msa.keys():
             depths = np.append(depths, seq_depths[name])
 
-        coords_depth = np.zeros((mus.shape[0], 3))
-        coords_depth[:, :2] = mus
-        coords_depth[:, 2] = depths
+        coords_depth = np.zeros((mus.shape[0], mus.shape[1] + 1))
+        coords_depth[:, :mus.shape[1]] = mus
+        coords_depth[:, mus.shape[1]] = depths
         return coords_depth, msa
 
     def plot_levels(self, levels: list):

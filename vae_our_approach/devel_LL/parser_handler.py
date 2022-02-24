@@ -41,6 +41,7 @@ class CmdHandler:
         self.highlight_instricts = self.args.highlight_dim
 
         self.in_file = self.args.in_file
+        self.msa_clustering = self.args.msa_not_cluster
         self.clustalo_path = self.args.clustalo_path
 
         self.robustness_train = self.args.robustness_train
@@ -96,6 +97,8 @@ class CmdHandler:
         parser.add_argument('--focus', action='store_true', default=False, help=Helper.HIGH_FOCUS.value)
         # Input MSA file
         parser.add_argument('--in_file', type=str, default='', help=Helper.MSA_FILE.value)
+        parser.add_argument('--msa_not_cluster', action='store_false', default=True,
+                            help=Helper.MSA_NOT_CLUSTER.value)
         # Model setup options
         parser.add_argument('--model_name', type=str, default="model", help=Helper.MODEL_NAME.value)
         parser.add_argument('--C', type=float, default=2.0, help=Helper.C.value)
@@ -128,13 +131,16 @@ class CmdHandler:
         self._load_model_params()
         print("\n" + Helper.LOG_DELIMETER.value)
         print(" Parser Handler message: : running with parameters\n"
-              "                         weight decay   : {}\n"
-              "                         layers setup   : {}\n"
+              "                           weight decay : {}\n"
+              "                           layers setup : {}\n"
               "                         dimensionality : {}\n"
-              "                         C parameter    : {}\n"
-              "                         Epochs count   : {}\n"
-              "                         Model name     : {}".format(self.decay, self.layers, self.dimensionality,
-                                                                    self.C, self.epochs, self.model_name))
+              "                            C parameter : {}\n"
+              "                           Epochs count : {}\n"
+              "                             Model name : {}\n"
+              "                                    MSA : Clustering = {}".format(self.decay, self.layers,
+                                                                                 self.dimensionality,
+                                                                                 self.C, self.epochs, self.model_name,
+                                                                                 self.msa_clustering))
         print(Helper.LOG_DELIMETER.value)
         # Transformer(setuper=self)
 

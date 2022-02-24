@@ -286,49 +286,55 @@ class AncestorsHandler:
         """
         aligned = {}
         # Do iterative alignment only to query (not optimal solution)
-        with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
-            ref = pickle.load(file_handle)
-            ref_name = list(ref.keys())[0]
-            ref_seq = "".join(ref[ref_name])
-            aligned, ref_len = {}, len(ref_seq)
-            i = 0
-            for k in msa.keys():
-                i += 1
-                seq = msa[k]
-                alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
-                best_align = alignments[0][1]
-                if len(seq) > ref_len:
-                    # length of sequence is bigger than ref query, cut sequence on reference query gap positions
-                    print(' AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
-                          '                          Sequence amino position'
-                          '  at reference gaps will be removed'.format(len(seq), ref_len))
-                    tmp = ''
-                    len_dif = len(best_align) - ref_len
-                    aligned_query = alignments[0][0]
-                    idx_to_remove = []
-                    # Remove gap positions when occur in both query and aligned sequence
-                    for i in range(len(aligned_query)):
-                        if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
-                            len_dif -= 1
-                            idx_to_remove.append(i)
-                    if len_dif > 0:
-                        # Remove positions where aligned query has gaps
-                        for i in range(len(aligned_query)):
-                            if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
-                                len_dif -= 1
-                                idx_to_remove.append(i)
-                            len_dif -= 1
-                    aligned[k] = tmp.join([best_align[i] for i in range(len(best_align)) if i not in idx_to_remove])
-                else:
-                    # try 3 iteration to fit ref query
-                    open_gap_pen, gap_pen = -7, -1
-                    while len(best_align) > ref_len:
-                        open_gap_pen, gap_pen = open_gap_pen - 1, gap_pen - 1
-                        alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
-                        best_align = alignments[0][1]
-                    aligned[k] = alignments[0][1]
+        # with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
+        original_msa = MSA.load_msa(self.setuper.in_file)
+        ref_seq = original_msa[self.setuper.query_id]
+        # ref_name = self.setuper.query_id  # list(ref.keys())[0]
+        # ref_seq = "".join(ref[ref_name])
+        alignment, ref_len = {}, len(ref_seq)
+        i = 0
+        for k in msa.keys():
+            i += 1
+            seq = msa[k]
+            pair_alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
+            alignment[k] = pair_alignments[0][1]
+            # if len(seq) > ref_len:
+            #     # length of sequence is bigger than ref query, cut sequence on reference query gap positions
+            #     print(' AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
+            #           '                          Sequence amino position'
+            #           '  at reference gaps will be removed'.format(len(seq), ref_len))
+            #     tmp = ''
+            #     len_dif = len(best_align) - ref_len
+            #     aligned_query = alignments[0][0]
+            #     idx_to_remove = []
+            #     # Remove gap positions when occur in both query and aligned sequence
+            #     for i in range(len(aligned_query)):
+            #         if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
+            #             len_dif -= 1
+            #             idx_to_remove.append(i)
+            #     if len_dif > 0:
+            #         # Remove positions where aligned query has gaps
+            #         for i in range(len(aligned_query)):
+            #             if aligned_query[i] == '-' and best_align[i] == '-' and len_dif > 0:
+            #                 len_dif -= 1
+            #                 idx_to_remove.append(i)
+            #             len_dif -= 1
+            #     aligned[k] = tmp.join([best_align[i] for i in range(len(best_align)) if i not in idx_to_remove])
+            # else:
+            #     # try 3 iteration to fit ref query
+            #     open_gap_pen, gap_pen = -7, -1
+            #     while len(best_align) > ref_len:
+            #         open_gap_pen, gap_pen = open_gap_pen - 1, gap_pen - 1
+            #         alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
+            #         best_align = alignments[0][1]
+            #     aligned[k] = alignments[0][1]
             if self.setuper.stats:
-                print(k, ':', alignments[0][2], len(aligned[k]))
+                print(k, ':', pair_alignments[0][2], len(alignment[k]))
+        with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
+            pos_idx = pickle.load(file_handle)
+
+        for name in msa.keys():
+            aligned[name] = [item for i, item in enumerate(alignment[name]) if i in pos_idx]
         return aligned
 
     def align_fasta_to_original_msa(self, seq_file, already_msa, verbose=True):

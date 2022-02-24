@@ -49,6 +49,8 @@ class Helper(Enum):
     LOG_DELIMETER = "="*80
     MODEL_FOLD = "_fold_0"
 
+    MSA_NOT_CLUSTER = "Setup in the case you do not wish to cluster sequences via 90% identity"
+
 
 class VaePaths(Enum):
     # Experiment directory paths

@@ -144,6 +144,7 @@ class OrderStatistics:
         Plots the order statistics of data, returns Pearson correlation coefficient
         show_gap - True if you want highlight gap frequencies in red dots
         """
+        print("Variance {} vs {}".format(np.var(train.flatten()), np.var(sampled.flatten())))
         my_rho = np.corrcoef(train.flatten(), sampled.flatten())
 
         fig, ax = plt.subplots()

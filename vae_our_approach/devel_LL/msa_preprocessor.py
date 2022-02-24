@@ -29,7 +29,9 @@ class MSAPreprocessor:
         msa_col_num = self.filter_gap_positions(msa)  # converted to numbers
         msa_no_gaps = self.filter_many_gap_sequences(msa_col_num, threshold=0.4)
         self.save_query_sequence(msa_no_gaps)
-        msa_filtered = self.identity_filtering(msa_no_gaps)
+        msa_filtered = msa_no_gaps
+        if self.setuper.msa_clustering:
+            msa_filtered = self.identity_filtering(msa_no_gaps)
         msa_overlap = self.filter_query_no_overlap_sequences(msa_filtered)
         self.weight_sequences(msa_overlap)
         MSA.number_to_binary(msa_overlap, self.pickle)

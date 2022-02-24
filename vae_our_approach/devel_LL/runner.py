@@ -12,6 +12,8 @@ with open(runner_json, "r") as json_file:
     run_setup = json.load(json_file)
 
 run_string = "python3 {} ".format(sys.argv[1])
+if len(sys.argv) > 2:
+    run_string += "{} ".format(sys.argv[2])  # in case of statistics mode
 
 on_found = False
 on_experiment = {}
@@ -31,6 +33,8 @@ for param in run_setup["core_params"]:
 for var_param in run_setup["variable_params"]:
     param_name = var_param.split(" ")[0][2:]
     run_string += var_param.format(on_experiment[param_name]) + " "
+for flag in on_experiment["flags"]:
+    run_string += "--{} ".format(flag)
 
-# print("  Running this command:\n      ", run_string)
+print("  Running this command:\n      ", run_string)
 sp.run(run_string, shell=True)
