@@ -25,6 +25,7 @@ class CmdHandler:
         self.epochs = self.args.num_epoch
         self.decay = self.args.weight_decay
         self.K = self.args.K  # cross validation counts
+        self.train_subsets = self.args.training_subsets
         self.C = self.args.C
         # MSA processing handling
         self.preserve_catalytic = self.args.preserve_catalytic
@@ -105,6 +106,7 @@ class CmdHandler:
         parser.add_argument('--num_epoch', type=int, default=16500)
         parser.add_argument('--weight_decay', type=float, default=0.0)
         parser.add_argument('--K', type=int, default=5, help=Helper.K.value)
+        parser.add_argument('--training_subsets', type=int, default=5, help=Helper.subsets.value)
         parser.add_argument('--layers', nargs='+', type=int, default=100, help=Helper.LAYERS.value)
         parser.add_argument('--dimensionality', type=int, default=2, help=Helper.DIMS.value)
         # Clustal path option
@@ -119,7 +121,9 @@ class CmdHandler:
                 ('--run_package_stats_fireprot' not in unknown and len(unknown) > 0) and \
                 ('--run_package_stats_tree' not in unknown and len(unknown) > 0) and \
                 ('--run_package_stats_mapper' not in unknown and len(unknown) > 0) and \
-                ('--run_package_stats_reconstruction' not in unknown and len(unknown) > 0):
+                ('--run_package_stats_reconstruction' not in unknown and len(unknown) > 0) and \
+                ('--run_generative_evaluation_plot' not in unknown and len(unknown) > 0) and \
+                ('--run_generative_evaluation' not in unknown and len(unknown) > 0):
             print(' Parser error : unrecognized parameters', unknown)
             exit(1)
         return args.exp_dir, args

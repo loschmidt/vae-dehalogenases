@@ -20,7 +20,7 @@ from download_MSA import Downloader
 from msa_preprocessor import MSAPreprocessor as BinaryCovertor
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer
-from project_enums import ScriptNames
+from project_enums import ScriptNames, VaePaths
 
 ## LAMBDAS FUNCTIONS FOR CONVERSION AND PAIRWWISE COMPARISON OF SEQUENCES
 # Lambda for the calculation of the amino sequence decoded from binary
@@ -45,8 +45,17 @@ class Benchmarker:
         self.ancestors_probs = ancestor_probs
         # Print holder
         self.dataset_str = ""
+        # Store stats
+        self.bench_plot = setuper.high_fld + "/" + VaePaths.BENCHMARK.value
+        self.bench_data_pickle = setuper.high_fld + "/" + VaePaths.BENCHMARK_DATA.value
+        self.setup_output_folder()
         # Ignore deprecated errors
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
+
+    def setup_output_folder(self):
+        """ Creates directory in Highlight results directory """
+        os.makedirs(self.bench_plot, exist_ok=True)
+        os.makedirs(self.bench_data_pickle, exist_ok=True)
 
     def make_bench(self):
         marginals_train, self.dataset_str = self._bench(self.train_data), "Training"
@@ -79,8 +88,8 @@ class Benchmarker:
         plt.ylabel('Density')
         plt.title(r'Benchmark histogram $\mu={0:.2f},{1:.2f},{2:.2f},{3:.2f}$'.format(mean_n, mean_p, mean_t, mean_a))
 
-        save_path = self.setuper.high_fld + '/{}benchmark_density.png'.format(self.setuper.model_name)
-        print(" Benchmark message : Class highlighter saving graph to", save_path)
+        save_path = self.bench_plot + '{}benchmark_density.png'.format(self.setuper.model_name)
+        print("  Benchmark message : Class highlighter saving graph to", save_path)
         sns_plot.figure.savefig(save_path)
         if self.setuper.stats:
             print(' Benchmark message : Benchmark results:')
@@ -89,11 +98,21 @@ class Benchmarker:
             print('\ttrain data mean: \t', mean_t)
             print('\tStraight ancestors mean: \t', mean_a)
 
-        file = open(self.setuper.high_fld + '/{}benchmark_stats.txt'.format(self.setuper.model_name), 'w')
-        print(' Benchmark stats saved in', self.setuper.high_fld + '/{}benchmark_stats.txt'.format(self.setuper.model_name))
+        file = open(self.bench_plot + '{}benchmark_stats.txt'.format(self.setuper.model_name), 'w')
+        print(' Benchmark stats saved in', self.bench_plot + '{}benchmark_stats.txt'.format(self.setuper.model_name))
         s = 'train: '+ str(mean_t) + ' positive: ' + str(mean_p) + ' negative: ' + str(mean_n) +' ancestors: '+ str(mean_a)
         file.write(s)
         file.close()
+
+        bench_data_dict = {
+            "mean_p" : mean_p,
+            "mean_n": mean_n,
+            "mean_a": mean_a,
+            "mean_t": mean_t,
+            "data_dict": data_dict
+        }
+        with open(self.bench_data_pickle, "wb") as file_handle:
+            pickle.dump(bench_data_dict, file_handle)
 
     def measure_seq_probability(self, seqs_dict):
         """
@@ -318,7 +337,7 @@ if __name__ == '__main__':
 
     h = Highlighter(tar_dir)
     h.highlight_mutants([], [], mutants=[pos_mus, neg_mus, tr_subset_mus, anc_npa], mut_names=mut_names,
-                        file_name='BenchmarkSets')
+                        file_name='{}BenchmarkSets'.format(b.bench_plot))
     # with open(tar_dir.pickles_fld + '/seq_msa_binary.pkl', 'rb') as file_handle:
     #     train_set = pickle.load(file_handle)
     # iden = np.identity(train_set.shape[2])

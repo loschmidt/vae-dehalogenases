@@ -2,6 +2,7 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2022/02/17 14:40:00"
 
 import os
+import pickle
 from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
 
@@ -20,12 +21,14 @@ class Reconstructor:
     Stats:
         self_reconstruction: how well are sequences reconstructed
     """
+
     def __init__(self, setuper: CmdHandler):
         self.transformer = Transformer(setuper)
         self.vae = VAEAccessor(setuper, setuper.get_model_to_load())
         self.aligner_obj = AncestorsHandler(setuper)
         self.pickle = setuper.pickles_fld
         self.target_dir = setuper.high_fld + "/" + VaePaths.FREQUENCIES_STATS.value + "/" + VaePaths.RECONSTRUCTOR.value
+        self.data_dir = self.target_dir + "data/"
         self.setup_output_folder()
 
         self.query_id = setuper.query_id
@@ -33,6 +36,7 @@ class Reconstructor:
     def setup_output_folder(self):
         """ Creates directory in Highlight results directory """
         os.makedirs(self.target_dir, exist_ok=True)
+        os.makedirs(self.data_dir, exist_ok=True)
 
     def get_sequences_to_reconstruct(self, fasta_msa_file: str, realign: bool) -> Dict[str, str]:
         """ Get sequences which will be highlighted in the latent space """
@@ -64,12 +68,23 @@ class Reconstructor:
     def plot_reconstructions(self, data: List[float], query_identity: float, title: str, file_name):
         """ Plots histogram distribution of identities of reconstructed and original sequences """
         fig, ax = plt.subplots()
+        Reconstructor.created_subplot(ax, data, query_identity, title)
+        plt.savefig(self.target_dir + file_name, dpi=400)
+
+    @staticmethod
+    def get_plot_data_file_names():
+        """ Returns names of data files for plotting """
+        return "identities.pkl", "query_identity.pkl"
+
+    @staticmethod
+    def created_subplot(ax, data: List[float], query_identity: float, title: str):
+        """ Method plotting desired graph into given subplot """
         ax.hist(data, bins=100)
         ax.set_title(title)
         ax.set(xlabel="%", ylabel="Quantity")
         ax.axvline(x=query_identity, color='r', linestyle='dashed', linewidth=2)
-        plt.text(query_identity + 0.2, 0, "Query({:.2f})".format(query_identity), rotation=90)
-        plt.savefig(self.target_dir + file_name, dpi=400)
+        ax.text(query_identity + 0.2, 0, "Query({:.2f})".format(query_identity), rotation=90)
+        return ax
 
 
 def run_input_dataset_reconstruction():
@@ -84,3 +99,10 @@ def run_input_dataset_reconstruction():
     reconstructor.plot_reconstructions(identities, query_identity, "Input dataset reconstruction",
                                        "input_training_reconstruction.png")
     print("     Saving plot into ", reconstructor.target_dir + "input_training_reconstruction.png")
+
+    # Save plot data
+    identities_file, query_identity_file = Reconstructor.get_plot_data_file_names()
+    with open(reconstructor.data_dir + identities_file, 'wb') as f:
+        pickle.dump(identities, f)
+    with open(reconstructor.data_dir + query_identity_file, 'wb') as f:
+        pickle.dump(query_identity, f)

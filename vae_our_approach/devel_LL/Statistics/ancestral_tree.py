@@ -276,3 +276,5 @@ def run_tree_highlighter():
         over_tree_corr.extend(correlations)
     anc_tree_handler.finalize_plot("latent_tree.png")
     anc_tree_handler.plot_corr_histogram(over_tree_corr, "tree_depths_corr.png")
+    with open(anc_tree_handler.target_dir + "correlations.pkl", "wb") as file_handle:
+        pickle.dump(over_tree_corr, file_handle)

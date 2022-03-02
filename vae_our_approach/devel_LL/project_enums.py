@@ -14,6 +14,7 @@ class Helper(Enum):
     C = "Set parameter for training loss = (x - f(x)) - (1/C * KL(qZ, pZ)). Reconstruction parameter " \
         "and normalization parameter. The bigger C is more accurate the reconstruction will be. Default value is 2.0"
     K = "Cross validation iterations setup. Default is 5"
+    subsets = "Train set should be split into many subsets, default 5"
     LAYERS = "List determining count of hidden layers and neurons within. Default 100. The dimensionality of latent " \
              "space is se over dimensionality argument. Example 2 3 "
     DIMS = "Latent space dimensionality. Default value 2"
@@ -64,6 +65,8 @@ class VaePaths(Enum):
     TREE_EVALUATION_DIR = "Tree_evaluation"
     MAPPING_DIR = "Mapping_to_latent_space"
     RECONSTRUCTOR = "Reconstruction/"
+    BENCHMARK = "Benchmark/"
+    BENCHMARK_DATA = BENCHMARK + "data/benchmark_data.pkl"
     # Files names
     MODEL_PARAMs_FILE = "ModelsParameters.txt"
     TRAIN_MSA_FILE = "training_alignment.pkl"

@@ -54,6 +54,7 @@ class OrderStatistics:
         self.dimensions = self.vae.vae.dim_latent_vars
         self.pickle = setuper.pickles_fld
         self.target_dir = setuper.high_fld + "/" + VaePaths.FREQUENCIES_STATS.value + "/"
+        self.data_dir = self.target_dir + "data/"
         self.setup_output_folder()
 
         # Keep calculations of amino appearances in columns, reshape later
@@ -69,6 +70,7 @@ class OrderStatistics:
     def setup_output_folder(self):
         """ Creates directory in Highlight results directory """
         os.makedirs(self.target_dir, exist_ok=True)
+        os.makedirs(self.data_dir, exist_ok=True)
 
     def shannon_entropy(self, msa: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -139,15 +141,32 @@ class OrderStatistics:
         return self.vae.decode_z_to_number(z)
 
     def plot_order_statistics(self, train, sampled, label_x, label_y, file_name, show_gap,
-                              frequencies: bool = False) -> float:
+                              frequencies: bool = False):
         """
         Plots the order statistics of data, returns Pearson correlation coefficient
         show_gap - True if you want highlight gap frequencies in red dots
         """
         print("Variance {} vs {}".format(np.var(train.flatten()), np.var(sampled.flatten())))
-        my_rho = np.corrcoef(train.flatten(), sampled.flatten())
 
         fig, ax = plt.subplots()
+        OrderStatistics.created_subplot(ax, train, sampled, label_x, label_y, show_gap, frequencies)
+
+        plt.savefig(self.target_dir + file_name, dpi=400)
+
+    @staticmethod
+    def get_plot_data_file_names():
+        """ Returns names of data files for plotting """
+        return ["msa_shannon.pkl", "msa_frequencies.pkl",
+                "sampled_shannon.pkl", "sampled_frequencies.pkl",
+                "mutual_msa.pkl", "mutual_msa_frequencies.pkl",
+                "mutual_sampled.pkl", "mutual_sampled_frequencies.pkl"
+                ]
+
+    @staticmethod
+    def created_subplot(ax, train, sampled, label_x, label_y, show_gap, frequencies):
+        """ Method plotting desired graph into given subplot """
+        my_rho = np.corrcoef(train.flatten(), sampled.flatten())
+
         ax.scatter(train.flatten(), sampled.flatten(), s=0.5)
         ax.title.set_text('Correlation = ' + "{:.4f}".format(my_rho[0, 1]))
         ax.set(xlabel=label_x, ylabel=label_y)
@@ -160,9 +179,7 @@ class OrderStatistics:
             gaps_msa_frequencies = train[0, :]
             gaps_sampled_frequencies = sampled[0, :]
             ax.scatter(gaps_msa_frequencies, gaps_sampled_frequencies, s=0.5, c='red')
-
-        plt.savefig(self.target_dir + file_name, dpi=400)
-        return my_rho[0, 1]
+        return ax
 
 
 def run_setup():
@@ -198,6 +215,13 @@ def run_setup():
     stat_obj.plot_order_statistics(mutual_msa_frequencies, mutual_sampled_frequencies,
                                    'Training Mutual Frequencies', 'Generated Mutual Frequencies',
                                    'second_order_frequencies.png', show_gap=False, frequencies=True)
+
+    data_to_store = [msa_shannon, msa_frequencies, sampled_shannon, sampled_frequencies,
+                     mutual_msa, mutual_msa_frequencies, mutual_sampled, mutual_sampled_frequencies]
+    data_files = OrderStatistics.get_plot_data_file_names()
+    for f, data in zip(data_files, data_to_store):
+        with open(stat_obj.data_dir + f, 'wb') as file_handle:
+            pickle.dump(data, file_handle)
 
 
 if __name__ == "__main__":

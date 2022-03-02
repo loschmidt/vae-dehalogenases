@@ -24,6 +24,7 @@ class Train:
         self.num_res_type = self.seq_msa_binary.shape[2]
 
         self.K = setuper.K
+        self.train_subsets = setuper.train_subsets
 
         if torch.cuda.is_available():
             self.use_cuda = True
@@ -54,10 +55,10 @@ class Train:
         self.seq_msa_binary = self.seq_msa_binary.astype(np.float32)
 
     def train(self):
-        num_seq_subset = self.num_seq // self.K + 1
+        num_seq_subset = self.num_seq // (self.train_subsets + 1)
         idx_subset = []
         random_idx = np.random.permutation(range(self.num_seq))
-        for i in range(self.K):
+        for i in range(self.train_subsets):
             idx_subset.append(random_idx[i * num_seq_subset:(i + 1) * num_seq_subset])
 
         # the following list holds the elbo values on validation data
@@ -210,4 +211,4 @@ if __name__ == '__main__':
     if not tar_dir.robustness_train:
         Train(tar_dir, benchmark=True).train()
     else:
-        Train(tar_dir, benchmark=False).train()
+        Train(tar_dir, benchmark=True).train()

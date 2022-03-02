@@ -6,62 +6,81 @@
     "--highlight_seqs DhaA_S19",
     "--in_file results/PF00561/MSA/dhlA_LinB.fa",
     "--stats",
-    "--robustness_train"],
+    "--K 1",
+    "--training_subsets 5"],
   "variable_params": [
     "--layers {}", "--dimensionality {}", "--num_epoch {}","--experiment {}",
-    "--C {}"],
+    "--C {}", "--weight_decay {}"],
   "experiments": [
     {
+    "experiment": "original_pipeline",
     "status": "on",
+    "layers": "100",
+    "dimensionality": 2,
+    "C": 2,
+    "num_epoch": 4000,
+    "weight_decay": 0.05,
+    "Note": "Check initial architecture",
+    "flags" : [
+      "msa_not_cluster"
+    ]
+  },
+    {
     "experiment": "more_dimensional_space",
+    "status": "off",
     "layers": "420",
     "dimensionality": 8,
     "C": 2,
     "num_epoch": 9500,
+    "weight_decay": 0,
     "Note": "How well can multidimensional latent space model mutual and tree covariance?",
     "flags" : [
       "msa_not_cluster"
     ]
   },
     {
-    "status": "off",
     "experiment": "wider_one_layer_no_cluster",
+    "status": "off",
     "layers": "420",
     "dimensionality": 2,
     "C": 2,
     "num_epoch": 9500,
+    "weight_decay": 0.0,
     "Note": "No clustering in msa preprocessing step",
     "flags" : [
       "msa_not_cluster"
     ]
   },
     {
-    "status": "off",
     "experiment": "deeper_layers",
+    "status": "off",
     "layers": "291 100",
     "dimensionality": 2,
     "C": 2,
     "num_epoch": 3500,
+    "weight_decay": 0.0,
     "Note": "No different setting of msa pipeline, more layers",
     "flags": []
   },
-  {
-    "status": "off",
+    {
     "experiment": "deeper_layers_less_epochs",
+    "status": "off",
     "layers": "291 100 20",
     "dimensionality": 2,
     "C": 2,
     "num_epoch": 1500,
+    "weight_decay": 0.0,
     "Note": "One more layer",
     "flags": []
   },
     {
-    "status": "off",
     "experiment": "no_clustering",
+    "status": "off",
     "layers": "291",
     "dimensionality": 2,
     "C": 2,
     "num_epoch": 9500,
+    "weight_decay": 0.0,
     "Note": "No clustering in msa preprocessing step",
     "flags" : [
       "msa_not_cluster"
