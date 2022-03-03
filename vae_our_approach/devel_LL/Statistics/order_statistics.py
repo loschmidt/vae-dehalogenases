@@ -216,7 +216,7 @@ def run_setup():
                                    'first_order.png', show_gap=False)
     stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Training Mutual Information',
                                    'Generated Mutual Information', 'second_order.png', show_gap=False)
-    stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Target MSA covariances',
+    stat_obj.plot_order_statistics(cov_msa, cov_gen, 'Target MSA covariances',
                                    'Generated MSA covariances', 'second_covariances.png', show_gap=False)
     stat_obj.plot_order_statistics(msa_frequencies, sampled_frequencies,
                                    'Training Data Frequencies', 'VAE Sampled Frequencies',
