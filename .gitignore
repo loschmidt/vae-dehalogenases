@@ -27,3 +27,6 @@ vae_our_approach/pfam_msa/FastTree/*
 vae_our_approach/devel_LL/run_scripts/*.[e|o]*
 DEADJOE
 vae_our_approach/pfam_msa/*
+
+# Ignoire output
+original_brooks_2019/simulated_msa/output/*

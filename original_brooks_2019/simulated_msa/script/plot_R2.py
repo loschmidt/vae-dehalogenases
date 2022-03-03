@@ -32,7 +32,7 @@ with open("./output/latent_space.pkl", 'rb') as file_handle:
 key = data['key']
 mu = data['mu']
 sigma = data['sigma']
-p = data['p']
+#p = data['p']
 
 key2idx = {}
 for i in range(len(key)):
@@ -40,45 +40,45 @@ for i in range(len(key)):
 
 ## plot
 # ## coefficient of determination
-# fig = plt.figure(0)
-# fig.clf()
-# plt.hist(R2, 25, normed = True)
-# plt.title("coefficient of determination R^2")
-# fig.savefig("./output/R2.pdf")
+fig = plt.figure(0)
+fig.clf()
+plt.hist(R2, 25, density = True)
+plt.title("coefficient of determination R^2")
+fig.savefig("./output/R2.pdf")
 
-# fig = plt.figure(1)
-# fig.clf()
-# plt.hist(np.sqrt(R2), 25, normed = True)
-# plt.title("coefficient of determination R")
-# fig.savefig("./output/R.pdf")
+#fig = plt.figure(1)
+#fig.clf()
+#plt.hist(np.sqrt(R2), 25, normed = True)
+#plt.title("coefficient of determination R")
+#fig.savefig("./output/R.pdf")
 
 fig = plt.figure(1)
 fig.clf()
-plt.hist(PCC, 25, normed = True)
+plt.hist(PCC, 25, density = True)
 #plt.title("pearson correlation coefficient r")
 #plt.xlim((0,1))
 plt.xlabel('Pearson correlation coefficient')
 plt.tight_layout()
 fig.savefig("./output/PCC.eps")
 
-# fig = plt.figure(3)
-# fig.clf()
-# tmp = [PCC[i] for i in range(len(PCC)) if np.sqrt(np.sum(mu[key.index(leaf_name[i]), :]**2)) >= 0.5]
-# plt.hist(tmp, 25, normed = True)
-# plt.title("pearson correlation coefficient r")
-# fig.savefig("./output/PCC_dist_cutoff_0.5.pdf")
+fig = plt.figure(3)
+fig.clf()
+tmp = [PCC[i] for i in range(len(PCC)) if np.sqrt(np.sum(mu[key.index(leaf_name[i]), :]**2)) >= 0.5]
+plt.hist(tmp, 25, normed = True)
+plt.title("pearson correlation coefficient r")
+fig.savefig("./output/PCC_dist_cutoff_0.5.pdf")
 
-# fig = plt.figure(4)
-# fig.clf()
-# plt.hist(PCC_naive, 25, normed = True)
-# plt.title("pearson correlation coefficient r")
-# fig.savefig("./output/PCC_naive.pdf")
+fig = plt.figure(4)
+fig.clf()
+plt.hist(PCC_naive, 25, normed = True)
+plt.title("pearson correlation coefficient r")
+fig.savefig("./output/PCC_naive.pdf")
 
-# fig = plt.figure(5)
-# fig.clf()
-# tmp = [PCC_naive[i] for i in range(len(PCC_naive)) if np.sqrt(np.sum(mu[key.index(leaf_name[i]), :]**2)) >= 0.5]
-# plt.hist(tmp, 25, normed = True)
-# plt.title("pearson correlation coefficient r")
-# fig.savefig("./output/PCC_naive_dist_cutoff_0.5.pdf")
+fig = plt.figure(5)
+fig.clf()
+tmp = [PCC_naive[i] for i in range(len(PCC_naive)) if np.sqrt(np.sum(mu[key.index(leaf_name[i]), :]**2)) >= 0.5]
+plt.hist(tmp, 25, normed = True)
+plt.title("pearson correlation coefficient r")
+fig.savefig("./output/PCC_naive_dist_cutoff_0.5.pdf")
 
 exit()

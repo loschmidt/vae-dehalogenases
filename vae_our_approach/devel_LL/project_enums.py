@@ -66,7 +66,8 @@ class VaePaths(Enum):
     MAPPING_DIR = "Mapping_to_latent_space"
     RECONSTRUCTOR = "Reconstruction/"
     BENCHMARK = "Benchmark/"
-    BENCHMARK_DATA = BENCHMARK + "data/benchmark_data.pkl"
+    BENCHMARK_DATA = BENCHMARK + "data/"
+    BENCHMARK_STORE_FILE = BENCHMARK_DATA + "benchmark_data.pkl"
     # Files names
     MODEL_PARAMs_FILE = "ModelsParameters.txt"
     TRAIN_MSA_FILE = "training_alignment.pkl"

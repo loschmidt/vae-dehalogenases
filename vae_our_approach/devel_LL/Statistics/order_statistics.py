@@ -8,7 +8,6 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
 from typing import Tuple
 
 currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -96,13 +95,18 @@ class OrderStatistics:
             H[j] = -np.sum(column_p * safe_log(column_p))
         return H, frequencies / msa.shape[0]
 
-    def mutual_information(self, msa: np.ndarray, shannon: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def mutual_information(self, msa: np.ndarray, shannon: np.ndarray):
         """
-        2nd order statistics/frequencies
+        2nd order statistics/frequencies/Covariance
         Computes mutual information of MSA given as:
             I_j,k = H_j + H_k - H_j,k
         where H_j,k is joint Shannon entropy
             H_j,k = - SUM_a( SUM_b( p^a,b_j,k * log(p^a,b_j,k)))
+        Covariance is computed:
+            C^j,k_a,b = f^j,k_a,b - f^j_a * f^k_b
+            f^j,k_a,b    - bivariate marginals, meaning the frequency of amino
+                           acid combination α, β at positions i, j in the MSA.
+            f^j_a, f^k_b - univariate marginals, or individual amino acid frequencies at positions i and j.
         """
         assert msa.shape[1] == shannon.shape[0]
         n = shannon.shape[0]
@@ -120,6 +124,7 @@ class OrderStatistics:
 
         # Matrix, row number of MSA columns except last column which is included in previous frequencies count
         # Row for pairs of amino acids
+        covariances = np.zeros((shannon.shape[0] - 1, column_jk_p.shape[0]))
         frequencies = np.zeros((shannon.shape[0] - 1, column_jk_p.shape[0]))
 
         index_counter = 0
@@ -129,11 +134,12 @@ class OrderStatistics:
                 for a, b in pairs:
                     vec_a, vec_b = np.where(msa[:, j] == a)[0], np.where(msa[:, k] == b)[0]
                     frequencies[j, a * len(alphabet) + b] = sum([a in vec_b for a in vec_a])
+                    covariances[j, a * len(alphabet) + b] = frequencies[j, a * len(alphabet) + b] - len(vec_a)*len(vec_b)
                 column_jk_p[:] = frequencies[j, :] / msa.shape[0]
                 H_j_k = -np.sum(column_jk_p)
                 I[index_counter] = shannon[j] + shannon[k] - H_j_k
                 index_counter += 1
-        return I[:index_counter], frequencies / msa.shape[0]
+        return I[:index_counter], frequencies / msa.shape[0], covariances
 
     def sample_dataset_from_normal(self, origin: np.ndarray, scale: float, N: int) -> np.ndarray:
         """ Sample from the model N data points and transform them to ndarray """
@@ -159,7 +165,8 @@ class OrderStatistics:
         return ["msa_shannon.pkl", "msa_frequencies.pkl",
                 "sampled_shannon.pkl", "sampled_frequencies.pkl",
                 "mutual_msa.pkl", "mutual_msa_frequencies.pkl",
-                "mutual_sampled.pkl", "mutual_sampled_frequencies.pkl"
+                "mutual_sampled.pkl", "mutual_sampled_frequencies.pkl",
+                "covariances_msa.pkl", "covariances_generated.pkl"
                 ]
 
     @staticmethod
@@ -199,8 +206,8 @@ def run_setup():
     sampled_shannon, sampled_frequencies = stat_obj.shannon_entropy(sampled_dataset)
 
     # 2nd order statistics
-    mutual_msa, mutual_msa_frequencies = stat_obj.mutual_information(msa_dataset, msa_shannon)
-    mutual_sampled, mutual_sampled_frequencies = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
+    mutual_msa, mutual_msa_frequencies, cov_msa = stat_obj.mutual_information(msa_dataset, msa_shannon)
+    mutual_sampled, mutual_sampled_frequencies, cov_gen = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
 
     # plot 1st order data statistics and frequencies statistics
     print("=" * 80)
@@ -209,6 +216,8 @@ def run_setup():
                                    'first_order.png', show_gap=False)
     stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Training Mutual Information',
                                    'Generated Mutual Information', 'second_order.png', show_gap=False)
+    stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Target MSA covariances',
+                                   'Generated MSA covariances', 'second_covariances.png', show_gap=False)
     stat_obj.plot_order_statistics(msa_frequencies, sampled_frequencies,
                                    'Training Data Frequencies', 'VAE Sampled Frequencies',
                                    'first_order_frequencies.png', show_gap=True, frequencies=True)
@@ -217,7 +226,7 @@ def run_setup():
                                    'second_order_frequencies.png', show_gap=False, frequencies=True)
 
     data_to_store = [msa_shannon, msa_frequencies, sampled_shannon, sampled_frequencies,
-                     mutual_msa, mutual_msa_frequencies, mutual_sampled, mutual_sampled_frequencies]
+                     mutual_msa, mutual_msa_frequencies, mutual_sampled, mutual_sampled_frequencies, cov_msa, cov_gen]
     data_files = OrderStatistics.get_plot_data_file_names()
     for f, data in zip(data_files, data_to_store):
         with open(stat_obj.data_dir + f, 'wb') as file_handle:

@@ -47,7 +47,8 @@ class Benchmarker:
         self.dataset_str = ""
         # Store stats
         self.bench_plot = setuper.high_fld + "/" + VaePaths.BENCHMARK.value
-        self.bench_data_pickle = setuper.high_fld + "/" + VaePaths.BENCHMARK_DATA.value
+        self.bench_data = setuper.high_fld + "/" + VaePaths.BENCHMARK_DATA.value
+        self.bench_file = setuper.high_fld + "/" + VaePaths.BENCHMARK_STORE_FILE.value
         self.setup_output_folder()
         # Ignore deprecated errors
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
@@ -55,7 +56,7 @@ class Benchmarker:
     def setup_output_folder(self):
         """ Creates directory in Highlight results directory """
         os.makedirs(self.bench_plot, exist_ok=True)
-        os.makedirs(self.bench_data_pickle, exist_ok=True)
+        os.makedirs(self.bench_data, exist_ok=True)
 
     def make_bench(self):
         marginals_train, self.dataset_str = self._bench(self.train_data), "Training"
@@ -111,7 +112,7 @@ class Benchmarker:
             "mean_t": mean_t,
             "data_dict": data_dict
         }
-        with open(self.bench_data_pickle, "wb") as file_handle:
+        with open(self.bench_file, "wb") as file_handle:
             pickle.dump(bench_data_dict, file_handle)
 
     def measure_seq_probability(self, seqs_dict):
