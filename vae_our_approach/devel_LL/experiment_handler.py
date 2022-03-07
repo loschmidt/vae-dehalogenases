@@ -67,7 +67,8 @@ class ExperimentStatistics:
 
         Returns observing probabilities
         """
-        observing_probs = self.probability_maker.measure_seq_probability(seq_dict_to_store)
+        t, _, _ = self.transformer.sequence_dict_to_binary(seq_dict_to_store)
+        observing_probs = self.probability_maker.bench(t.reshape(t.shape[0], -1, 21))
         names = list(seq_dict_to_store.keys())
         sequences = list(seq_dict_to_store.values())
         self.store_ancestor_dict_in_fasta(seq_dict=seq_dict_to_store, file_name=file_name)

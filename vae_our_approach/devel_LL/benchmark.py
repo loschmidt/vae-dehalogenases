@@ -59,9 +59,9 @@ class Benchmarker:
         os.makedirs(self.bench_data, exist_ok=True)
 
     def make_bench(self):
-        marginals_train, self.dataset_str = self._bench(self.train_data), "Training"
-        marginals_positive, self.dataset_str = self._bench(self.positive), "Positive"
-        marginals_negative, self.dataset_str = self._bench(self.negative), "Negative"
+        marginals_train, self.dataset_str = self.bench(self.train_data), "Training"
+        marginals_positive, self.dataset_str = self.bench(self.positive), "Positive"
+        marginals_negative, self.dataset_str = self.bench(self.negative), "Negative"
         self._store_marginals(marginals_train, marginals_positive, marginals_negative)
 
         mean_p = sum(marginals_positive) / len(marginals_positive)
@@ -121,8 +121,8 @@ class Benchmarker:
         the sequence on the output of network
         """
         # Encode sequence to binary
-        binary, _, _ = self.transformer.sequence_dict_to_binary(seqs_dict)
-        observing_probs = self._bench(binary)
+        binary, _, keys = self.transformer.sequence_dict_to_binary(seqs_dict)
+        observing_probs = self.bench(binary)
         return observing_probs
 
     def prepareMusSigmas(self, data):
@@ -131,7 +131,8 @@ class Benchmarker:
         mus, sigmas = self.vae_handler.propagate_through_VAE(data_t, weights=msa_weight, keys=rand_keys)
         return mus, sigmas
 
-    def _bench(self, data):
+    def bench(self, data):
+        print(data.shape)
         mus, sigmas = self.prepareMusSigmas(data)
         return self._sample(mus, sigmas, data)
 
