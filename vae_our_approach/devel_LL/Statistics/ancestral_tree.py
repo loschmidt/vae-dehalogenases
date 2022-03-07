@@ -9,8 +9,13 @@ import inspect
 from typing import List
 
 import numpy as np
+import pandas as pd
 from Bio import Phylo
+from ete3 import Tree
 import matplotlib.pyplot as plt
+from sklearn import linear_model
+import scipy.stats as stats
+from sklearn.decomposition import PCA
 
 currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentDir = os.path.dirname(currentDir)
@@ -208,6 +213,57 @@ class AncestralTree:
         coords_depth[:, mus.shape[1]] = depths
         return coords_depth, msa
 
+    def tree_pca_component_correlation(self, newick_tree: str, mu: np.ndarray, key):
+        """ Follow the used protocol in paper to check the correlations with 1st components """
+        t = Tree(self.data_dir + newick_tree, format=1)
+        for node in t.traverse('preorder'):
+            if node.is_root():
+                node.add_feature('anc', [])
+                node.add_feature('sumdist', 0)
+            else:
+                node.add_feature('anc', node.up.anc + [node.up.name])
+                node.add_feature('sumdist', node.up.sumdist + node.dist)
+
+        reg = linear_model.LinearRegression()
+        pca = PCA(n_components=2)
+        leaf = [k for k in key if "ancestral" not in k]
+        R2, PCC = [], []
+
+        print("PCA tree branch correlation proceeding...")
+        for k in range(len(leaf)):
+            print(k, flush=True, end=("," if (k+1) % 40 != 0 else "\n"))
+
+            leaf_name = "\"" + leaf[k] + "\""
+            idx = key.index(leaf[k])
+            data = pd.DataFrame(index=(t & leaf_name).anc + [leaf_name], columns=("mu1", 'mu2', 'depth'))
+            data.loc[leaf_name, :] = (mu[idx, 0], mu[idx, 1], (t & leaf_name).sumdist)
+            num_anc = len((t & leaf_name).anc)
+
+            for i in range(num_anc):
+                n = (t & leaf_name).anc[i]
+                idx = key.index("ancestral_" + n)
+                data.loc[n, :] = (mu[idx, 0], mu[idx, 1], (t & n).sumdist)
+
+            data = np.array(data).astype(np.float64)
+            res = reg.fit(data[:, 0:2], data[:, -1])
+            yhat = res.predict(data[:, 0:2])
+
+            SS_res = np.sum((data[:, -1] - yhat) ** 2)
+            SS_tot = np.sum((data[:, -1] - np.mean(data[:, -1])) ** 2)
+            r2 = 1 - SS_res / SS_tot
+            R2.append(r2)
+
+            pca.fit(data[:, 0:2])
+            pca_coor = pca.transform(data[:, 0:2])
+
+            if np.sum(pca.components_[0, :] * data[-1, 0:2]) < 0:
+                main_coor = -pca_coor[:, 0]
+            else:
+                main_coor = pca_coor[:, 0]
+            PCC.append(stats.pearsonr(main_coor, data[:, 2])[0])
+        print()
+        return R2, PCC
+
     def plot_levels(self, levels: list):
         """ Plot levels into latent space """
         for level, mus in enumerate(levels):
@@ -219,11 +275,11 @@ class AncestralTree:
         """ Plot depth into latent space """
         plt.scatter(depths[:, 0], depths[:, 1], c=depths[:, 2], s=1.5, cmap='jet', vmin=0, vmax=self.max_depth)
 
-    def plot_corr_histogram(self, correlations, file_name):
+    def plot_corr_histogram(self, correlations, file_name, title):
         """ Plot histogram of correlations in branches """
         fig, ax = plt.subplots()
         ax.hist(correlations, bins=25)
-        ax.set_title("Correlation of latent center distance and depth in the tree")
+        ax.set_title(title)
         ax.set(xlabel=" Pearson correlation coefficient", ylabel="")
         plt.savefig(self.target_dir + file_name, dpi=400)
 
@@ -259,7 +315,7 @@ def run_tree_highlighter():
     print("   Mapping trees for {} MSAs".format(n))
 
     anc_tree_handler = AncestralTree(cmdline)
-    over_tree_corr = []
+    over_tree_corr, R2_all, PCC_all = [], [], []
     for i in range(n):
         if i in [5, 11, 2]:
             continue  # These alignments do not have ancestors by Fireprot
@@ -273,8 +329,19 @@ def run_tree_highlighter():
         # branches correlations
         branches = anc_tree_handler.get_tree_branches(file_tree_templ.format(i))
         correlations = anc_tree_handler.calculate_latent_branch_depth_correlation(branches, depths, msa)
+        r2, pcc = anc_tree_handler.tree_pca_component_correlation(file_tree_templ.format(i), depths_coords[:, :2],
+                                                                  list(msa.keys()))
         over_tree_corr.extend(correlations)
+        R2_all.extend(r2)
+        PCC_all.extend(pcc)
     anc_tree_handler.finalize_plot("latent_tree.png")
-    anc_tree_handler.plot_corr_histogram(over_tree_corr, "tree_depths_corr.png")
+    anc_tree_handler.plot_corr_histogram(over_tree_corr, "tree_depths_corr.png",
+                                         "Correlation of latent origin distance and depth in the tree")
+    anc_tree_handler.plot_corr_histogram(R2_all, "tree_r2.png", "R2 correlations with the origin distance")
+    anc_tree_handler.plot_corr_histogram(PCC_all, "tree_pcc.png", "PCC correlations upon 1st component")
     with open(anc_tree_handler.target_dir + "correlations.pkl", "wb") as file_handle:
         pickle.dump(over_tree_corr, file_handle)
+    with open(anc_tree_handler.target_dir + "r2_correlations.pkl", "wb") as file_handle:
+        pickle.dump(R2_all, file_handle)
+    with open(anc_tree_handler.target_dir + "pcc_correlations.pkl", "wb") as file_handle:
+        pickle.dump(PCC_all, file_handle)

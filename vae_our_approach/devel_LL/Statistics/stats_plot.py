@@ -2,20 +2,19 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2022/02/24 14:40:00"
 
 import pickle
-import torch
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import copy
 
-from Statistics.reconstruction_ability  import Reconstructor
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import torch
 from Statistics.order_statistics import OrderStatistics
-from parser_handler import CmdHandler
-from sequence_transformer import Transformer
+from Statistics.reconstruction_ability import Reconstructor
 from VAE_accessor import VAEAccessor
 from analyzer import AncestorsHandler
-from project_enums import VaePaths
 from msa_preparation import MSA
+from parser_handler import CmdHandler
+from project_enums import VaePaths
+from sequence_transformer import Transformer
 
 cmd_line = CmdHandler()
 transformer = Transformer(cmd_line)
@@ -87,14 +86,14 @@ def create_seq_identity_plot(ax, highlight_folder_path):
     Reconstructor.created_subplot(ax, identities, query_identity, "Input dataset reconstruction")
 
 
-def create_depths_tree_corr_plot(ax, highlight_folder_path):
+def create_depths_tree_corr_plot(ax, highlight_folder_path, pickle_name, title):
     """ Create plot for depths correlations """
     print("   Loading and plotting tree correlation...")
     mapping_path = highlight_folder_path + "/" + VaePaths.TREE_EVALUATION_DIR.value + "/"
-    with open(mapping_path + "correlations.pkl", "rb") as file_handle:
+    with open(mapping_path + pickle_name, "rb") as file_handle:
         correlations = pickle.load(file_handle)
     ax.hist(correlations, bins=25)
-    ax.set_title("Correlation of latent center distance and depth in the tree")
+    ax.set_title(title)
     ax.set(xlabel=" Pearson correlation coefficient", ylabel="")
 
 
@@ -121,7 +120,7 @@ def create_orders_statistics_plots(axs, highlight_folder_path):
                                     show_gap=True, frequencies=True)
     OrderStatistics.created_subplot(axs[0, 1], cov_msa, cov_gen,
                                     'Target MSA covariances', 'Generated MSA covariances',
-                                    show_gap=False, frequencies=True)
+                                    show_gap=False, frequencies=False)
 
 
 def make_overview():
@@ -129,12 +128,17 @@ def make_overview():
     cmd_line = CmdHandler()
     highlight_dir = cmd_line.high_fld
 
-    fig, axs = plt.subplots(4, 2, figsize=(12, 16), gridspec_kw={'height_ratios': [1, 1, 1, 1]})
+    fig, axs = plt.subplots(5, 2, figsize=(12, 16), gridspec_kw={'height_ratios': [1, 1, 1, 1, 1]})
     show_latent_space_features(axs[0, 0], cmd_line.highlight_files)
     create_bench_plot(axs[0, 1], highlight_dir)
     create_seq_identity_plot(axs[1, 0], highlight_dir)
-    create_depths_tree_corr_plot(axs[1, 1], highlight_dir)
-    create_orders_statistics_plots(axs[2:, :], highlight_dir)
+    create_depths_tree_corr_plot(axs[1, 1], highlight_dir, "correlations.pkl",
+                                 "Correlation of latent center distance and depth in the tree")
+    create_depths_tree_corr_plot(axs[2, 0], highlight_dir, "r2_correlations.pkl",
+                                 "R2 correlation of latent space distance and depth in the tree")
+    create_depths_tree_corr_plot(axs[2, 1], highlight_dir, "pcc_correlations.pkl",
+                                 "PCC correlation with 1st PCA component")
+    create_orders_statistics_plots(axs[3:, :], highlight_dir)
 
     plt.tight_layout()
     plot_file = highlight_dir + "/generative_evaluation.png"

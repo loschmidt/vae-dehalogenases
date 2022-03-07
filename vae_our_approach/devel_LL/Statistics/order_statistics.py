@@ -83,7 +83,7 @@ class OrderStatistics:
         """
         H = np.zeros(msa.shape[1])
         alphabet = list(MSA.amino_acid_dict(self.pickle).values())
-        column_p = np.zeros(len(alphabet))
+        column_p = np.zeros(len(set(alphabet)))
 
         frequencies = np.zeros((column_p.shape[0], msa.shape[1]))
 
@@ -114,13 +114,14 @@ class OrderStatistics:
         # Shape according number of unique pairs in set
         I = np.zeros(n * (n - 1) // 2)
 
-        alphabet = list(MSA.amino_acid_dict(self.pickle).values())
-        column_jk_p = np.zeros(len(alphabet) ** 2)
+        alphabet = list(set(MSA.amino_acid_dict(self.pickle).values()))
+        aa_cnt = len(alphabet)
+        column_jk_p = np.zeros(aa_cnt ** 2)
 
         # prepare amino acids pairs
         pairs = []
         for a in alphabet:
-            pairs = [(a, b) for b in alphabet]
+            pairs.extend([(a, b) for b in alphabet])
 
         # Matrix, row number of MSA columns except last column which is included in previous frequencies count
         # Row for pairs of amino acids
@@ -133,8 +134,8 @@ class OrderStatistics:
                 # calculate H_j,k
                 for a, b in pairs:
                     vec_a, vec_b = np.where(msa[:, j] == a)[0], np.where(msa[:, k] == b)[0]
-                    frequencies[j, a * len(alphabet) + b] = sum([a in vec_b for a in vec_a])
-                    covariances[j, a * len(alphabet) + b] = frequencies[j, a * len(alphabet) + b] - len(vec_a)*len(vec_b)
+                    frequencies[j, a * aa_cnt + b] = sum([a in vec_b for a in vec_a])
+                    covariances[j, a * aa_cnt + b] = frequencies[j, a * aa_cnt + b] - len(vec_a)*len(vec_b)
                 column_jk_p[:] = frequencies[j, :] / msa.shape[0]
                 H_j_k = -np.sum(column_jk_p)
                 I[index_counter] = shannon[j] + shannon[k] - H_j_k
@@ -197,10 +198,18 @@ def run_setup():
         msa_original_binary = pickle.load(file_handle)
 
     msa_dataset = Transformer.binaries_to_numbers_coding(msa_original_binary)
-
+    # msa_dataset = np.array([[0, 1, 2, 3, 4, 5, 6, 7,0],
+    #                             [0, 1, 2, 3, 4, 5, 6, 7,0],
+    #                             [0, 1, 2, 3, 4, 5, 6, 7,0],
+    #                             [1, 1, 1, 1, 1, 1, 1, 1,0],
+    #                             [2, 2, 2, 2, 2, 2, 2, 2,0]])
     stat_obj = OrderStatistics(cmdline)
     sampled_dataset = stat_obj.sample_dataset_from_normal(np.zeros(stat_obj.dimensions), 2.5, msa_dataset.shape[0])
-
+    # sampled_dataset = np.array([[0,1,2,3,4,5,6,7,0],
+    #                    [0,1,2,3,4,5,6,7,0],
+    #                    [0,1,2,3,4,5,6,7,0],
+    #                    [1,1,1,1,1,1,1,1,0],
+    #                    [2,2,2,2,2,2,2,2,0]])
     # 1st order stats
     msa_shannon, msa_frequencies = stat_obj.shannon_entropy(msa_dataset)
     sampled_shannon, sampled_frequencies = stat_obj.shannon_entropy(sampled_dataset)
