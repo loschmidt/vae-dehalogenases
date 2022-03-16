@@ -3,18 +3,23 @@ __date__ = "2020/07/18 09:33:12"
 
 import os
 import pickle
+import multiprocessing
 
 import matplotlib.pyplot as plt
 import numpy as np
 from Bio import pairwise2
 from Bio.Align.Applications import ClustalOmegaCommandline
+from ete3 import Tree
+from multiprocessing import Pool
 
+from VAE_accessor import VAEAccessor
+from VAE_logger import Logger, Capturing
 from download_MSA import Downloader
+from experiment_handler import ExperimentStatistics
 from msa_preparation import MSA
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer
 from supportscripts.animator import GifMaker
-from VAE_accessor import VAEAccessor
 
 
 class Highlighter:
@@ -277,17 +282,82 @@ class AncestorsHandler:
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
 
-    def align_to_ref(self, msa: dict = None):
+    def align_tree_msa_to_msa(self, tree_msa_path: str, tree_path):
+        """
+            Aligns sequences in msa_file to individual sequence in the original MSA.
+            Iterates over all sequences in the fasta file. If the key is in Original
+            MSA just return this sequence, otherwise find the closest and align to it.
+            The sequence is aligned to the leaf in its branch. The leaf is expected to
+            be in the input MSA.
+
+            If key 'query' occurs along the sequences, the key is replaced for queryID.
+        """
+        msa_file = tree_msa_path.split("/")[-1].split(".")[0]
+        store_file = self.pickle + "/{}_aligned_to_leaf.fasta".format(msa_file)
+        aligned_dict = {}
+        if os.path.exists(store_file) and os.path.getsize(store_file) > 0:
+            print("   Using aligned tree nodes in ...", store_file[-30:])
+            aligned_dict = MSA.load_msa(store_file)
+        else:
+            with Capturing() as output:
+                tree_seq_dict = MSA.load_msa(tree_msa_path)
+                original_msa = MSA.load_msa(self.setuper.in_file)
+            mapped_tree = AncestorsHandler.map_tree_node_to_closest_leaf(tree_path, tree_seq_dict, original_msa,
+                                                                         self.setuper.query_id)
+            msg ="   Aligned {} sequences and using 12 processes"
+            Logger.print_for_update(msg, '0')
+            pool_values, pool_keys, align_cnt = [], [], 1
+            for tree_key, seq in tree_seq_dict.items():
+                dict_key = tree_key.replace("\"", "")
+                if dict_key == 'query':
+                    aligned_dict[dict_key] = original_msa[self.setuper.query_id]
+                    continue
+                try:
+                    aligned_dict[dict_key] = original_msa[dict_key]
+                except KeyError:
+                    pool_values.append((seq, (mapped_tree & tree_key).mapped_leaf, align_cnt))
+                    pool_keys.append(dict_key)
+                    align_cnt += 1
+
+            # In parallel process aligning
+            pool = Pool(processes=12)
+            pool_results = pool.starmap(AncestorsHandler.align_to_seq, pool_values)
+            for pool_key, result in zip(pool_keys, pool_results):
+                aligned_dict[pool_key] = result
+            pool.close()
+            pool.join()
+
+            Logger.update_msg("every node ", True)
+
+            # slice all aligned sequence to its original templates
+            with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
+                pos_idx = pickle.load(file_handle)
+
+            for name, seq in aligned_dict.items():
+                aligned_dict[name] = [item for i, item in enumerate(seq) if i in pos_idx]
+
+            ExperimentStatistics(self.setuper).store_ancestor_dict_in_fasta(aligned_dict, store_file,
+                                                                            "Storing tree nodes into ")
+        return aligned_dict
+
+    @staticmethod
+    def align_to_seq(seq_to_align, template_seq, align_cnt):
+        """ Align sequences to template sequence in pairwise session """
+        pair_alignments = pairwise2.align.globalms(template_seq, seq_to_align, 3, 1, -7, -1)
+        Logger.update_msg(align_cnt, False)
+        return pair_alignments[0][1]
+
+    def align_to_ref(self, msa: dict = None, original_msa: dict = None):
         """
             Align sequences to original MSA and then apply
             the same position removal as in MSA processing.
             In the case of msa_align False do iterative alignment
-            to only query sequence. This may not be optimal solution
+            to only query sequence.
         """
         aligned = {}
         # Do iterative alignment only to query (not optimal solution)
         # with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
-        original_msa = MSA.load_msa(self.setuper.in_file)
+        original_msa = MSA.load_msa(self.setuper.in_file) if original_msa is None else original_msa
         ref_seq = original_msa[self.setuper.query_id]
         # ref_name = self.setuper.query_id  # list(ref.keys())[0]
         # ref_seq = "".join(ref[ref_name])
@@ -395,6 +465,44 @@ class AncestorsHandler:
             aligned[name] = [item for i, item in enumerate(alignment[name]) if i in pos_idx]
         return aligned
 
+    @staticmethod
+    def map_tree_node_to_closest_leaf(tree_path, tree_msa: dict, input_msa: dict, query_id):
+        """
+        Get mapping of tree nodes to its tree leaf having the highest identity
+        with node 'ancestral' sequence.
+        Every node is extended by mapped_leaf attribute.
+        """
+        tree = Tree(tree_path, format=1)
+        for node in tree.traverse('postorder'):
+            if node.is_leaf():
+                node.add_feature('mapped_leaf', node)
+            else:
+                # Get the most identical leaf
+                msa_name = "ancestral_{}".format(node.name)
+                node.name = msa_name
+                sequence = tree_msa[msa_name]
+
+                max_identity, most_identical_node = -1, None
+                for leaf in node.get_leaves():
+                    dict_key = query_id if leaf.name == '"query"' else leaf.name.replace("\"", "")
+                    leaf_sequence = input_msa[dict_key]
+                    identity = ExperimentStatistics.sequence_identity(sequence, leaf_sequence)
+                    if identity > max_identity:
+                        most_identical_seq = leaf_sequence
+                        max_identity = identity
+                node.add_feature('mapped_leaf', most_identical_seq)
+        return tree
+
+        # names = {}
+        # for clade in tree.find_clades():
+        #     if clade.name:
+        #         if clade.name in names:
+        #             raise ValueError("Duplicate key: %s" % clade.name)
+        #         names[clade.name] = clade
+        #     else:
+        #         clade.name = "ancestral_" + str(clade.confidence)
+        #         names[clade.name] = clade
+        # return names
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()

@@ -110,11 +110,11 @@ def create_orders_statistics_plots(axs, highlight_folder_path):
 
     msa_shannon, msa_frequencies, sampled_shannon, sampled_frequencies = data[:4]
     mutual_msa, mutual_msa_frequencies, mutual_sampled, mutual_sampled_frequencies, cov_msa, cov_gen = data[4:]
-    OrderStatistics.created_subplot(axs[1, 0], msa_shannon, sampled_shannon, 'Training Data Entropy',
-                                    'VAE Sampled Entropy',
-                                    show_gap=False, frequencies=False)
-    OrderStatistics.created_subplot(axs[1, 1], mutual_msa, mutual_sampled, 'Training Mutual Entropy',
-                                    'Generated Mutual Entropy', show_gap=False, frequencies=False)
+    # OrderStatistics.created_subplot(axs[1, 0], msa_shannon, sampled_shannon, 'Training Data Entropy',
+    #                                 'VAE Sampled Entropy',
+    #                                 show_gap=False, frequencies=False)
+    # OrderStatistics.created_subplot(axs[1, 1], mutual_msa, mutual_sampled, 'Training Mutual Entropy',
+    #                                 'Generated Mutual Entropy', show_gap=False, frequencies=False)
     OrderStatistics.created_subplot(axs[0, 0], msa_frequencies, sampled_frequencies,
                                     'Training Data Frequencies', 'VAE Sampled Frequencies',
                                     show_gap=True, frequencies=True)
@@ -128,7 +128,7 @@ def make_overview():
     cmd_line = CmdHandler()
     highlight_dir = cmd_line.high_fld
 
-    fig, axs = plt.subplots(5, 2, figsize=(12, 16), gridspec_kw={'height_ratios': [1, 1, 1, 1, 1]})
+    fig, axs = plt.subplots(4, 2, figsize=(12, 16), gridspec_kw={'height_ratios': [1, 1, 1, 1]})
     show_latent_space_features(axs[0, 0], cmd_line.highlight_files)
     create_bench_plot(axs[0, 1], highlight_dir)
     create_seq_identity_plot(axs[1, 0], highlight_dir)

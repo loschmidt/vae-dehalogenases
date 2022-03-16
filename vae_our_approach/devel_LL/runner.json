@@ -13,6 +13,17 @@
     "--C {}", "--weight_decay {}"],
   "experiments": [
     {
+    "experiment": "ground_truth_boost",
+    "status": "off",
+    "layers": "100",
+    "dimensionality": 2,
+    "C": 2,
+    "num_epoch": 4000,
+    "weight_decay": 0.05,
+    "Note": "Train model and moke frequencies analysis as ground truth for C++ lib",
+    "flags" : []
+  },
+    {
     "experiment": "original_pipeline",
     "status": "on",
     "layers": "100",

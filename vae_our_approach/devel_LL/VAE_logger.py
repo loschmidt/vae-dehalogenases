@@ -1,6 +1,9 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2022/01/06 14:33:00"
 
+from io import StringIO
+import sys
+
 text_keeper, text_len = "", 0
 
 
@@ -33,3 +36,14 @@ class Logger:
         if new_line:
             print()
 
+
+class Capturing(list):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO()
+        return self
+
+    def __exit__(self, *args):
+        self.extend(self._stringio.getvalue().splitlines())
+        del self._stringio  # free up some memory
+        sys.stdout = self._stdout

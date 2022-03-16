@@ -36,15 +36,16 @@ class ExperimentStatistics:
 
     def store_ancestor_dict_in_fasta(self, seq_dict: dict, file_name, msg="storing ancestors into "):
         """ Method store sequence dictionary in fasta file named expName_file_name.fasta """
-        file_name = self.exp_name + file_name
+        if "/" not in file_name:
+            file_name = self.high_fld + "/" + self.exp_name + file_name
         n = 80  # 80 characters per line
-        with open(self.high_fld + "/" + file_name, 'w') as file_handle:
+        with open(file_name, 'w') as file_handle:
             for key, sequence in seq_dict.items():
                 file_handle.write(">" + key + "\n")
                 seq = "".join(sequence)
                 for i in range(0, len(seq), n):
                     file_handle.write(seq[i:i + n] + "\n")
-        self._log_msg(msg + self.high_fld + "/" + file_name)
+        self._log_msg(msg + file_name)
 
     def residues_likelihood_above_threshold(self, seqs_dict, threshold=0.9):
         """

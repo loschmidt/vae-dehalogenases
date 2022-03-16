@@ -134,9 +134,10 @@ class AncestralTree:
         sequence_dephts = {}
         for clade, depth in depths_dict.items():
             if clade in terminals:
-                sequence_dephts[clade.name.replace("\"", "")] = self.max_depth
+                sequence_dephts[clade.name.replace("\"", "")] = depth #self.max_depth
             else:
                 sequence_dephts["ancestral_" + str(clade.confidence)] = depth
+                clade.name = "ancestral_" + str(clade.confidence)
         return sequence_dephts
 
     def get_tree_branches(self, tree_nwk_file: str) -> List[List[str]]:
@@ -195,12 +196,12 @@ class AncestralTree:
 
         return ret_levels
 
-    def encode_sequences_with_depths(self, seq_depths: dict, msa_file):
+    def encode_sequences_with_depths(self, seq_depths: dict, tree_msa_file, tree_path):
         """
         Get latent space coordinates.
         Returns latent space coordinates with depth value in 3rd dimension, loaded msa
         """
-        msa = self.aligner_obj.align_fasta_to_original_msa(self.data_dir + msa_file, already_msa=True, verbose=True)
+        msa = self.aligner_obj.align_tree_msa_to_msa(self.data_dir + tree_msa_file, self.data_dir + tree_path)
         binaries, weights, keys = self.transformer.sequence_dict_to_binary(msa)
         mus, _ = self.vae.propagate_through_VAE(binaries, weights, keys)
 
@@ -213,13 +214,14 @@ class AncestralTree:
         coords_depth[:, mus.shape[1]] = depths
         return coords_depth, msa
 
-    def tree_pca_component_correlation(self, newick_tree: str, mu: np.ndarray, key):
+    def tree_pca_component_correlation(self, newick_tree: str, mu: np.ndarray, key, iter):
         """ Follow the used protocol in paper to check the correlations with 1st components """
         t = Tree(self.data_dir + newick_tree, format=1)
         for node in t.traverse('preorder'):
             if node.is_root():
                 node.add_feature('anc', [])
                 node.add_feature('sumdist', 0)
+                root_name = node.name
             else:
                 node.add_feature('anc', node.up.anc + [node.up.name])
                 node.add_feature('sumdist', node.up.sumdist + node.dist)
@@ -227,8 +229,10 @@ class AncestralTree:
         reg = linear_model.LinearRegression()
         pca = PCA(n_components=2)
         leaf = [k for k in key if "ancestral" not in k]
-        R2, PCC = [], []
+        R2, PCC, PCA_direction = [], [], []
+        root_coords = np.zeros(mu.shape[0])
 
+        branches = ["query", "OUT68545.1", "WP_012286701.1", "TFG98623.1", "PYV12062.1", "TDI51065.1", "TDJ42344.1"]
         print("PCA tree branch correlation proceeding...")
         for k in range(len(leaf)):
             print(k, flush=True, end=("," if (k+1) % 40 != 0 else "\n"))
@@ -243,6 +247,12 @@ class AncestralTree:
                 n = (t & leaf_name).anc[i]
                 idx = key.index("ancestral_" + n)
                 data.loc[n, :] = (mu[idx, 0], mu[idx, 1], (t & n).sumdist)
+                if k == 0 and root_name == n:
+                    root_coords = mu[idx]
+            if iter == 0 and leaf[k] in branches:
+                plt.scatter(data.loc[:, 'mu1'], data.loc[:, 'mu2'], c=data.loc[:, 'depth'],
+                            cmap=plt.get_cmap('viridis'))
+                plt.plot(data.loc[leaf_name, 'mu1'], data.loc[leaf_name, 'mu2'], '+r', markersize=16)
 
             data = np.array(data).astype(np.float64)
             res = reg.fit(data[:, 0:2], data[:, -1])
@@ -258,11 +268,29 @@ class AncestralTree:
 
             if np.sum(pca.components_[0, :] * data[-1, 0:2]) < 0:
                 main_coor = -pca_coor[:, 0]
+                pca_vector = -pca.components_[0]
             else:
                 main_coor = pca_coor[:, 0]
+                pca_vector = pca.components_[0]
             PCC.append(stats.pearsonr(main_coor, data[:, 2])[0])
+
+            # Compute PCA component pointing to origin
+            unit_origin_vec = (mu[idx] / np.linalg.norm(mu[idx]))  # to point into center of latent space
+            unit_pca0_comp = pca_vector / np.linalg.norm(pca_vector)
+            PCA_direction.append(np.dot(unit_origin_vec, unit_pca0_comp))
+
+        if iter == 0:
+            # Finish plot
+            plt.xlim((-6.5, 6.5))
+            plt.ylim((-6.5, 6.5))
+            plt.xlabel("$Z_1$")
+            plt.ylabel("$Z_2$")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(self.target_dir + "branch_evolution.png", dpi=600)
+            print("  Storing tree evolution")
         print()
-        return R2, PCC
+        return R2, PCC, PCA_direction, root_coords
 
     def plot_levels(self, levels: list):
         """ Plot levels into latent space """
@@ -289,6 +317,15 @@ class AncestralTree:
         color_bar.set_label('Sequence distance from root')
         plt.savefig(self.target_dir + file_name, dpi=600)
 
+    def map_roots_into_latent_space(self, roots):
+        """ maps root latent space coordinates """
+        plt.figure()
+        roots = roots.reshape(-1, 2)
+        plt.plot(roots[:, 0], roots[:, 1], '+', markersize=8, color='blue')
+        plt.title("Roots mapping into the latent space")
+        plt.xlim(-7, 7)
+        plt.ylim(-7, 7)
+        plt.savefig(self.target_dir + "roots.png", dpi=600)
 
 # Number of randomly created MSAs and then trees
 n = 13
@@ -315,7 +352,7 @@ def run_tree_highlighter():
     print("   Mapping trees for {} MSAs".format(n))
 
     anc_tree_handler = AncestralTree(cmdline)
-    over_tree_corr, R2_all, PCC_all = [], [], []
+    over_tree_corr, R2_all, PCC_all, roots, directions = [], [], [], np.array([]), []
     for i in range(n):
         if i in [5, 11, 2]:
             continue  # These alignments do not have ancestors by Fireprot
@@ -324,21 +361,28 @@ def run_tree_highlighter():
         # levels = anc_tree_handler.encode_levels(levels, file_bigmsa_templ.format(i))
         # anc_tree_handler.plot_levels(levels)
         depths = anc_tree_handler.get_tree_depths(file_tree_templ.format(i))
-        depths_coords, msa = anc_tree_handler.encode_sequences_with_depths(depths, file_bigmsa_templ.format(i))
-        anc_tree_handler.plot_depths(depths_coords)
+        depths_coords, msa = anc_tree_handler.encode_sequences_with_depths(depths, file_bigmsa_templ.format(i),
+                                                                           file_tree_templ.format(i))
+        # anc_tree_handler.plot_depths(depths_coords)
         # branches correlations
         branches = anc_tree_handler.get_tree_branches(file_tree_templ.format(i))
         correlations = anc_tree_handler.calculate_latent_branch_depth_correlation(branches, depths, msa)
-        r2, pcc = anc_tree_handler.tree_pca_component_correlation(file_tree_templ.format(i), depths_coords[:, :2],
-                                                                  list(msa.keys()))
+        r2, pcc, dire, root = anc_tree_handler.tree_pca_component_correlation(file_tree_templ.format(i), depths_coords[:, :2],
+                                                                  list(msa.keys()), i)
         over_tree_corr.extend(correlations)
         R2_all.extend(r2)
         PCC_all.extend(pcc)
-    anc_tree_handler.finalize_plot("latent_tree.png")
+        directions.extend(dire)
+        roots = np.append(root, roots)
+    # anc_tree_handler.finalize_plot("latent_tree.png")
     anc_tree_handler.plot_corr_histogram(over_tree_corr, "tree_depths_corr.png",
                                          "Correlation of latent origin distance and depth in the tree")
     anc_tree_handler.plot_corr_histogram(R2_all, "tree_r2.png", "R2 correlations with the origin distance")
     anc_tree_handler.plot_corr_histogram(PCC_all, "tree_pcc.png", "PCC correlations upon 1st component")
+    anc_tree_handler.plot_corr_histogram(directions, "pca_origin_product.png",
+                                         "Dot product of PCA 0th component and leaf origin vector")
+    anc_tree_handler.map_roots_into_latent_space(roots)
+
     with open(anc_tree_handler.target_dir + "correlations.pkl", "wb") as file_handle:
         pickle.dump(over_tree_corr, file_handle)
     with open(anc_tree_handler.target_dir + "r2_correlations.pkl", "wb") as file_handle:

@@ -14,13 +14,12 @@ import seaborn as sns
 import torch
 from matplotlib import pyplot as plt
 
-from analyzer import Highlighter
 from VAE_accessor import VAEAccessor
 from download_MSA import Downloader
 from msa_preprocessor import MSAPreprocessor as BinaryCovertor
 from parser_handler import CmdHandler
-from sequence_transformer import Transformer
 from project_enums import ScriptNames, VaePaths
+from sequence_transformer import Transformer
 
 ## LAMBDAS FUNCTIONS FOR CONVERSION AND PAIRWWISE COMPARISON OF SEQUENCES
 # Lambda for the calculation of the amino sequence decoded from binary
@@ -121,7 +120,7 @@ class Benchmarker:
         the sequence on the output of network
         """
         # Encode sequence to binary
-        binary, _, keys = self.transformer.sequence_dict_to_binary(seqs_dict)
+        binary, _, _ = self.transformer.sequence_dict_to_binary(seqs_dict)
         observing_probs = self.bench(binary)
         return observing_probs
 
@@ -132,7 +131,6 @@ class Benchmarker:
         return mus, sigmas
 
     def bench(self, data):
-        print(data.shape)
         mus, sigmas = self.prepareMusSigmas(data)
         return self._sample(mus, sigmas, data)
 
@@ -336,6 +334,8 @@ if __name__ == '__main__':
     pos_mus, _ = b.prepareMusSigmas(b.positive)
     anc_npa = np.asarray(ancs, dtype=np.float32)[0::10, :] # Subsampling
     mut_names = ['Positive', 'Negative', 'Training', 'Ancestors']
+
+    from analyzer import Highlighter
 
     h = Highlighter(tar_dir)
     h.highlight_mutants([], [], mutants=[pos_mus, neg_mus, tr_subset_mus, anc_npa], mut_names=mut_names,

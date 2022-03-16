@@ -19,6 +19,7 @@ from project_enums import VaePaths
 from msa_preparation import MSA
 from sequence_transformer import Transformer
 from VAE_accessor import VAEAccessor
+from VAE_logger import Logger
 
 
 def safe_log(x, eps=1e-10):
@@ -110,8 +111,9 @@ class OrderStatistics:
         """
         assert msa.shape[1] == shannon.shape[0]
         n = shannon.shape[0]
+        msa_rows = msa.shape[0]
 
-        # Shape according number of unique pairs in set
+        # Shape according number of unique column pairs in set
         I = np.zeros(n * (n - 1) // 2)
 
         alphabet = list(set(MSA.amino_acid_dict(self.pickle).values()))
@@ -122,11 +124,16 @@ class OrderStatistics:
         pairs = []
         for a in alphabet:
             pairs.extend([(a, b) for b in alphabet])
+        pairs_cnt = (aa_cnt ** 2)
 
         # Matrix, row number of MSA columns except last column which is included in previous frequencies count
         # Row for pairs of amino acids
-        covariances = np.zeros((shannon.shape[0] - 1, column_jk_p.shape[0]))
-        frequencies = np.zeros((shannon.shape[0] - 1, column_jk_p.shape[0]))
+        # Vector length given by number of column pairs and AA pairs for each pair of column
+        covariances = np.zeros(I.shape[0] * pairs_cnt)
+        frequencies = np.zeros(I.shape[0] * pairs_cnt)
+        # print("Shapes of covariances: {} {}".format(covariances.shape, I.shape))
+        # covariances = np.zeros((shannon.shape[0] - 1, column_jk_p.shape[0]))
+        # frequencies = np.zeros((shannon.shape[0] - 1, column_jk_p.shape[0]))
 
         index_counter = 0
         for j in range(msa.shape[1] - 1):
@@ -134,13 +141,21 @@ class OrderStatistics:
                 # calculate H_j,k
                 for a, b in pairs:
                     vec_a, vec_b = np.where(msa[:, j] == a)[0], np.where(msa[:, k] == b)[0]
-                    frequencies[j, a * aa_cnt + b] = sum([a in vec_b for a in vec_a])
-                    covariances[j, a * aa_cnt + b] = frequencies[j, a * aa_cnt + b] - len(vec_a)*len(vec_b)
-                column_jk_p[:] = frequencies[j, :] / msa.shape[0]
+                    pair_freq = np.intersect1d(vec_a, vec_b, assume_unique=True).shape[0] / msa_rows
+                    tar_index = index_counter * pairs_cnt + a * aa_cnt + b
+                    frequencies[tar_index] = pair_freq
+                    # frequencies[j, a * aa_cnt + b] = sum([a in vec_b for a in vec_a])
+                    # Compute covariance
+                    single_marginals_product = (vec_a.shape[0]/msa_rows) * (vec_b.shape[0]/msa_rows)
+                    covariances[tar_index] = pair_freq - single_marginals_product
+                # column_jk_p[:] = frequencies[j, :] / msa.shape[0]
+                column_jk_p = frequencies[-pairs_cnt:]
                 H_j_k = -np.sum(column_jk_p)
                 I[index_counter] = shannon[j] + shannon[k] - H_j_k
                 index_counter += 1
-        return I[:index_counter], frequencies / msa.shape[0], covariances
+                Logger.update_msg("{:.1f} %".format((index_counter / I.shape[0]) * 100))
+        return I[:index_counter], frequencies, covariances
+        # return I[:index_counter], frequencies / msa.shape[0], covariances
 
     def sample_dataset_from_normal(self, origin: np.ndarray, scale: float, N: int) -> np.ndarray:
         """ Sample from the model N data points and transform them to ndarray """
@@ -197,14 +212,17 @@ def run_setup():
     with open(cmdline.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
         msa_original_binary = pickle.load(file_handle)
 
-    msa_dataset = Transformer.binaries_to_numbers_coding(msa_original_binary)
+    sample_cnt = 600
+    random_idx = np.random.permutation(range(0, msa_original_binary.shape[0]))
+
+    msa_dataset = Transformer.binaries_to_numbers_coding(msa_original_binary[random_idx[:sample_cnt]])
     # msa_dataset = np.array([[0, 1, 2, 3, 4, 5, 6, 7,0],
     #                             [0, 1, 2, 3, 4, 5, 6, 7,0],
     #                             [0, 1, 2, 3, 4, 5, 6, 7,0],
     #                             [1, 1, 1, 1, 1, 1, 1, 1,0],
     #                             [2, 2, 2, 2, 2, 2, 2, 2,0]])
     stat_obj = OrderStatistics(cmdline)
-    sampled_dataset = stat_obj.sample_dataset_from_normal(np.zeros(stat_obj.dimensions), 2.5, msa_dataset.shape[0])
+    sampled_dataset = stat_obj.sample_dataset_from_normal(np.zeros(stat_obj.dimensions), 2.5, sample_cnt)
     # sampled_dataset = np.array([[0,1,2,3,4,5,6,7,0],
     #                    [0,1,2,3,4,5,6,7,0],
     #                    [0,1,2,3,4,5,6,7,0],
@@ -213,11 +231,17 @@ def run_setup():
     # 1st order stats
     msa_shannon, msa_frequencies = stat_obj.shannon_entropy(msa_dataset)
     sampled_shannon, sampled_frequencies = stat_obj.shannon_entropy(sampled_dataset)
+    print("   Shannon entropy and single frequencies calculation ............... DONE")
 
     # 2nd order statistics
+    Logger.print_for_update("   Mutual information, pair frequencies and covariance for MSA ...... {}", str(0) + "%")
     mutual_msa, mutual_msa_frequencies, cov_msa = stat_obj.mutual_information(msa_dataset, msa_shannon)
+    Logger.update_msg("DONE", True)
+    Logger.print_for_update("   Mutual information, pair frequencies and covariance for SAMPLE ... {}", str(0)+"%")
     mutual_sampled, mutual_sampled_frequencies, cov_gen = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
-
+    Logger.update_msg("DONE", True)
+    # print(cov_gen.reshape(21**2, -1), cov_gen.reshape(21**2, -1).shape)
+    # print(msa_frequencies)
     # plot 1st order data statistics and frequencies statistics
     print("=" * 80)
     print(" Creating first and second order statistics to  {}".format(stat_obj.target_dir))
