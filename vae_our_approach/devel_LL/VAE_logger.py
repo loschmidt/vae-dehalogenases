@@ -5,7 +5,7 @@ from io import StringIO
 import sys
 
 text_keeper, text_len = "", 0
-
+mlt_proc_text = ""
 
 # $python3 benchmark.py --model_name bench --exp_dir simple --query DhaA_S19 --experiment dhlA_LinB_DhaA_S19 --in_file results/PF00561/MSA/dhlA_LinB.fa --stats --num_epoch 5000 --layers 291 --robustness_train
 class Logger:
@@ -36,6 +36,33 @@ class Logger:
         if new_line:
             print()
 
+    @staticmethod
+    def init_multiprocess_msg(msg, processes, init_value):
+        """ Special case for multiprocess logging, msg be printed for every process """
+        global text_keeper, text_len, mlt_proc_text
+        text_keeper = msg
+        output = ""
+        for i in range(processes):
+            output += " Process {} ".format(i+1) + msg.format(init_value) + (";" if i < processes-1 else "")
+        text_len = len(output)
+        mlt_proc_text = output
+        print("\r{}".format(msg), end='', flush=True)
+
+    @staticmethod
+    def process_update_out(process_number, value):
+        """ Print value to appropriate column """
+        global text_keeper, text_len, mlt_proc_text
+        proc_outs = mlt_proc_text.split(";")
+        output = ""
+        for i, o in enumerate(proc_outs):
+            if i == process_number:
+                output += " Process {} ".format(i+1) + text_keeper.format(value) + (";" if i < len(proc_outs)-1 else "")
+            else:
+                output += o + ";"
+        while len(output) < text_len:
+            output += " "
+        text_len = len(output)
+        print("\r{}".format(output), end='', flush=True)
 
 class Capturing(list):
     def __enter__(self):

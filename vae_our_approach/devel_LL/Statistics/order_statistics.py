@@ -9,6 +9,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Tuple
+from multiprocessing import Pool
 
 currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentDir = os.path.dirname(currentDir)
@@ -96,7 +97,7 @@ class OrderStatistics:
             H[j] = -np.sum(column_p * safe_log(column_p))
         return H, frequencies / msa.shape[0]
 
-    def mutual_information(self, msa: np.ndarray, shannon: np.ndarray):
+    def mutual_information(self, msa: np.ndarray, shannon: np.ndarray, process_num=None):
         """
         2nd order statistics/frequencies/Covariance
         Computes mutual information of MSA given as:
@@ -153,7 +154,10 @@ class OrderStatistics:
                 H_j_k = -np.sum(column_jk_p)
                 I[index_counter] = shannon[j] + shannon[k] - H_j_k
                 index_counter += 1
-                Logger.update_msg("{:.1f} %".format((index_counter / I.shape[0]) * 100))
+                if process_num is not None:
+                    Logger.process_update_out(process_num, "{:.1f} %".format((index_counter / I.shape[0]) * 100))
+                else:
+                    Logger.update_msg("{:.1f} %".format((index_counter / I.shape[0]) * 100))
         return I[:index_counter], frequencies, covariances
         # return I[:index_counter], frequencies / msa.shape[0], covariances
 
@@ -234,12 +238,23 @@ def run_setup():
     print("   Shannon entropy and single frequencies calculation ............... DONE")
 
     # 2nd order statistics
-    Logger.print_for_update("   Mutual information, pair frequencies and covariance for MSA ...... {}", str(0) + "%")
-    mutual_msa, mutual_msa_frequencies, cov_msa = stat_obj.mutual_information(msa_dataset, msa_shannon)
-    Logger.update_msg("DONE", True)
-    Logger.print_for_update("   Mutual information, pair frequencies and covariance for SAMPLE ... {}", str(0)+"%")
-    mutual_sampled, mutual_sampled_frequencies, cov_gen = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
-    Logger.update_msg("DONE", True)
+    # Logger.print_for_update("   Mutual information, pair frequencies and covariance for MSA ...... {}", str(0) + "%")
+    # mutual_msa, mutual_msa_frequencies, cov_msa = stat_obj.mutual_information(msa_dataset, msa_shannon)
+    # Logger.update_msg("DONE", True)
+    # Logger.print_for_update("   Mutual information, pair frequencies and covariance for SAMPLE ... {}", str(0)+"%")
+    # mutual_sampled, mutual_sampled_frequencies, cov_gen = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
+    # Logger.update_msg("DONE", True)
+
+    # In parallel process aligning
+    pool_values = [(msa_dataset, msa_shannon, 0), (sampled_dataset, sampled_shannon, 1)]
+    Logger.init_multiprocess_msg(" 2nd order stats computation .... {}", processes=2, init_value=str(0) + "%")
+    pool = Pool(processes=2)
+    pool_results = pool.starmap(stat_obj.mutual_information, pool_values)
+    mutual_msa, mutual_msa_frequencies, cov_msa = pool_results[0]
+    mutual_sampled, mutual_sampled_frequencies, cov_gen = pool_results[1]
+    pool.close()
+    pool.join()
+    print()
     # print(cov_gen.reshape(21**2, -1), cov_gen.reshape(21**2, -1).shape)
     # print(msa_frequencies)
     # plot 1st order data statistics and frequencies statistics
