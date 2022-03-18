@@ -15,6 +15,9 @@ from sequence_transformer import Transformer
 
 
 class MutagenesisGenerator:
+
+    number_of_successors = 30
+
     def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2):
         self.num_mutations = num_point_mut
         self.handler = VAEAccessor(setuper, model_name=setuper.get_model_to_load())
@@ -120,7 +123,7 @@ class MutagenesisGenerator:
         step_list = [0.0 for _ in tuple_dim]
         for i in tuple_dim:
             step_list[i] = (coor_tuple[i] / cnt_of_anc)
-        i = 30
+        i = MutagenesisGenerator.number_of_successors
         successors = []
         while i > 0:
             cur_coor = [0.0 for _ in tuple_dim]
@@ -138,7 +141,8 @@ class MutagenesisGenerator:
             i += 1
 
         successors.extend(to_highlight)
-        ancestors_to_store = self.handler.decode_z_to_aa_dict(successors, self.cur_name)
+        ancestors_to_store = self.handler.decode_z_to_aa_dict(successors, self.cur_name,
+                                                              MutagenesisGenerator.number_of_successors)
         file_name = '{}straight_ancestors.fasta'.format(self.setuper.model_name)
         observing_probs = self.exp_handler.create_and_store_ancestor_statistics(ancestors_to_store, file_name,
                                                                                 coords=successors)

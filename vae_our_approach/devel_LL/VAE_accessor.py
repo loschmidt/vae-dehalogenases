@@ -105,9 +105,12 @@ class VAEAccessor:
         sigma = np.vstack(sigma_list)
         return mu, sigma
 
-    def decode_z_to_aa_dict(self, lat_sp_pos, ref_name):
+    def decode_z_to_aa_dict(self, lat_sp_pos, ref_name, query_pos=0):
         """
         Methods decodes latent space coordinates to sequences in amino acid form.
+        @param lat_sp_pos  - latent space coordinates to be decoded to sequence (array)
+        @param ref_name    - name for query sequence posed on query_pos index in 'lat_sp_pos'
+        @param query_pos   - position of query sequence in 'lat_sp_pos' list
 
         Returns dictionary of decoded sequences where first sequence name is ref_name
         """
@@ -116,8 +119,9 @@ class VAEAccessor:
         if vae is None:
             vae, num_seq = self._prepare_model()
         num_seqs = {}
-        for i, z in enumerate(lat_sp_pos, 1):
-            anc_name = 'ancestor_{}'.format(i) if i > 1 else ref_name
+        for i, z in enumerate(lat_sp_pos, 0):
+            seq_name = 'ancestor_{}'.format(i-query_pos) if i > query_pos else "successor_{}".format(query_pos-i)
+            anc_name = ref_name if i == query_pos else seq_name
             z = tensor(z)
             if self.use_cuda:
                 z = z.cuda()
