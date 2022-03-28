@@ -1,0 +1,52 @@
+{
+  "core_params": ["--model_name test_arch",
+    "--exp_dir architecture_optimization",
+    "--query DhaA_S19",
+    "--highlight_files results/PF00561/MSA/ancestors.fasta --align",
+    "--highlight_seqs DhaA_S19",
+    "--in_file results/PF00561/MSA/dhlA_LinB.fa",
+    "--stats", "--K 1",
+    "--training_subsets 5"],
+  "variable_params": [
+    "--layers {}", "--dimensionality {}", "--num_epoch {}","--experiment {}",
+    "--C {}", "--weight_decay {}"],
+  "experiments": [
+    {
+    "status": "off",
+    "experiment": "Balanced_deep_no_cluster",
+    "layers": "291 100",
+    "dimensionality": 2,
+    "C": 3,
+    "num_epoch": 7000,
+      "weight_decay": 0.0,
+    "Note": "How well can multidimensional latent space model mutual and tree covariance?",
+    "flags" : [
+      "msa_not_cluster"
+    ]
+  },
+    {
+    "status": "on",
+    "experiment": "Balanced_deep_cluster",
+    "layers": "291 100",
+    "dimensionality": 2,
+    "C": 3,
+    "num_epoch": 7000,
+      "weight_decay": 0.0,
+    "Note": "How well can multidimensional latent space model mutual and tree covariance?",
+    "flags" : [
+    ]
+  },
+    {
+    "status": "off",
+    "experiment": "High_Dimensions_Balanced_cluster",
+    "layers": "291 100",
+    "dimensionality": 4,
+    "C": 8,
+    "num_epoch": 5500,
+      "weight_decay": 0.0,
+    "Note": "High dim latent space",
+    "flags" : [
+    ]
+  }
+  ]
+}

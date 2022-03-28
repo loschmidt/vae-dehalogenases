@@ -44,6 +44,9 @@ class CmdHandler:
         self.in_file = self.args.in_file
         self.msa_clustering = self.args.msa_not_cluster
         self.clustalo_path = self.args.clustalo_path
+        
+        # modelarch setup
+        self.convolution = self.args.convolution
 
         self.robustness_train = self.args.robustness_train
         self.robustness_measure = self.args.robustness_measure
@@ -109,6 +112,7 @@ class CmdHandler:
         parser.add_argument('--training_subsets', type=int, default=5, help=Helper.subsets.value)
         parser.add_argument('--layers', nargs='+', type=int, default=100, help=Helper.LAYERS.value)
         parser.add_argument('--dimensionality', type=int, default=2, help=Helper.DIMS.value)
+        parser.add_argument('--convolution', action='store_true', default=False, help=Helper.CONV.value)
         # Clustal path option
         parser.add_argument('--clustalo_path', type=str, default='/storage/brno2/home/xkohou15/bin/clustalo',
                             help=Helper.CLUSTAL.value)
@@ -134,14 +138,16 @@ class CmdHandler:
         self._log_run_setup_into_file()
         self._load_model_params()
         print("\n" + Helper.LOG_DELIMETER.value)
+        model_arch = "convolution" if self.convolution else "dense linear"
         print(" Parser Handler message: : running with parameters\n"
+              "                     model architecture : {}\n"
               "                           weight decay : {}\n"
               "                           layers setup : {}\n"
               "                         dimensionality : {}\n"
               "                            C parameter : {}\n"
               "                           Epochs count : {}\n"
               "                             Model name : {}\n"
-              "                                    MSA : Clustering = {}".format(self.decay, self.layers,
+              "                                    MSA : Clustering = {}".format(model_arch, self.decay, self.layers,
                                                                                  self.dimensionality,
                                                                                  self.C, self.epochs, self.model_name,
                                                                                  self.msa_clustering))

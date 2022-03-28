@@ -51,6 +51,7 @@ class Helper(Enum):
     MODEL_FOLD = "_fold_0"
 
     MSA_NOT_CLUSTER = "Setup in the case you do not wish to cluster sequences via 90% identity"
+    CONV = "Set this up to use encoder and decoder build up from from 2D convolution layers"
 
 
 class VaePaths(Enum):

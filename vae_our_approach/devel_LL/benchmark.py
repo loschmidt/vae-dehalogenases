@@ -139,7 +139,7 @@ class Benchmarker:
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
         """
-        N = 5
+        N = 500
         probs = []  # marginal propabilities
 
         if sys.argv[0] == ScriptNames.BENCH.value:

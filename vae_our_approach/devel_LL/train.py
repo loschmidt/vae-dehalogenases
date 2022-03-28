@@ -7,8 +7,10 @@ import pickle
 import numpy as np
 import torch
 import torch.optim as optim
+from torch.utils.data import DataLoader
 
-from VAE_model import VAE
+from VAE_model import VAE, MSA_Dataset
+from vae_models.cnn_vae import VaeCnn
 from download_MSA import Downloader
 from parser_handler import CmdHandler
 from project_enums import Helper
@@ -43,6 +45,7 @@ class Train:
             training_weights = np.delete(self.seq_weight, random_idx[:(self.num_seq // percentage)], axis=0)
             training_keys = np.delete(self.seq_keys, random_idx[:(self.num_seq // percentage)], axis=0)
             self.num_seq = self.seq_msa_binary.shape[0]
+            self.keys = training_keys
             with open(setuper.pickles_fld + '/positive_control.pkl', 'wb') as file_handle:
                 pickle.dump(self.benchmark_set, file_handle)
             with open(setuper.pickles_fld + '/training_set.pkl', 'wb') as file_handle:
@@ -71,8 +74,11 @@ class Train:
             print("-" * 60)
 
             # build a VAE model with random parameters
-            vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type,
-                      self.setuper.layers)
+            if self.setuper.convolution:
+                vae = VaeCnn(self.setuper.dimensionality, self.len_protein)
+            else:
+                vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type,
+                            self.setuper.layers)
 
             # random initialization of weights in the case of robustness
             if self.setuper.robustness_train:
@@ -112,16 +118,24 @@ class Train:
             if self.use_cuda:
                 train_weight = train_weight.cuda()
 
+            train_data = MSA_Dataset(train_msa, train_weight, self.keys[train_idx])
+            batch_size = 128 if self.setuper.convolution else train_msa.shape[0]
+            train_data_loader = DataLoader(train_data, batch_size=batch_size)
             train_loss_list = []
             for epoch in range(self.setuper.epochs):
-                loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight, self.setuper.C)
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+                train_loss_tmp = []
+                for data in train_data_loader:
+                    train_msa, train_weight, key = data
+                    loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight, self.setuper.C)
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+                    train_loss_tmp.append(loss.item())
 
-                train_loss_list.append(loss.item())
-                if (epoch + 1) % 50 == 0:
-                    print("Fold: {}, Epoch: {:>4}, loss: {:>4.2f}".format(k, epoch, loss.item()), flush=True)
+                train_loss_list.extend(train_loss_tmp)
+                print_limit = 5 if self.setuper.convolution else 50
+                if (epoch + 1) % print_limit == 0:
+                    print("Fold: {}, Epoch: {:>4}, loss: {:>4.2f}".format(k, epoch, train_loss_list[-1]), flush=True)
 
             ## cope trained model to cpu and save it
             if self.use_cuda:
@@ -149,20 +163,21 @@ class Train:
             # into batches.
             batch_size = 20
             num_batches = len(validation_idx) // batch_size + 1
-            for idx_batch in range(num_batches):
-                if (idx_batch + 1) % 50 == 0:
-                    print("idx_batch: {} out of {}".format(idx_batch, num_batches))
-                validation_msa = self.seq_msa_binary[
-                    validation_idx[idx_batch * batch_size:(idx_batch + 1) * batch_size]]
-                validation_msa = torch.from_numpy(validation_msa)
-                with torch.no_grad():
-                    if self.use_cuda:
-                        validation_msa = validation_msa.cuda()
-                    elbo = vae.compute_elbo_with_multiple_samples(validation_msa, 5000)
-                    elbo_on_validation_data_list.append(elbo.cpu().data.numpy())
+            if not self.setuper.convolution:
+                for idx_batch in range(num_batches):
+                    if (idx_batch + 1) % 50 == 0:
+                        print("idx_batch: {} out of {}".format(idx_batch, num_batches))
+                    validation_msa = self.seq_msa_binary[
+                        validation_idx[idx_batch * batch_size:(idx_batch + 1) * batch_size]]
+                    validation_msa = torch.from_numpy(validation_msa)
+                    with torch.no_grad():
+                        if self.use_cuda:
+                            validation_msa = validation_msa.cuda()
+                        elbo = vae.compute_elbo_with_multiple_samples(validation_msa, 5000)
+                        elbo_on_validation_data_list.append(elbo.cpu().data.numpy())
 
-            elbo_on_validation_data = np.concatenate(elbo_on_validation_data_list)
-            elbo_all_list.append(elbo_on_validation_data)
+                elbo_on_validation_data = np.concatenate(elbo_on_validation_data_list)
+                elbo_all_list.append(elbo_on_validation_data)
 
             print("Finish the {}th fold validation".format(k))
             print(Helper.LOG_DELIMETER.value)
@@ -170,7 +185,7 @@ class Train:
             if self.use_cuda:
                 torch.cuda.empty_cache()
 
-            elbo_all = np.concatenate(elbo_all_list)
+            elbo_all = np.concatenate(elbo_all_list) if not self.setuper.convolution else [0]
             elbo_mean = np.mean(elbo_all)
             # the mean_elbo can approximate the quanlity of the learned model
             # we want a model that has high mean_elbo

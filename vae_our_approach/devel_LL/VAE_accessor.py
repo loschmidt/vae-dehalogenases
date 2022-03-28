@@ -12,6 +12,7 @@ from torch import tensor
 from torch.utils.data import DataLoader
 
 from VAE_model import MSA_Dataset, VAE
+from vae_models.cnn_vae import VaeCnn
 from VAE_logger import Logger
 from project_enums import Helper
 from sequence_transformer import Transformer
@@ -40,7 +41,10 @@ class VAEAccessor:
         num_res_type = msa_original_binary.shape[2]
 
         # build a VAE model
-        vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
+        if self.setuper.convolution:
+            vae = vae = VaeCnn(self.setuper.dimensionality, len_protein)
+        else:
+            vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
         if self.model_name:
             vae.load_state_dict(torch.load(self.setuper.VAE_model_dir + "/" + self.model_name))
 

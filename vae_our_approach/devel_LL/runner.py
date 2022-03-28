@@ -6,7 +6,7 @@ import sys
 import subprocess as sp
 import json
 
-runner_json = "runner.json"
+runner_json = "model_configurations/runner-parameters.json"
 
 with open(runner_json, "r") as json_file:
     run_setup = json.load(json_file)

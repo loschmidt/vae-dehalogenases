@@ -230,6 +230,7 @@ class AncestralTree:
         pca = PCA(n_components=2)
         leaf = [k for k in key if "ancestral" not in k]
         R2, PCC, PCA_direction = [], [], []
+        root_projection_corr = []
         root_coords = np.zeros(mu.shape[0])
 
         branches = ["query", "OUT68545.1", "WP_012286701.1", "TFG98623.1", "PYV12062.1", "TDI51065.1", "TDJ42344.1"]
@@ -277,6 +278,7 @@ class AncestralTree:
             # Compute PCA component pointing to origin
             unit_origin_vec = (mu[idx] / np.linalg.norm(mu[idx]))  # to point into center of latent space
             unit_pca0_comp = pca_vector / np.linalg.norm(pca_vector)
+            root_vec_proc = root_coords * np.dot(mu[idx], root_coords) / np.dot(root_coords, root_coords)
             PCA_direction.append(np.dot(unit_origin_vec, unit_pca0_comp))
 
         if iter == 0:
