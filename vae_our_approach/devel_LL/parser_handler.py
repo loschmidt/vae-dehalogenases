@@ -12,10 +12,11 @@ import sys
 
 from typing import Dict
 from project_enums import Helper, VaePaths, ScriptNames
+from metaclasses import Singleton
 # from sequence_transformer import Transformer
 
 
-class CmdHandler:
+class CmdHandler(metaclass=Singleton):
     def __init__(self):
         # Setup all parameters
         self.exp_dir, self.args = self.get_parser()
@@ -34,6 +35,7 @@ class CmdHandler:
         self.paper_pipe = self.args.paper_pipeline
         self.align = self.args.align
         self.mut_points = self.args.mut_points
+        self.mutant_samples = self.args.mut_samples
         self.focus = self.args.focus
         self.dimensionality = self.args.dimensionality
 
@@ -88,6 +90,7 @@ class CmdHandler:
         parser.add_argument('--align', action='store_true', default=False, help=Helper.ALIGN.value)
         # Mutagenesis options
         parser.add_argument('--mut_points', type=int, default=1, help=Helper.MUT_POINTS.value)
+        parser.add_argument('--mut_samples', type=int, default=50, help=Helper.MUT_SAMPLES.value)
         # EnzymeMiner scraper options
         parser.add_argument('--preserve_catalytic', action='store_true', default=False, help=Helper.PRESERVE.value)
         parser.add_argument('--ec_num', type=str, default="3.8.1.5", help=Helper.EC_NUM.value)
@@ -127,7 +130,8 @@ class CmdHandler:
                 ('--run_package_stats_mapper' not in unknown and len(unknown) > 0) and \
                 ('--run_package_stats_reconstruction' not in unknown and len(unknown) > 0) and \
                 ('--run_generative_evaluation_plot' not in unknown and len(unknown) > 0) and \
-                ('--run_generative_evaluation' not in unknown and len(unknown) > 0):
+                ('--run_generative_evaluation' not in unknown and len(unknown) > 0) and \
+                ('--run_random_mutagenesis' not in unknown and len(unknown) > 0):
             print(' Parser error : unrecognized parameters', unknown)
             exit(1)
         return args.exp_dir, args

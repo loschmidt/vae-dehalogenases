@@ -10,6 +10,9 @@ from Statistics.label_mapper import run_latent_mapper as model_mapper_run
 from Statistics.order_statistics import run_setup as model_statistics_run
 from Statistics.reconstruction_ability import run_input_dataset_reconstruction as model_input_reconstruct_run
 from Statistics.stats_plot import make_overview as plot_overview
+
+from reconstruction.mutagenesis import run_random_mutagenesis
+
 from VAE_logger import Capturing
 
 
@@ -36,6 +39,8 @@ def get_package_parser() -> ArgumentParser:
                         help="Plot all statistics in one plot")
     parser.add_argument("--run_generative_evaluation", action='store_true', default=False,
                         help="Run all statistics and then plot")
+    parser.add_argument("--run_random_mutagenesis", action='store_true', default=False,
+                        help="Run random mutagenesis for query sequence")
     return parser
 
 
@@ -66,6 +71,8 @@ def run_package(parser: ArgumentParser):
         print("  Running order reconstruction.. ")
         with Capturing() as output:
             model_input_reconstruct_run()
+    if args.run_random_mutagenesis:
+        run_random_mutagenesis()
 
 
 if __name__ == '__main__':

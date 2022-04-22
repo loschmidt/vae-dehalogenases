@@ -165,19 +165,31 @@ class MutagenesisGenerator:
             return [], []
 
 
+def run_random_mutagenesis():
+    """ Task description for random mutagenesis approach """
+    cmd_line = CmdHandler()
+    mutation_generator = MutagenesisGenerator(setuper=cmd_line, num_point_mut=cmd_line.mut_points)
+    ancs, anc_names, mutants_coords = mutation_generator.reconstruct_ancestors(samples=cmd_line.mutant_samples)
+
+    file_templ = 'random{}_' + str(cmd_line.mut_points) + '_points_mutants_' + str(cmd_line.mutant_samples)
+    h = Highlighter(cmd_line)
+    h.highlight_mutants(ancs, anc_names, mutants_coords,
+                        file_name=file_templ.format(''))
+    if cmd_line.focus:
+        h.highlight_mutants(ancs, anc_names, mutants_coords, file_name=file_templ.format('_focus'),
+                            focus=cmd_line.focus)
+
+    # prepare sequence dictionary
+    seq_dict = {}
+    for seq_name, seq in zip(anc_names, ancs):
+        seq_dict[seq_name] = seq
+    mutation_generator.exp_handler.create_and_store_ancestor_statistics(seq_dict, file_templ.format(''), mutants_coords)
+
 if __name__ == '__main__':
     tar_dir = CmdHandler()
     dow = Downloader(tar_dir)
 
-    # ref = MutagenesisGenerator.binary_to_seq(tar_dir,seq_key='P27652.1')
-    # ref_binary = MutagenesisGenerator.binary_to_seq(tar_dir, seq_key='P59336_S14', return_binary=True)
     mut = MutagenesisGenerator(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
-    # ancs, names, muts = mut.reconstruct_ancestors(samples=tar_dir.mutant_samples)
-    # h = Highlighter(tar_dir)
-    # h.highlight_mutants(ancs, names, muts, file_name='mutans_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples))
-    # if tar_dir.focus:
-    #     h.highlight_mutants(ancs, names, muts, file_name='mutans_focus_{}_{}'.format(tar_dir.mut_points, tar_dir.mutant_samples), focus=tar_dir.focus)
-    # mut.store_ancestors_in_fasta(names)
     names, ancestors, probs = mut.get_straight_ancestors()
     # given_anc_probs, given_anc_names = mut.measure_probability_given_ancestors()
     # h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)

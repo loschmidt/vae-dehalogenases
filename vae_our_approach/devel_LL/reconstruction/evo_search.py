@@ -15,7 +15,7 @@ from EVO.create_library import CommandHandler, Curator
 from analyzer import AncestorsHandler
 from VAE_accessor import VAEAccessor
 from benchmark import Benchmarker as Vae_encoder
-from cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
+from devel_LL.reconstruction.cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
 from experiment_handler import ExperimentStatistics
 from parser_handler import CmdHandler
 
