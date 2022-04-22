@@ -522,3 +522,7 @@ if __name__ == '__main__':
             highlighter.highlight_name(name=n)
     if tar_dir.highlight_instricts:
         highlighter.plot_instrict_dimensions(mus)
+
+    plt.clf()
+    plt.plot(mus[:, 0], mus[:, 1], '.', alpha=0.1, markersize=3, )
+    plt.savefig(tar_dir.high_fld + "/latent_space.png", dpi=600)
