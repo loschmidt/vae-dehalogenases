@@ -35,6 +35,16 @@ class MSA:
                     name, seq = fasta.id, str(fasta.seq)
                     seq_dict[name] = seq.upper()
                 Logger.update_msg(value="done!", new_line=True)
+            elif file.endswith('.txt') or file.endswith('.stockholm'):
+                with open(file, 'r') as lines:
+                    for line in lines:
+                        if line[0] == "#" or line[0] == "/" or line[0] == "":
+                            continue
+                        line = line.strip()
+                        if len(line) == 0:
+                            continue
+                        seq_id, seq = line.split()
+                        seq_dict[seq_id] = seq.upper()
         else:
             Logger.update_msg(value="cannot be done! No file parameter passed to the function", new_line=True)
         return seq_dict
