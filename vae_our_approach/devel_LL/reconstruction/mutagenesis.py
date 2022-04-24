@@ -169,21 +169,22 @@ def run_random_mutagenesis():
     """ Task description for random mutagenesis approach """
     cmd_line = CmdHandler()
     mutation_generator = MutagenesisGenerator(setuper=cmd_line, num_point_mut=cmd_line.mut_points)
-    ancs, anc_names, mutants_coords = mutation_generator.reconstruct_ancestors(samples=cmd_line.mutant_samples)
+    mutant_coords, anc_names, mutants_seq = mutation_generator.reconstruct_ancestors(samples=cmd_line.mutant_samples)
 
     file_templ = 'random{}_' + str(cmd_line.mut_points) + '_points_mutants_' + str(cmd_line.mutant_samples)
     h = Highlighter(cmd_line)
-    h.highlight_mutants(ancs, anc_names, mutants_coords,
+    h.highlight_mutants(mutant_coords, anc_names, mutants_seq,
                         file_name=file_templ.format(''))
     if cmd_line.focus:
-        h.highlight_mutants(ancs, anc_names, mutants_coords, file_name=file_templ.format('_focus'),
+        h.highlight_mutants(mutant_coords, anc_names, mutants_seq, file_name=file_templ.format('_focus'),
                             focus=cmd_line.focus)
 
     # prepare sequence dictionary
     seq_dict = {}
-    for seq_name, seq in zip(anc_names, ancs):
+    for seq_name, seq in zip(anc_names, mutants_seq):
         seq_dict[seq_name] = seq
-    mutation_generator.exp_handler.create_and_store_ancestor_statistics(seq_dict, file_templ.format(''), mutants_coords)
+    print(seq_dict) # TODO musi se predelat do cisel tohle jsou coordinates
+    mutation_generator.exp_handler.create_and_store_ancestor_statistics(seq_dict, file_templ.format(''), mutants_seq)
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
