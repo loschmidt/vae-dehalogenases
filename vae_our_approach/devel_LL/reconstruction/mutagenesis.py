@@ -36,24 +36,27 @@ class MutagenesisGenerator:
         self.cur_name = list(ref_dict.keys())[0]
         self.exp_handler = ExperimentStatistics(setuper, experiment_name="Mutagenesis_experiment")
 
-    def reconstruct_ancestors(self, samples=10):
-        mutants_samples = []
-        ancestors = []
+    def random_mutagenesis(self, samples=10):
+        """ Simulate random walk in the latent space by sequence mutation """
+        mutants_coords = []
+        ancestors_coords, ancestors_seq = [], []
         anc_names = []
         anc_n = self.cur_name
 
-        ancestor_dist, ancestor, anc_pos, _ = self._get_ancestor(mutants=self.cur)
-        ancestors.append(anc_pos)
+        ancestor_dist, ancestor, anc_pos, _ = self.get_closest_mutant(mutants=self.cur)
+        ancestors_coords.append(anc_pos)
+        ancestors_seq.append(list(self.cur.values())[0])
         anc_names.append(anc_n)
         while ancestor_dist > self.threshold:
             self.anc_seqs.append(ancestor)
             mutant_seqs = self._produce_mutants(ancestor, samples)
-            anc_n = 'anc_{}'.format(len(mutants_samples))
-            ancestor_dist, ancestor, anc_pos, mutants_pos = self._get_ancestor(mutants=mutant_seqs)
-            mutants_samples.append(mutants_pos)
-            ancestors.append(anc_pos)
+            anc_n = 'anc_{}'.format(len(mutants_coords))
+            ancestor_dist, ancestor, anc_pos, mutants_pos = self.get_closest_mutant(mutants=mutant_seqs)
+            mutants_coords.append(mutants_pos)
+            ancestors_coords.append(anc_pos)
+            ancestors_seq.append(ancestor)
             anc_names.append(anc_n)
-        return ancestors, anc_names, mutants_samples
+        return ancestors_coords, anc_names, mutants_coords, ancestors_seq
 
     def _produce_mutants(self, gene, samples):
         mutant_seqs = {}  # List of dictionaries with fake names
@@ -86,11 +89,13 @@ class MutagenesisGenerator:
         return mutant_seqs
 
     def _mutants_positions(self, seqs):
+        """ Get mutants position in the latent space from dictionary """
         binary, weights, keys = self.transformer.sequence_dict_to_binary(seqs)
         data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
         return data
 
-    def _get_ancestor(self, mutants):
+    def get_closest_mutant(self, mutants):
+        """ Get mutant with highest proximity to the origin """
         mutants_pos = self._mutants_positions(mutants)
         seqs = list(mutants.values())
         min_dist = float("inf")
@@ -169,22 +174,24 @@ def run_random_mutagenesis():
     """ Task description for random mutagenesis approach """
     cmd_line = CmdHandler()
     mutation_generator = MutagenesisGenerator(setuper=cmd_line, num_point_mut=cmd_line.mut_points)
-    mutant_coords, anc_names, mutants_seq = mutation_generator.reconstruct_ancestors(samples=cmd_line.mutant_samples)
+    anc_coords, anc_names, mutants_coords, anc_seq = \
+        mutation_generator.random_mutagenesis(samples=cmd_line.mutant_samples)
 
     file_templ = 'random{}_' + str(cmd_line.mut_points) + '_points_mutants_' + str(cmd_line.mutant_samples)
     h = Highlighter(cmd_line)
-    h.highlight_mutants(mutant_coords, anc_names, mutants_seq,
+    h.highlight_mutants(anc_coords, anc_names, mutants_coords,
                         file_name=file_templ.format(''))
     if cmd_line.focus:
-        h.highlight_mutants(mutant_coords, anc_names, mutants_seq, file_name=file_templ.format('_focus'),
+        h.highlight_mutants(anc_coords, anc_names, mutants_coords, file_name=file_templ.format('_focus'),
                             focus=cmd_line.focus)
 
     # prepare sequence dictionary
     seq_dict = {}
-    for seq_name, seq in zip(anc_names, mutants_seq):
+    for seq_name, seq in zip(anc_names, anc_seq):
         seq_dict[seq_name] = seq
-    print(seq_dict) # TODO musi se predelat do cisel tohle jsou coordinates
-    mutation_generator.exp_handler.create_and_store_ancestor_statistics(seq_dict, file_templ.format(''), mutants_seq)
+
+    mutation_generator.exp_handler.create_and_store_ancestor_statistics(seq_dict, file_templ.format(''), anc_coords)
+
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
