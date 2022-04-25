@@ -41,6 +41,8 @@ def get_package_parser() -> ArgumentParser:
                         help="Run all statistics and then plot")
     parser.add_argument("--run_random_mutagenesis", action='store_true', default=False,
                         help="Run random mutagenesis for query sequence")
+    parser.add_argument("--run_multicriterial_random_mutagenesis", action='store_true', default=False,
+                        help="Run random mutagenesis for query sequence")
     return parser
 
 
@@ -73,6 +75,8 @@ def run_package(parser: ArgumentParser):
             model_input_reconstruct_run()
     if args.run_random_mutagenesis:
         run_random_mutagenesis()
+    if args.run_multicriterial_random_mutagenesis:
+        run_random_mutagenesis(multicriterial=True)
 
 
 if __name__ == '__main__':

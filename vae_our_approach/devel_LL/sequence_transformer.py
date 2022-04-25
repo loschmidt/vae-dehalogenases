@@ -122,3 +122,12 @@ class Transformer(metaclass=Singleton):
         binary = binary.reshape((binary.shape[0], -1))
         binary = binary.astype(np.float32)
         return binary, weights
+
+    @staticmethod
+    def seq_list_to_dict(seq_list):
+        """ Convert only sequences to dict form """
+        ret_dict = {}
+        for i, seq in enumerate(seq_list):
+            seq_n = "tmp_seq_{}".format(i)
+            ret_dict[seq_n] = seq
+        return ret_dict

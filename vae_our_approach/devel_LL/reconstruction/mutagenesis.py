@@ -2,6 +2,8 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/09/03 09:36:00"
 
 import pickle
+import torch
+import numpy as np
 from math import sqrt
 from random import randrange, sample
 
@@ -18,7 +20,7 @@ class MutagenesisGenerator:
 
     number_of_successors = 30
 
-    def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.2):
+    def __init__(self, setuper, ref_dict=None, num_point_mut=1, distance_threshold=0.08):
         self.num_mutations = num_point_mut
         self.handler = VAEAccessor(setuper, model_name=setuper.get_model_to_load())
         self.threshold = distance_threshold
@@ -36,7 +38,7 @@ class MutagenesisGenerator:
         self.cur_name = list(ref_dict.keys())[0]
         self.exp_handler = ExperimentStatistics(setuper, experiment_name="Mutagenesis_experiment")
 
-    def random_mutagenesis(self, samples=10):
+    def random_mutagenesis(self, samples=10, multicriterial=False):
         """ Simulate random walk in the latent space by sequence mutation """
         mutants_coords = []
         ancestors_coords, ancestors_seq = [], []
@@ -52,11 +54,36 @@ class MutagenesisGenerator:
             mutant_seqs = self._produce_mutants(ancestor, samples)
             anc_n = 'anc_{}'.format(len(mutants_coords))
             ancestor_dist, ancestor, anc_pos, mutants_pos = self.get_closest_mutant(mutants=mutant_seqs)
+            # Multi-criterial optimization with sequence likelihood
+            if multicriterial:
+                anc_pos, ancestor = self.pareto_optimalization(mutant_seqs, mutants_pos)
             mutants_coords.append(mutants_pos)
             ancestors_coords.append(anc_pos)
             ancestors_seq.append(ancestor)
             anc_names.append(anc_n)
         return ancestors_coords, anc_names, mutants_coords, ancestors_seq
+
+    def pareto_optimalization(self, mutants_seq, mutants_pos):
+        """ Use multicriterial selection of sequence coords and likelihood """
+        seq_binaries, _, keys = self.transformer.sequence_dict_to_binary(mutants_seq)
+
+        # return log likelihood which should be maximized thus exponential and 1 minus exp
+        # then minimization for either distance or likelihood
+        seq_binaries = torch.from_numpy(seq_binaries)
+        log_like = 1 - torch.exp(self.handler.get_marginal_probability(seq_binaries, multiple_likelihoods=True))
+        # sequence distance normalized
+        seq_distances = np.array([np.sqrt(d.dot(d)) for d in mutants_pos])
+        seq_distances_norm = seq_distances / seq_distances.max()
+
+        # pareto selection simplified by proximity in 2D graph to optimal solution at the origin
+        min_idx, min_val = 0, 60000
+        for i, (like, d) in enumerate(zip(log_like, seq_distances_norm)):
+            v = np.array([like, d])
+            v_dist = np.sqrt(v.dot(v))
+            if v_dist < min_val:
+                min_val = v_dist
+                min_idx = i
+        return mutants_pos[min_idx], mutants_seq["mut_{}".format(min_idx)]
 
     def _produce_mutants(self, gene, samples):
         mutant_seqs = {}  # List of dictionaries with fake names
@@ -102,7 +129,7 @@ class MutagenesisGenerator:
         ancestor = []
         anc_pos = []
         for i, p in enumerate(mutants_pos):
-            dis = sqrt(p[0] ** 2 + p[1] ** 2)
+            dis = sqrt(sum([p_i**2 for p_i in p]))#sqrt(p[0] ** 2 + p[1] ** 2)
             if dis < min_dist:
                 min_dist = dis
                 ancestor = seqs[i]
@@ -170,12 +197,15 @@ class MutagenesisGenerator:
             return [], []
 
 
-def run_random_mutagenesis():
-    """ Task description for random mutagenesis approach """
+def run_random_mutagenesis(multicriterial=False):
+    """
+    Task description for random mutagenesis approach
+    If the multicriterial parameters is on than we are doing multi-criterial optimization with likelihood of sequence
+    """
     cmd_line = CmdHandler()
     mutation_generator = MutagenesisGenerator(setuper=cmd_line, num_point_mut=cmd_line.mut_points)
     anc_coords, anc_names, mutants_coords, anc_seq = \
-        mutation_generator.random_mutagenesis(samples=cmd_line.mutant_samples)
+        mutation_generator.random_mutagenesis(samples=cmd_line.mutant_samples, multicriterial=multicriterial)
 
     file_templ = 'random{}_' + str(cmd_line.mut_points) + '_points_mutants_' + str(cmd_line.mutant_samples)
     h = Highlighter(cmd_line)

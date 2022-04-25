@@ -1,6 +1,32 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/08/10 11:30:00"
 
+import os, sys, inspect
+currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentDir = os.path.dirname(currentDir)
+sys.path.insert(0, parentDir)
+
+from project_enums import Helper
+
+# check the existence of geckodriver in custom directory
+geckodriver_path = "./msa_handlers/selenium_drivers/geckodriver"
+
+if not os.path.isfile(geckodriver_path):
+    print()
+    print(Helper.LOG_DELIMETER.value)
+    print("   Selenium driver are not installed yet!\n"
+          "   please run following commands:\n"
+          "      1) enter selenium driver local directory: cd ./msa_handlers/selenium_driver/\n"
+          "      2) install drivers: ./install_selenium_webdriver.sh\n"
+          "      3) enter back to project root: cd ./../../\n"
+          "      4) modify line of code in file msa_handlers/catalytic_res_msa_filter.py:27 "
+          "to navigate to correct file")
+    exit(0)
+else:
+    pwd = os.getcwd()
+    os.environ['PATH'] += ":" + "/storage/brno2/home/xkohou15/msa_handlers/selenium_driver"
+    print(os.environ['PATH'])
+
 from msa_handlers.download_MSA import Downloader
 from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler

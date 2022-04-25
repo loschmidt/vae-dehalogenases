@@ -177,6 +177,8 @@ class VAEAccessor:
                 x = x.cuda()
             # indices already on cpu(not tensor)
             ret = vae.get_sequence_log_likelihood(x, multiple_likelihoods)
+            if self.use_cuda:
+                ret = ret.cpu()
         return ret
 
     def residues_probability(self, x):

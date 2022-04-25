@@ -131,7 +131,8 @@ class CmdHandler(metaclass=Singleton):
                 ('--run_package_stats_reconstruction' not in unknown and len(unknown) > 0) and \
                 ('--run_generative_evaluation_plot' not in unknown and len(unknown) > 0) and \
                 ('--run_generative_evaluation' not in unknown and len(unknown) > 0) and \
-                ('--run_random_mutagenesis' not in unknown and len(unknown) > 0):
+                ('--run_random_mutagenesis' not in unknown and len(unknown) > 0) and \
+                ('--run_multicriterial_random_mutagenesis' not in unknown and len(unknown) > 0):
             print(' Parser error : unrecognized parameters', unknown)
             exit(1)
         return args.exp_dir, args
