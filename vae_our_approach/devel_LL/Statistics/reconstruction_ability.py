@@ -10,7 +10,7 @@ from parser_handler import CmdHandler
 from project_enums import VaePaths
 from sequence_transformer import Transformer
 from analyzer import AncestorsHandler
-from msa_preparation import MSA
+from msa_handlers.msa_preparation import MSA
 from VAE_accessor import VAEAccessor
 from experiment_handler import ExperimentStatistics
 

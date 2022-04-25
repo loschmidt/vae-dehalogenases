@@ -7,9 +7,9 @@ from random import randrange, sample
 
 from analyzer import Highlighter, AncestorsHandler
 from VAE_accessor import VAEAccessor
-from download_MSA import Downloader
+from msa_handlers.download_MSA import Downloader
 from experiment_handler import ExperimentStatistics
-from msa_preparation import MSA
+from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer
 

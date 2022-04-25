@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from VAE_model import VAE, MSA_Dataset
 from vae_models.cnn_vae import VaeCnn
-from download_MSA import Downloader
+from msa_handlers.download_MSA import Downloader
 from parser_handler import CmdHandler
 from project_enums import Helper
 

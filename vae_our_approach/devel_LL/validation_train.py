@@ -7,8 +7,8 @@ import torch
 import torch.optim as optim
 
 from parser_handler import CmdHandler
-from download_MSA import Downloader
-from VAE_model import MSA_Dataset, VAE
+from msa_handlers.download_MSA import Downloader
+from VAE_model import VAE
 from matplotlib import pyplot as plt
 
 class Train:

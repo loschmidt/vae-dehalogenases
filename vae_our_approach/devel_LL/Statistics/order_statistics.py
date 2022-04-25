@@ -17,7 +17,7 @@ sys.path.insert(0, parentDir)
 
 from parser_handler import CmdHandler
 from project_enums import VaePaths
-from msa_preparation import MSA
+from msa_handlers.msa_preparation import MSA
 from sequence_transformer import Transformer
 from VAE_accessor import VAEAccessor
 from VAE_logger import Logger

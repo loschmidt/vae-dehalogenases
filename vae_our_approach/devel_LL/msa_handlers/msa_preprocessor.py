@@ -9,8 +9,8 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from download_MSA import Downloader
-from msa_preparation import MSA
+from msa_handlers.download_MSA import Downloader
+from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler
 from project_enums import Helper
 from VAE_logger import Logger

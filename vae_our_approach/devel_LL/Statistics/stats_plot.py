@@ -11,7 +11,7 @@ from Statistics.order_statistics import OrderStatistics
 from Statistics.reconstruction_ability import Reconstructor
 from VAE_accessor import VAEAccessor
 from analyzer import AncestorsHandler
-from msa_preparation import MSA
+from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler
 from project_enums import VaePaths
 from sequence_transformer import Transformer

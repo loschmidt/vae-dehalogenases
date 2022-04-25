@@ -3,7 +3,6 @@ __date__ = "2020/07/18 09:33:12"
 
 import os
 import pickle
-import multiprocessing
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,9 +13,9 @@ from multiprocessing import Pool
 
 from VAE_accessor import VAEAccessor
 from VAE_logger import Logger, Capturing
-from download_MSA import Downloader
+from msa_handlers.download_MSA import Downloader
 from experiment_handler import ExperimentStatistics
-from msa_preparation import MSA
+from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler
 from sequence_transformer import Transformer
 from supportscripts.animator import GifMaker

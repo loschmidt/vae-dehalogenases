@@ -14,7 +14,7 @@ parentDir = os.path.dirname(currentDir)
 sys.path.insert(0, parentDir)
 
 from sequence_transformer import Transformer
-from msa_preparation import MSA
+from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler
 from project_enums import VaePaths
 from VAE_accessor import VAEAccessor

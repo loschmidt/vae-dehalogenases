@@ -3,10 +3,9 @@ __date__ = "2021/06/09 00:30:00"
 
 import numpy as np
 import pickle
-import torch
 
-from msa_preprocessor import MSAPreprocessor as Convertor
-from msa_preparation import MSA
+from msa_handlers.msa_preprocessor import MSAPreprocessor as Convertor
+from msa_handlers.msa_preparation import MSA
 from metaclasses import Singleton
 
 

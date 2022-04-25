@@ -15,8 +15,8 @@ import torch
 from matplotlib import pyplot as plt
 
 from VAE_accessor import VAEAccessor
-from download_MSA import Downloader
-from msa_preprocessor import MSAPreprocessor as BinaryCovertor
+from msa_handlers.download_MSA import Downloader
+from msa_handlers.msa_preprocessor import MSAPreprocessor as BinaryCovertor
 from parser_handler import CmdHandler
 from project_enums import ScriptNames, VaePaths
 from sequence_transformer import Transformer

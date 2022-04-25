@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from msa_preparation import MSA
+from msa_handlers.msa_preparation import MSA
 
 
 class Flatten(nn.Module):

@@ -7,7 +7,7 @@ import pickle
 from parser_handler import CmdHandler
 from analyzer import Highlighter
 from VAE_accessor import VAEAccessor
-from msa_preprocessor import MSAPreprocessor as Convertor
+from msa_handlers.msa_preprocessor import MSAPreprocessor as Convertor
 from math import sqrt
 
 
@@ -115,7 +115,7 @@ class Robustness:
         if not os.path.isfile(filename):
             print("Robustness message : Not find reference straight ancestors in file", filename)
             exit(0)
-        from msa_preparation import MSA
+        from msa_handlers.msa_preparation import MSA
         self.setuper.set_msa_file("tmp")  # Secure that msa file attribute exists
         ancs = MSA.load_msa(filename)
         return ancs

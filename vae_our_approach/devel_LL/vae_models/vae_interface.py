@@ -143,27 +143,13 @@ class VAEInterface(nn.Module):
     def compute_weighted_elbo(self, x, weight, c_fx_x=2):
         """
         TO BE OVERWRITTEN
-        c_fx_x - 
+        c_fx_x - the trade off between latent space regularization parameter and reconstruction accuracy in flipped
+                 order -> 1/c_fx_x
         """
 
     def compute_elbo_with_multiple_samples(self, x, num_samples):
-        with torch.no_grad():
-            x = x.expand(num_samples, x.shape[0], x.shape[1])
-            mu, sigma = self.encoder(x)
-            eps = torch.randn_like(mu)
-            z = mu + sigma * eps
-            log_Pz = torch.sum(-0.5 * z ** 2 - 0.5 * torch.log(2 * z.new_tensor(np.pi)), -1)
-            log_p = self.decoder(z)
-            log_PxGz = torch.sum(x * log_p, -1)
-            log_Pxz = log_Pz + log_PxGz
-
-            log_QzGx = torch.sum(-0.5 * (eps) ** 2 -
-                                 0.5 * torch.log(2 * z.new_tensor(np.pi))
-                                 - torch.log(sigma), -1)
-            log_weight = (log_Pxz - log_QzGx).detach().data
-            log_weight = log_weight.double()
-            log_weight_max = torch.max(log_weight, 0)[0]
-            log_weight = log_weight - log_weight_max
-            weight = torch.exp(log_weight)
-            elbo = torch.log(torch.mean(weight, 0)) + log_weight_max
-            return elbo
+        """
+        TO BE OVERWRITTEN
+        c_fx_x - the trade off between latent space regularization parameter and reconstruction accuracy in flipped
+                 order -> 1/c_fx_x
+        """
