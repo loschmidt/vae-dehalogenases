@@ -1,7 +1,7 @@
-__author__ = "Xinqiang Ding <xqding@umich.edu>"
+__author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2017/10/16 02:50:08"
 
-"""Modified by Pavel Kohout"""
+"""Modified by Pavel Kohout, original proposed by Xinqiang Ding <xqding@umich.edu>"""
 
 import numpy as np
 import torch
@@ -9,13 +9,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 
+from project_enums import SolubilitySetting
+
 class MSA_Dataset(Dataset):
-    '''
+    """
     Dataset class for multiple sequence alignment.
-    '''
+    """
     
     def __init__(self, seq_msa_binary, seq_weight, seq_keys):
-        '''
+        """
         seq_msa_binary: a two dimensional np.array. 
                         size: [num_of_sequences, length_of_msa*num_amino_acid_types]
         seq_weight: one dimensional array. 
@@ -23,7 +25,7 @@ class MSA_Dataset(Dataset):
                     Weights for sequences in a MSA. 
                     The sum of seq_weight has to be equal to 1 when training latent space models using VAE
         seq_keys: name of sequences in MSA
-        '''
+        """
         super(MSA_Dataset).__init__()
         self.seq_msa_binary = seq_msa_binary
         self.seq_weight = seq_weight
@@ -37,23 +39,29 @@ class MSA_Dataset(Dataset):
     def __getitem__(self, idx):
         return self.seq_msa_binary[idx, :], self.seq_weight[idx], self.seq_keys[idx]
 
+
 class VAE(nn.Module):
+    """
+    The core latent space model based on variational autoencoder framework with standard
+    fully connected layer parametrized by constructor argument value.
+    """
+
     def __init__(self, num_aa_type, dim_latent_vars, dim_msa_vars, num_hidden_units):
         super(VAE, self).__init__()
 
-        ## num of amino acid types
+        # num of amino acid types
         self.num_aa_type = num_aa_type
 
-        ## dimension of latent space
+        # dimension of latent space
         self.dim_latent_vars = dim_latent_vars
 
-        ## dimension of binary representation of sequences
+        # dimension of binary representation of sequences
         self.dim_msa_vars = dim_msa_vars
 
-        ## num of hidden neurons in encoder and decoder networks
+        # num of hidden neurons in encoder and decoder networks
         self.num_hidden_units = num_hidden_units
 
-        ## encoder
+        # encoder
         self.encoder_linears = nn.ModuleList()
         self.encoder_linears.append(nn.Linear(dim_msa_vars, num_hidden_units[0]))
         for i in range(1, len(num_hidden_units)):
@@ -61,7 +69,7 @@ class VAE(nn.Module):
         self.encoder_mu = nn.Linear(num_hidden_units[-1], dim_latent_vars, bias = True)
         self.encoder_logsigma = nn.Linear(num_hidden_units[-1], dim_latent_vars, bias = True)
 
-        ## decoder
+        # decoder
         self.decoder_linears = nn.ModuleList()
         self.decoder_linears.append(nn.Linear(dim_latent_vars, num_hidden_units[0]))
         for i in range(1, len(num_hidden_units)):
