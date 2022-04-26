@@ -20,19 +20,19 @@ class VAEInterface(nn.Module):
     def __init__(self, num_aa_type, dim_latent_vars, dim_msa_vars, num_hidden_units):
         super(VAEInterface, self).__init__()
 
-        ## num of amino acid types
+        # num of amino acid types
         self.num_aa_type = num_aa_type
 
-        ## dimension of latent space
+        # dimension of latent space
         self.dim_latent_vars = dim_latent_vars
 
-        ## dimension of binary representation of sequences
+        # dimension of binary representation of sequences
         self.dim_msa_vars = dim_msa_vars
 
-        ## num of hidden neurons in encoder and decoder networks
+        # num of hidden neurons in encoder and decoder networks
         self.num_hidden_units = num_hidden_units
 
-        ## encoder
+        # encoder
         self.encoder_linears = nn.ModuleList()
         self.encoder_linears.append(nn.Linear(dim_msa_vars, num_hidden_units[0]))
         for i in range(1, len(num_hidden_units)):
@@ -40,7 +40,7 @@ class VAEInterface(nn.Module):
         self.encoder_mu = nn.Linear(num_hidden_units[-1], dim_latent_vars, bias=True)
         self.encoder_logsigma = nn.Linear(num_hidden_units[-1], dim_latent_vars, bias=True)
 
-        ## decoder
+        # decoder
         self.decoder_linears = nn.ModuleList()
         self.decoder_linears.append(nn.Linear(dim_latent_vars, num_hidden_units[0]))
         for i in range(1, len(num_hidden_units)):
