@@ -190,11 +190,20 @@ class VAEInterface(nn.Module):
                  order -> 1/c_fx_x
         """
         with torch.no_grad():
-            x = x.expand(num_samples, x.shape[0], x.shape[1])
-            mu, sigma = self.encoder(x, c)
+            x_c = Transformer.add_condition(x, c)
+
+            x_c = x_c.expand(num_samples, x_c.shape[0], x_c.shape[1])
+            mu, sigma = self.encoder(x_c)
             eps = torch.randn_like(mu)
             z = mu + sigma * eps
             log_Pz = torch.sum(-0.5*z**2 - 0.5*torch.log(2*z.new_tensor(np.pi)), -1)
+            # if c is not None:
+            #     label_z = torch.zeros(z.shape[0], c.shape[0], 5).cuda()
+            #     for i, sample_z in enumerate(z):
+            #         tmp = Transformer.add_condition(sample_z, c)
+            #         label_z[i] = tmp
+            #         print(z.shape)
+            #     z = label_z.cuda()
             log_p = self.decoder(z, c)
             log_PxGz = torch.sum(x*log_p, -1)
             log_Pxz = log_Pz + log_PxGz

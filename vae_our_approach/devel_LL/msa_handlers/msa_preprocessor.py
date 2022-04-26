@@ -1,6 +1,11 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2020/08/24 11:30:00"
 
+import os, sys, inspect
+currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentDir = os.path.dirname(currentDir)
+sys.path.insert(0, parentDir)
+
 import pickle
 from copy import deepcopy
 from random import randint
@@ -12,7 +17,7 @@ import pandas as pd
 from msa_handlers.download_MSA import Downloader
 from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler
-from project_enums import Helper
+from project_enums import Helper, SolubilitySetting
 from VAE_logger import Logger
 
 
@@ -35,6 +40,7 @@ class MSAPreprocessor:
         msa_overlap = self.filter_query_no_overlap_sequences(msa_filtered)
         self.weight_sequences(msa_overlap)
         MSA.number_to_binary(msa_overlap, self.pickle)
+        self.prepare_solubility_data()
         self._stats(msa_overlap)
 
     def prepare_aligned_msa_for_Vae(self, msa: Dict[str, str]):
@@ -273,6 +279,44 @@ class MSAPreprocessor:
             print(' \tSequences removed due to noessential AA: ', self.no_essentials)
             print(Helper.LOG_DELIMETER.value)
             print()
+
+    def prepare_solubility_data(self):
+        """
+        If solubility data are provided prepare solubility dictionary level encoding
+            the original input sequences are divided into 3 bins as following:
+            1 - predicted low (<40%) solubility
+            2 - predicted medium (40 - 72.5 %) solubility
+            3 - predicted high (>72.5 %) solubility
+        """
+        def calc_bin(sol_val: float):
+            if sol_val < 0.40:
+                return SolubilitySetting.SOL_BIN_LOW.value
+            if sol_val <= 72.5:
+                return SolubilitySetting.SOL_BIN_MEDIUM.value
+            return SolubilitySetting.SOL_BIN_HIGH.value
+
+        if not self.setuper.solubility_file:
+            return
+        with open(self.pickle + "/keys_list.pkl", 'rb') as file_handle:
+            keys = pickle.load(file_handle)
+        solubilities = np.zeros(len(keys))
+        with open(self.setuper.solubility_file, "r") as sol_data:
+            for i, record in enumerate(sol_data):
+                if i == 0: # header
+                    continue
+                key, sol = record.split("\t")
+                if key in keys:
+                    ind = keys.index(key)
+                    solubilities[ind] = sol
+            float_solubilities = np.array(solubilities).astype(float)
+            solubility_bins = []
+            # include to bins
+            for sd in float_solubilities:
+                solubility_bins.append(calc_bin(sd))
+        with open(self.pickle + "/solubilities.pkl", "wb") as sol_pkl:
+            pickle.dump(np.array(solubility_bins), sol_pkl)
+        print(Helper.LOG_DELIMETER.value)
+        print(" Parsing of solubility data done with {} records".format(len(solubilities)))
 
 
 if __name__ == '__main__':

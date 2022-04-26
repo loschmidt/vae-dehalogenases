@@ -10,15 +10,11 @@ from msa_handlers.msa_preparation import MSA
 
 class Flatten(nn.Module):
     def forward(self, input):
-        # print("Flatten before ", input.shape)
-        # print("Flatten after ", input.view(input.size(0), -1).shape)
         return input.view(input.size(0), -1)
 
 
 class UnFlatten(nn.Module):
     def forward(self, input, size=64):
-        # print("UnFlatten before ", input.shape)
-        # print("UnFlatten after ", input.view(-1, size, 33, 6).shape)
         return input.view(-1, size, 10, 8)
 
 

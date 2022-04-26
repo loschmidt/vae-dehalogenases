@@ -3,10 +3,8 @@ __date__ = "2022/03/28 02:50:08"
 __description__ = " Implementation of conditonal variational autoencoder " \
                   "held out of original pipeline to keep it clear and save."
 
-import torch
 import torch.nn as nn
 
-from sequence_transformer import Transformer
 from vae_models.vae_interface import VAEInterface
 from project_enums import SolubilitySetting
 
@@ -33,4 +31,4 @@ class CVAE(VAEInterface):
         for i in range(1, len(num_hidden_units)):
             self.decoder_linears.append(nn.Linear(num_hidden_units[i - 1], num_hidden_units[i]))
         self.decoder_linears.append(nn.Linear(num_hidden_units[-1], dim_msa_vars))
-        super().decoder_linears = self.decoder_linears
+        # super(CVAE, self).decoder_linears = self.decoder_linears

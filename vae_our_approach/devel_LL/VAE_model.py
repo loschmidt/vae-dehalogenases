@@ -16,7 +16,7 @@ class MSA_Dataset(Dataset):
     Dataset class for multiple sequence alignment.
     """
     
-    def __init__(self, seq_msa_binary, seq_weight, seq_keys):
+    def __init__(self, seq_msa_binary, seq_weight, seq_keys, solubility_bins=None):
         """
         seq_msa_binary: a two dimensional np.array. 
                         size: [num_of_sequences, length_of_msa*num_amino_acid_types]
@@ -25,11 +25,13 @@ class MSA_Dataset(Dataset):
                     Weights for sequences in a MSA. 
                     The sum of seq_weight has to be equal to 1 when training latent space models using VAE
         seq_keys: name of sequences in MSA
+        solubility_bins: bins with values of solubility
         """
         super(MSA_Dataset).__init__()
         self.seq_msa_binary = seq_msa_binary
         self.seq_weight = seq_weight
         self.seq_keys = seq_keys
+        self.solubility_bins = solubility_bins
         
     def __len__(self):
         assert(self.seq_msa_binary.shape[0] == len(self.seq_weight))
@@ -37,7 +39,9 @@ class MSA_Dataset(Dataset):
         return self.seq_msa_binary.shape[0]
     
     def __getitem__(self, idx):
-        return self.seq_msa_binary[idx, :], self.seq_weight[idx], self.seq_keys[idx]
+        if self.solubility_bins is not None:
+            return self.seq_msa_binary[idx, :], self.seq_weight[idx], self.seq_keys[idx], self.solubility_bins[idx]
+        return self.seq_msa_binary[idx, :], self.seq_weight[idx], self.seq_keys[idx], None
 
 
 class VAE(nn.Module):

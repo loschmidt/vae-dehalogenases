@@ -42,6 +42,7 @@ class CmdHandler(metaclass=Singleton):
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
         self.highlight_instricts = self.args.highlight_dim
+        self.solubility_file = self.args.solubility_file
 
         self.in_file = self.args.in_file
         self.msa_clustering = self.args.msa_not_cluster
@@ -49,6 +50,7 @@ class CmdHandler(metaclass=Singleton):
         
         # modelarch setup
         self.convolution = self.args.convolution
+        self.conditional = self.args.conditional
 
         self.robustness_train = self.args.robustness_train
         self.robustness_measure = self.args.robustness_measure
@@ -116,6 +118,8 @@ class CmdHandler(metaclass=Singleton):
         parser.add_argument('--layers', nargs='+', type=int, default=100, help=Helper.LAYERS.value)
         parser.add_argument('--dimensionality', type=int, default=2, help=Helper.DIMS.value)
         parser.add_argument('--convolution', action='store_true', default=False, help=Helper.CONV.value)
+        parser.add_argument('--conditional', action='store_true', default=False, help=Helper.CVAE.value)
+        parser.add_argument('--solubility_file', type=str, default=None, help=Helper.SOL_FILE.value)
         # Clustal path option
         parser.add_argument('--clustalo_path', type=str, default='/storage/brno2/home/xkohou15/bin/clustalo',
                             help=Helper.CLUSTAL.value)

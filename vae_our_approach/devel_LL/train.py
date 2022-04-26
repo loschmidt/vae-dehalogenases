@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 
 from VAE_model import VAE, MSA_Dataset
 from vae_models.cnn_vae import VaeCnn
+from vae_models.conditional_vae import CVAE
 from msa_handlers.download_MSA import Downloader
 from parser_handler import CmdHandler
 from project_enums import Helper
@@ -54,6 +55,9 @@ class Train:
                 pickle.dump(training_keys, file_handle)
             with open(setuper.pickles_fld + '/training_weights.pkl', 'wb') as file_handle:
                 pickle.dump(training_weights, file_handle)
+        if setuper.conditional:
+            with open(setuper.pickles_fld + '/solubilities.pkl', 'rb') as file_handle:
+                self.solubility = pickle.load(file_handle)
         self.seq_msa_binary = self.seq_msa_binary.reshape((self.num_seq, -1))
         self.seq_msa_binary = self.seq_msa_binary.astype(np.float32)
 
@@ -76,6 +80,9 @@ class Train:
             # build a VAE model with random parameters
             if self.setuper.convolution:
                 vae = VaeCnn(self.setuper.dimensionality, self.len_protein)
+            elif self.setuper.conditional:
+                vae = CVAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type,
+                          self.setuper.layers)
             else:
                 vae = VAE(self.num_res_type, self.setuper.dimensionality, self.len_protein * self.num_res_type,
                             self.setuper.layers)
@@ -109,24 +116,32 @@ class Train:
             train_idx = np.array(list(set(range(self.num_seq)) - set(validation_idx)))
             train_idx.sort()
 
+            solubility = None
+            if self.setuper.conditional:
+                solubility = torch.from_numpy(self.solubility[train_idx])
+
             train_msa = torch.from_numpy(self.seq_msa_binary[train_idx,])
             if self.use_cuda:
                 train_msa = train_msa.cuda()
+                solubility = solubility.cuda()
 
             train_weight = torch.from_numpy(self.seq_weight[train_idx])
             # train_weight = train_weight / torch.sum(train_weight) #Already done
             if self.use_cuda:
                 train_weight = train_weight.cuda()
 
-            train_data = MSA_Dataset(train_msa, train_weight, self.keys[train_idx])
+            train_data = MSA_Dataset(train_msa, train_weight, self.keys[train_idx], solubility)
             batch_size = 128 if self.setuper.convolution else train_msa.shape[0]
             train_data_loader = DataLoader(train_data, batch_size=batch_size)
             train_loss_list = []
             for epoch in range(self.setuper.epochs):
                 train_loss_tmp = []
                 for data in train_data_loader:
-                    train_msa, train_weight, key = data
-                    loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight, self.setuper.C)
+                    train_msa, train_weight, key, sol = data
+                    if self.setuper.conditional:
+                        loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight, self.setuper.C, c=sol)
+                    else:
+                        loss = (-1) * vae.compute_weighted_elbo(train_msa, train_weight, self.setuper.C)
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
@@ -163,7 +178,7 @@ class Train:
             # into batches.
             batch_size = 20
             num_batches = len(validation_idx) // batch_size + 1
-            if not self.setuper.convolution:
+            if not self.setuper.convolution and not self.setuper.conditional:
                 for idx_batch in range(num_batches):
                     if (idx_batch + 1) % 50 == 0:
                         print("idx_batch: {} out of {}".format(idx_batch, num_batches))
@@ -185,7 +200,8 @@ class Train:
             if self.use_cuda:
                 torch.cuda.empty_cache()
 
-            elbo_all = np.concatenate(elbo_all_list) if not self.setuper.convolution else [0]
+            elbo_all = np.concatenate(elbo_all_list) if not self.setuper.convolution and \
+                                                        not self.setuper.conditional else [0]
             elbo_mean = np.mean(elbo_all)
             # the mean_elbo can approximate the quanlity of the learned model
             # we want a model that has high mean_elbo

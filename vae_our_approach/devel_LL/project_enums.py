@@ -53,7 +53,8 @@ class Helper(Enum):
 
     MSA_NOT_CLUSTER = "Setup in the case you do not wish to cluster sequences via 90% identity"
     CONV = "Set this up to use encoder and decoder build up from from 2D convolution layers"
-
+    CVAE = "Conditional variational autoencoder variant. The soluprot file should be provided in option solubility_file"
+    SOL_FILE = "File with soluprot predictions for sequences in the dataset (proposed by enzymeMiner tool) "
 
 class VaePaths(Enum):
     # Experiment directory paths
@@ -85,3 +86,6 @@ class ScriptNames(Enum):
 class SolubilitySetting(Enum):
     """ Setting for conditional vae and soluprot setting for bins division """
     SOLUBILITY_BINS = 3
+    SOL_BIN_LOW = 0
+    SOL_BIN_MEDIUM = 1
+    SOL_BIN_HIGH = 2
