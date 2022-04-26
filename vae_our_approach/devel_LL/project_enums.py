@@ -80,3 +80,8 @@ class ScriptNames(Enum):
     MSA_PROCESS = "msa_preprocessor.py"
     VALIDATION = "validation_train.py"
     BENCH = "benchmark.py"
+
+
+class SolubilitySetting(Enum):
+    """ Setting for conditional vae and soluprot setting for bins division """
+    SOLUBILITY_BINS = 3
