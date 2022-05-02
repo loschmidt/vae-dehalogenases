@@ -349,7 +349,7 @@ def run_cma_es_evolution():
 
     ##########################
     # Experiment setup
-    experiment_runs = 2
+    experiment_runs = 10
     experiment_generations = 50
     population = 64
     sigma_step = 0.5
