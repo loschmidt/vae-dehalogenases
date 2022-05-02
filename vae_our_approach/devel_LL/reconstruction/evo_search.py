@@ -61,6 +61,8 @@ class EvolutionSearch:
         self.fitness_class_setting = (0.7, 0.25, 1.5, 0.5)
         self.log_str = ""
         self.exp_stats_handler = ExperimentStatistics(setuper, experiment_name="cma_search")
+        self.best_sequences_stats = {"dict": {}, "coords": []}
+        self.run = 0
 
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
             self.query = pickle.load(file_handle)
@@ -280,6 +282,10 @@ class EvolutionSearch:
         self.log_str += "{};{};{:.4f};{:.4f};{:.4f};{};{};{};{};{};{}" \
                         "\n".format(step, sigma, best[0], best[2][1], best[2][3],
                                     mean[1][0], mean[1][1], mean[0], mean[2][1], mean[2][3], "".join(mean[2][4]))
+
+        self.best_sequences_stats["dict"]["evo_run_{}_anc_{}".format(self.run, step)] = "".join(mean[2][4])
+        self.best_sequences_stats["coords"].append(mean[1])
+
         if filename is None:
             print(self.log_str)
             self.log_str = ""
@@ -343,7 +349,7 @@ def run_cma_es_evolution():
 
     ##########################
     # Experiment setup
-    experiment_runs = 10
+    experiment_runs = 2
     experiment_generations = 50
     population = 64
     sigma_step = 0.5
@@ -357,12 +363,15 @@ def run_cma_es_evolution():
     # Run experiments
     run_trajectories = []
     for run_i in range(experiment_runs):
+        evo.run = run_i+1
         print("=" * 80)
         print("# Run {} out of {}".format(run_i + 1, experiment_runs))
         ret = evo.search(experiment_generations, population, query_coords, target_identity,
                          sigma_step, pareto=PARETO, filename="run_pokus{}.csv".format(run_i + 1))
         run_trajectories.append(ret)
     # evo.animate(run_trajectories, experiment_generations)
+    evo.exp_stats_handler.create_and_store_ancestor_statistics(evo.best_sequences_stats["dict"], "cma_evolution.fasta",
+                                                               evo.best_sequences_stats["coords"])
 
 
 if __name__ == "__main__":
