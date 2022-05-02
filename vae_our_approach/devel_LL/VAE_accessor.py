@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 
 from VAE_model import MSA_Dataset, VAE
 from vae_models.cnn_vae import VaeCnn
+from vae_models.conditional_vae import CVAE
 from VAE_logger import Logger
 from project_enums import Helper
 from sequence_transformer import Transformer
@@ -42,7 +43,9 @@ class VAEAccessor:
 
         # build a VAE model
         if self.setuper.convolution:
-            vae = vae = VaeCnn(self.setuper.dimensionality, len_protein)
+            vae = VaeCnn(self.setuper.dimensionality, len_protein)
+        elif self.setuper.conditional:
+            vae = CVAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
         else:
             vae = VAE(num_res_type, self.setuper.dimensionality, len_protein * num_res_type, self.setuper.layers)
         if self.model_name:
@@ -95,7 +98,7 @@ class VAEAccessor:
         mu_list = []
         sigma_list = []
         for idx, data in enumerate(train_data_loader):
-            msa, weight, key = data
+            msa, weight, key, cond = data
             with torch.no_grad():
                 if self.use_cuda:
                     msa = msa.cuda()

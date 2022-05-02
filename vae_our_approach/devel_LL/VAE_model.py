@@ -41,7 +41,7 @@ class MSA_Dataset(Dataset):
     def __getitem__(self, idx):
         if self.solubility_bins is not None:
             return self.seq_msa_binary[idx, :], self.seq_weight[idx], self.seq_keys[idx], self.solubility_bins[idx]
-        return self.seq_msa_binary[idx, :], self.seq_weight[idx], self.seq_keys[idx], None
+        return self.seq_msa_binary[idx, :], self.seq_weight[idx], self.seq_keys[idx], torch.zeros(3)
 
 
 class VAE(nn.Module):
