@@ -100,6 +100,11 @@ class Curator:
         pass
 
     def get_data(self):
+        concatenate_seq = {}
+        for k, v in self.mutants.items():
+            tmp_str = ''
+            concatenate_seq[k] = tmp_str.join(v)
+        self.mutants = concatenate_seq
         return self.mutants, self.temps
 
     def _load_pickles(self):
@@ -118,6 +123,7 @@ def mutate_seq(seq, muts):
             print(" Curator warning : {}[{}] vs expected residue by mutation {}".format(seq[pos], pos, mut[0]))
         mutated[pos] = mut[-1]
     return mutated
+
 
 if __name__ == '__main__':
     cmd_line = CommandHandler()

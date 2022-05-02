@@ -2,6 +2,7 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2021/04/16 00:10:00"
 
 import pickle
+from os import path
 from itertools import product
 
 import numpy as np
@@ -15,9 +16,11 @@ from EVO.create_library import CommandHandler, Curator
 from analyzer import AncestorsHandler
 from VAE_accessor import VAEAccessor
 from benchmark import Benchmarker as Vae_encoder
-from devel_LL.reconstruction.cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
+from reconstruction.cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
 from experiment_handler import ExperimentStatistics
 from parser_handler import CmdHandler
+from msa_handlers.msa_preparation import MSA
+from sequence_transformer import Transformer
 
 
 def highlight_coord(ax, mus, color='r'):
@@ -48,6 +51,7 @@ class EvolutionSearch:
 
     def __init__(self, setuper, cmd_handler):
         self.curator = Curator(cmd_handler)
+        self.transformer = Transformer(setuper)
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
         self.vae = Vae_encoder(None, None, self.setuper, generate_negative=False)
@@ -77,7 +81,13 @@ class EvolutionSearch:
         self.exp_stats_handler.store_ancestor_dict_in_fasta(mutants, file_name, msg=msg)
 
         self.setuper.highlight_files = self.out_dir + file_name
-        mutant_aligned = AncestorsHandler(setuper=self.setuper).align_to_ref(msa=mutants)
+
+        fasta_aligned_file = self.setuper.pickles_fld + "/aligned_mutants_evo.fasta"
+        if not path.isfile(fasta_aligned_file):
+            mutant_aligned = AncestorsHandler(setuper=self.setuper).align_to_ref(msa=mutants)
+            self.exp_stats_handler.store_ancestor_dict_in_fasta(mutant_aligned, fasta_aligned_file, msg=msg)
+        else:
+            mutant_aligned = MSA.load_msa(fasta_aligned_file)
         X = self.encode(mutant_aligned)
 
         # Input space
@@ -138,8 +148,8 @@ class EvolutionSearch:
 
     def encode(self, seqs):
         """ Encode dictionary to the latent space """
-        binary, _, _ = self.vae.binaryConv.prepare_aligned_msa_for_Vae(seqs)
-        X, _ = self.vae.prepareMusSigmas(binary)
+        binaries, weights, keys = self.transformer.sequence_dict_to_binary(seqs)
+        X, _ = self.handler.propagate_through_VAE(binaries, weights, keys)
         return X
 
     def decode(self, coords):
@@ -322,7 +332,8 @@ class EvolutionSearch:
         print("Animation {} saved into {}".format(gif, self.out_dir))
 
 
-if __name__ == "__main__":
+def run_cma_es_evolution():
+    """ Setup for running Covariance matrix adaptation evolution strategy """
     tar_dir = CmdHandler()
     cmd_line = CommandHandler()
 
@@ -351,4 +362,8 @@ if __name__ == "__main__":
         ret = evo.search(experiment_generations, population, query_coords, target_identity,
                          sigma_step, pareto=PARETO, filename="run_pokus{}.csv".format(run_i + 1))
         run_trajectories.append(ret)
-    #evo.animate(run_trajectories, experiment_generations)
+    # evo.animate(run_trajectories, experiment_generations)
+
+
+if __name__ == "__main__":
+    run_cma_es_evolution()
