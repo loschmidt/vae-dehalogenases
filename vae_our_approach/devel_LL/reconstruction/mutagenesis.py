@@ -208,6 +208,7 @@ def run_random_mutagenesis(multicriterial=False):
         mutation_generator.random_mutagenesis(samples=cmd_line.mutant_samples, multicriterial=multicriterial)
 
     file_templ = 'random{}_' + str(cmd_line.mut_points) + '_points_mutants_' + str(cmd_line.mutant_samples)
+    file_templ = file_templ + "_multi" if multicriterial else file_templ
     h = Highlighter(cmd_line)
     h.highlight_mutants(anc_coords, anc_names, mutants_coords,
                         file_name=file_templ.format(''))
@@ -221,6 +222,20 @@ def run_random_mutagenesis(multicriterial=False):
         seq_dict[seq_name] = seq
 
     mutation_generator.exp_handler.create_and_store_ancestor_statistics(seq_dict, file_templ.format(''), anc_coords)
+
+
+def run_straight_evolution():
+    """
+    Task description for straight ancestral reconstruction strategy
+    """
+    cmd_line = CmdHandler()
+
+    # Stats are created inside get_straight_ancestors method
+    mut = MutagenesisGenerator(setuper=cmd_line, num_point_mut=cmd_line.mut_points)
+    names, ancestors, probs = mut.get_straight_ancestors(cmd_line.ancestral_samples)
+
+    h = Highlighter(cmd_line)
+    h.plot_probabilities(probs, ancestors)
 
 
 if __name__ == '__main__':

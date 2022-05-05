@@ -31,6 +31,7 @@ class Helper(Enum):
     # Mutagenesis options
     MUT_POINTS = "Points of mutation. Default 1"
     MUT_SAMPLES = "Number of generated mutants, for mutagenesis analysis, default value is 100"
+    ANCESTORS = "Number of generated mutants for straight ancestral strategy, default value is 100"
     # Pipelines options
     NO_SCORE = "Default. Loschmidt Labs pipeline for processing MSA."
     PAPER_LINE = "Original paper pipeline. Exclusive use score_filter and preserve_catalytics."

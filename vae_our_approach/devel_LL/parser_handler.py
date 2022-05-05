@@ -36,6 +36,7 @@ class CmdHandler(metaclass=Singleton):
         self.align = self.args.align
         self.mut_points = self.args.mut_points
         self.mutant_samples = self.args.mut_samples
+        self.ancestral_samples = self.args.ancestors
         self.focus = self.args.focus
         self.dimensionality = self.args.dimensionality
 
@@ -92,7 +93,8 @@ class CmdHandler(metaclass=Singleton):
         parser.add_argument('--align', action='store_true', default=False, help=Helper.ALIGN.value)
         # Mutagenesis options
         parser.add_argument('--mut_points', type=int, default=1, help=Helper.MUT_POINTS.value)
-        parser.add_argument('--mut_samples', type=int, default=50, help=Helper.MUT_SAMPLES.value)
+        parser.add_argument('--mut_samples', type=int, default=100, help=Helper.MUT_SAMPLES.value)
+        parser.add_argument('--ancestors', type=int, default=100, help=Helper.ANCESTORS.value)
         # EnzymeMiner scraper options
         parser.add_argument('--preserve_catalytic', action='store_true', default=False, help=Helper.PRESERVE.value)
         parser.add_argument('--ec_num', type=str, default="3.8.1.5", help=Helper.EC_NUM.value)
@@ -146,7 +148,7 @@ class CmdHandler(metaclass=Singleton):
         """ Setup experiment directory and log its setup. Also init singleton classes """
         self._setup_experimental_paths()
         self._log_run_setup_into_file()
-        self._load_model_params()
+        # self._load_model_params()
         print("\n" + Helper.LOG_DELIMETER.value)
         model_arch = "convolution" if self.convolution else "dense linear"
         print(" Parser Handler message: : running with parameters\n"

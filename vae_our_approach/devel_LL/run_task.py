@@ -11,7 +11,7 @@ from Statistics.order_statistics import run_setup as model_statistics_run
 from Statistics.reconstruction_ability import run_input_dataset_reconstruction as model_input_reconstruct_run
 from Statistics.stats_plot import make_overview as plot_overview
 
-from reconstruction.mutagenesis import run_random_mutagenesis
+from reconstruction.mutagenesis import run_random_mutagenesis, run_straight_evolution
 from reconstruction.evo_search import run_cma_es_evolution
 
 from VAE_logger import Capturing
@@ -43,9 +43,11 @@ def get_package_parser() -> ArgumentParser:
     parser.add_argument("--run_random_mutagenesis", action='store_true', default=False,
                         help="Run random mutagenesis for query sequence")
     parser.add_argument("--run_multicriterial_random_mutagenesis", action='store_true', default=False,
-                        help="Run random mutagenesis for query sequence")
+                        help="Run random multicriterial mutagenesis for query sequence with model sequence probability")
     parser.add_argument("--run_evolution", action='store_true', default=False,
                         help="Run evolution in the latent space using Covariance matrix adaptation evolution strategy")
+    parser.add_argument("--run_straight_evolution", action='store_true', default=False,
+                        help="Run direct evolution strategy")
     return parser
 
 
