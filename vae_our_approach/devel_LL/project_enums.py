@@ -59,11 +59,11 @@ class Helper(Enum):
 
 class VaePaths(Enum):
     # Experiment directory paths
-    RESULTS = "./results/"
+    RESULTS = "./../results/"
     MODEL_DIR = "model"
     PICKLE_DIR = "pickles"
     HIGHLIGHT_DIR = "highlight"
-    STATS_DATA_SOURCE = "./Statistics/data_source/"
+    STATS_DATA_SOURCE = "./../datasets/Statistics/data_source/"
     STATS_MAPPING_SOURCE = STATS_DATA_SOURCE + "/mapping_values/"
     FREQUENCIES_STATS = "Latent_space_stats"
     TREE_EVALUATION_DIR = "Tree_evaluation"

@@ -78,7 +78,7 @@ class MutagenesisGenerator:
         # pareto selection simplified by proximity in 2D graph to optimal solution at the origin
         min_idx, min_val = 0, 60000
         for i, (like, d) in enumerate(zip(log_like, seq_distances_norm)):
-            v = np.array([like, d])
+            v = np.array([like*1000, d]) # more significant likelihood
             v_dist = np.sqrt(v.dot(v))
             if v_dist < min_val:
                 min_val = v_dist
