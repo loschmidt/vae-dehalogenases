@@ -55,7 +55,7 @@ class Train:
                 pickle.dump(training_keys, file_handle)
             with open(setuper.pickles_fld + '/training_weights.pkl', 'wb') as file_handle:
                 pickle.dump(training_weights, file_handle)
-        if setuper.conditional:
+        if setuper.solubility_file:
             with open(setuper.pickles_fld + '/solubilities.pkl', 'rb') as file_handle:
                 self.solubility = pickle.load(file_handle)
         self.seq_msa_binary = self.seq_msa_binary.reshape((self.num_seq, -1))
@@ -119,11 +119,12 @@ class Train:
             solubility = None
             if self.setuper.conditional:
                 solubility = torch.from_numpy(self.solubility[train_idx])
+                if self.use_cuda:
+                    solubility = solubility.cuda()
 
             train_msa = torch.from_numpy(self.seq_msa_binary[train_idx,])
             if self.use_cuda:
                 train_msa = train_msa.cuda()
-                solubility = solubility.cuda()
 
             train_weight = torch.from_numpy(self.seq_weight[train_idx])
             # train_weight = train_weight / torch.sum(train_weight) #Already done
