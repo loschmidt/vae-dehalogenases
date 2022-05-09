@@ -281,7 +281,7 @@ class AncestorsHandler:
         self.setuper = setuper
         self.pickle = setuper.pickles_fld
 
-    def align_tree_msa_to_msa(self, tree_msa_path: str, tree_path):
+    def align_tree_msa_to_msa(self, tree_msa_path: str, tree_path, tree_dir):
         """
             Aligns sequences in msa_file to individual sequence in the original MSA.
             Iterates over all sequences in the fasta file. If the key is in Original
@@ -292,8 +292,9 @@ class AncestorsHandler:
             If key 'query' occurs along the sequences, the key is replaced for queryID.
         """
         msa_file = tree_msa_path.split("/")[-1].split(".")[0]
-        store_file = self.pickle + "/{}_aligned_to_leaf.fasta".format(msa_file)
+        store_file = tree_dir + "/{}_aligned_to_leaf.fasta".format(msa_file)
         aligned_dict = {}
+
         if os.path.exists(store_file) and os.path.getsize(store_file) > 0:
             print("   Using aligned tree nodes in ...", store_file[-30:])
             aligned_dict = MSA.load_msa(store_file)

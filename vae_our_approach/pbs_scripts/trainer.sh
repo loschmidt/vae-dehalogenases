@@ -1,6 +1,7 @@
 #!/bin/bash
-#PBS -N trainerHTS3
+#PBS -N norm
 #PBS -q gpu -l select=1:ngpus=1:mem=16gb:scratch_local=10gb
+# -l select=1:ncpus=1:mem=16gb:scratch_local=1gb
 #PBS -l walltime=24:00:00
 #PBS -m ae
 
@@ -22,9 +23,9 @@ conda activate #vae-env
 echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 
 ## copy project to scratch directory
-LOCALPROJECT=${SCRATCHDIR}/project/.
+LOCALPROJECT=${SCRATCHDIR}/devel_LL/.
 
-cp $DATADIR $SCRATCHDIR || { echo >&2 "Error while copying input file(s)!"; exit 2; }
+cp -r $DATADIR $SCRATCHDIR || { echo >&2 "Error while copying input file(s)!"; exit 2; }
 
 ## transfer datasets
 cp $DATASET $SCRATCHDIR
@@ -51,7 +52,8 @@ python3 runner.py run_task.py --run_generative_evaluation_plot
 ## transport results
 LOCALRESULTS=${SCRATCHDIR}/results/.
 cd $LOCALRESULTS
-tar -zcvf results-$PBS_JOBID.tar.gz .
+
+tar cvzf results-$PBS_JOBID.tar.gz .
 cp results-$PBS_JOBID.tar.gz $RESULTS || { echo >&2 "Result file(s) copying failed (with a code $?) !!"; exit 4; }
 
 echo "Training process is finished" >> $LOGDIR/jobs_info.txt

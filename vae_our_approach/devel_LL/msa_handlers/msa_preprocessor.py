@@ -17,7 +17,7 @@ import pandas as pd
 from msa_handlers.download_MSA import Downloader
 from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler
-from project_enums import Helper, SolubilitySetting
+from project_enums import Helper
 from VAE_logger import Logger
 
 
@@ -288,13 +288,6 @@ class MSAPreprocessor:
             2 - predicted medium (40 - 72.5 %) solubility
             3 - predicted high (>72.5 %) solubility
         """
-        def calc_bin(sol_val: float):
-            if sol_val < 0.40:
-                return SolubilitySetting.SOL_BIN_LOW.value
-            if sol_val <= 72.5:
-                return SolubilitySetting.SOL_BIN_MEDIUM.value
-            return SolubilitySetting.SOL_BIN_HIGH.value
-
         if not self.setuper.solubility_file:
             return
         with open(self.pickle + "/keys_list.pkl", 'rb') as file_handle:
@@ -312,7 +305,7 @@ class MSAPreprocessor:
             solubility_bins = []
             # include to bins
             for sd in float_solubilities:
-                solubility_bins.append(calc_bin(sd))
+                solubility_bins.append(MSA.solubility_bin(sd))
         with open(self.pickle + "/solubilities.pkl", "wb") as sol_pkl:
             pickle.dump(np.array(solubility_bins), sol_pkl)
         print(Helper.LOG_DELIMETER.value)

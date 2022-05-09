@@ -1,0 +1,32 @@
+{
+  "core_params": ["--model_name test_arch",
+    "--exp_dir hts_project",
+    "--align",
+    "--highlight_files ./../datasets/ancestors.fasta",
+    "--solubility_file ./../datasets/soluprot.txt",
+    "--stats", "--K 1",
+    "--training_subsets 5", "--source_txt EVO/mutations.txt"],
+  "variable_params": [
+    "--layers {}", "--dimensionality {}", "--num_epoch {}","--experiment {}",
+    "--C {}", "--weight_decay {}", "--mut_points {}", "--mut_samples {}", "--query {}", "--in_file {}",
+    "--highlight_seqs {}", "--ancestors {}"],
+  "experiments": [
+  {
+    "status": "on",
+    "experiment": "optim_1",
+    "layers": "291 100",
+    "dimensionality": 7,
+    "C": 2,
+    "in_file": "../datasets/dhlA_LinB.fa",
+    "query": "DhaA_S19",
+    "highlight_seqs": "DhaA_S19",
+    "num_epoch": 14000,
+    "weight_decay": 0.0,
+    "Note": "Diploma thesis experiment with all hts project",
+    "mut_points": 1,
+    "mut_samples": 100,
+    "ancestors": 100,
+    "flags" : [ "focus"]
+  }
+  ]
+}

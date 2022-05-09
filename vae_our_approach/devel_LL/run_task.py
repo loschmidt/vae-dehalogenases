@@ -2,19 +2,22 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2022/02/07 11:30:00"
 __description__ = " This file enable to run packages from the root directory "
 
+import sys
 from argparse import ArgumentParser
 
-from Statistics.ancestral_tree import run_sampler as model_sampler_run
-from Statistics.ancestral_tree import run_tree_highlighter as model_tree_run
-from Statistics.label_mapper import run_latent_mapper as model_mapper_run
-from Statistics.order_statistics import run_setup as model_statistics_run
-from Statistics.reconstruction_ability import run_input_dataset_reconstruction as model_input_reconstruct_run
-from Statistics.stats_plot import make_overview as plot_overview
 
-from reconstruction.mutagenesis import run_random_mutagenesis, run_straight_evolution
-from reconstruction.evo_search import run_cma_es_evolution
+if sys.argv[1] not in ["--help", "-h"]:
+    from Statistics.ancestral_tree import run_sampler as model_sampler_run
+    from Statistics.ancestral_tree import run_tree_highlighter as model_tree_run
+    from Statistics.label_mapper import run_latent_mapper as model_mapper_run
+    from Statistics.order_statistics import run_setup as model_statistics_run
+    from Statistics.reconstruction_ability import run_input_dataset_reconstruction as model_input_reconstruct_run
+    from Statistics.stats_plot import make_overview as plot_overview
 
-from VAE_logger import Capturing
+    from reconstruction.mutagenesis import run_random_mutagenesis, run_straight_evolution
+    from reconstruction.evo_search import run_cma_es_evolution
+
+    from VAE_logger import Capturing
 
 
 
@@ -53,6 +56,9 @@ def get_package_parser() -> ArgumentParser:
 
 def run_package(parser: ArgumentParser):
     """ Run package according to the choice """
+    if sys.argv[1] in ["--help", "-h"]:
+        parser.print_help()
+        exit(0)
     args, unknown = parser.parse_known_args()
     if args.run_package_stats_order:
         model_statistics_run()
@@ -84,6 +90,8 @@ def run_package(parser: ArgumentParser):
         run_random_mutagenesis(multicriterial=True)
     if args.run_evolution:
         run_cma_es_evolution()
+    if args.run_straight_evolution:
+        run_straight_evolution()
 
 
 if __name__ == '__main__':

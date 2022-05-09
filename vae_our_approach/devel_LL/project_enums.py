@@ -43,7 +43,7 @@ class Helper(Enum):
     # Input MSA file
     MSA_FILE = "Setup input file. Recognize automatically .fasta or .txt for stockholm file format."
     # Clustal path option
-    CLUSTAL = "Setup path to the clustal omega binary. Default is mine ./bin/clustao"
+    CLUSTAL = "Setup path to the clustal omega binary. Default is mine /clustal/clustao"
     # Robustness parameters
     ROB_TRAIN = "Option to run just one train fold validation for robustness purposes.\n It is used with robustness " \
                 "class which inthis mode run batch scripts in cluster."
@@ -64,6 +64,7 @@ class VaePaths(Enum):
     PICKLE_DIR = "pickles"
     HIGHLIGHT_DIR = "highlight"
     STATS_DATA_SOURCE = "./../datasets/Statistics/data_source/"
+    STATS_DATA_TREE = "./../datasets/Statistics/tree_source/"
     STATS_MAPPING_SOURCE = STATS_DATA_SOURCE + "/mapping_values/"
     FREQUENCIES_STATS = "Latent_space_stats"
     TREE_EVALUATION_DIR = "Tree_evaluation"

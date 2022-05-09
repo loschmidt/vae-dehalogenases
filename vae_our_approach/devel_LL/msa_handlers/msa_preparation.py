@@ -8,6 +8,7 @@ import numpy as np
 from Bio import SeqIO
 
 from VAE_logger import Logger
+from project_enums import SolubilitySetting
 
 
 class MSA:
@@ -93,3 +94,11 @@ class MSA:
             amino_seq = [reverse_index[s] for s in to_amino]
             transformed[k] = amino_seq
         return transformed
+
+    @staticmethod
+    def solubility_bin(sol_val: float):
+        if sol_val < 0.40:
+            return SolubilitySetting.SOL_BIN_LOW.value
+        if sol_val <= 72.5:
+            return SolubilitySetting.SOL_BIN_MEDIUM.value
+        return SolubilitySetting.SOL_BIN_HIGH.value

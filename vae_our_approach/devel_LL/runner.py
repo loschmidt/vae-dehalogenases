@@ -6,7 +6,21 @@ import sys
 import subprocess as sp
 import json
 
-runner_json = "model_configurations/runner-parameters.json"
+runner_json = "model_configurations/runner-hts.json"
+
+if sys.argv[1] in ["--help", "-h"]:
+    print("")
+    print("  Help of VAE ancestral reconstruction protocol:")
+    print("\nThe run configuration file can be found in directory model_configuration/")
+    print("\nrun .... for ....")
+    print("\tpython3 runner.py msa_handlers/msa_preprocessor.py   for   MSA preprocessing")
+    print("\tpython3 runner.py msa_handlers/train.py              for   Model training")
+    print("\tpython3 runner.py run_task.py --[option]             for   Model further analysis")
+    print("\nrun_task.py options:\n")
+    sp.run("python3 run_task.py --help", shell=True)
+    exit(0)
+
+print("\n\t\tRunning with {} configuration file!".format(runner_json))
 
 with open(runner_json, "r") as json_file:
     run_setup = json.load(json_file)
@@ -27,6 +41,12 @@ for exp in run_setup["experiments"]:
             exit()
         on_found = True
         on_experiment = exp
+
+if len(on_experiment.keys()) == 0:
+    print("   Please set one of configurations on!")
+    exit(0)
+
+print("\t\tSelected configuration is {}\n".format(on_experiment["experiment"]))
 
 for param in run_setup["core_params"]:
     run_string += param + " "

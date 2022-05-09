@@ -82,6 +82,10 @@ class AncestralTree:
         self.transformer = Transformer(setuper)
         self.data_dir = VaePaths.STATS_DATA_SOURCE.value
         self.target_dir = setuper.high_fld + "/" + VaePaths.TREE_EVALUATION_DIR.value + "/"
+
+        dataset = (setuper.in_file.split("/")[-1]).split(".")[0]
+        self.tree_dir = VaePaths.STATS_DATA_TREE.value + dataset + "/"
+
         self.setup_output_folder()
 
         self.max_depth = 6
@@ -89,6 +93,7 @@ class AncestralTree:
     def setup_output_folder(self):
         """ Creates directory in Highlight results directory """
         os.makedirs(self.target_dir, exist_ok=True)
+        os.makedirs(self.tree_dir, exist_ok=True)
 
     def get_tree_levels(self, tree_nwk_file: str):
         """
@@ -126,7 +131,7 @@ class AncestralTree:
 
     def get_tree_depths(self, tree_nwk_file: str):
         """ Get tree depths with distance from root """
-        tree = Phylo.read(self.data_dir + tree_nwk_file, "newick")
+        tree = Phylo.read(self.tree_dir + tree_nwk_file, "newick")
         terminals = tree.get_terminals()
 
         depths_dict = tree.depths()
@@ -145,7 +150,7 @@ class AncestralTree:
         Get paths from the root to all lists for tree depth correlation with latent space distance calculation.
         Returns sequence names which will be match with names from get_tree_depths method.
         """
-        tree = Phylo.read(self.data_dir + tree_nwk_file, "newick")
+        tree = Phylo.read(self.tree_dir + tree_nwk_file, "newick")
         terminals = tree.get_terminals()
 
         branch_node_names = []
@@ -201,7 +206,8 @@ class AncestralTree:
         Get latent space coordinates.
         Returns latent space coordinates with depth value in 3rd dimension, loaded msa
         """
-        msa = self.aligner_obj.align_tree_msa_to_msa(self.data_dir + tree_msa_file, self.data_dir + tree_path)
+        msa = self.aligner_obj.align_tree_msa_to_msa(self.tree_dir + tree_msa_file, self.tree_dir + tree_path,
+                                                     self.tree_dir)
         binaries, weights, keys = self.transformer.sequence_dict_to_binary(msa)
         mus, _ = self.vae.propagate_through_VAE(binaries, weights, keys)
 
@@ -216,7 +222,7 @@ class AncestralTree:
 
     def tree_pca_component_correlation(self, newick_tree: str, mu: np.ndarray, key, iter):
         """ Follow the used protocol in paper to check the correlations with 1st components """
-        t = Tree(self.data_dir + newick_tree, format=1)
+        t = Tree(self.tree_dir + newick_tree, format=1)
         for node in t.traverse('preorder'):
             if node.is_root():
                 node.add_feature('anc', [])

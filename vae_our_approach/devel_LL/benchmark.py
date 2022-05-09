@@ -320,7 +320,7 @@ if __name__ == '__main__':
         train_set = pickle.load(file_handle)
 
     # Prepare straight ancestors for making its distribution
-    from devel_LL.reconstruction.mutagenesis import MutagenesisGenerator as Mutagenesis
+    from reconstruction.mutagenesis import MutagenesisGenerator as Mutagenesis
     mut = Mutagenesis(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
     _, ancs, probs = mut.get_straight_ancestors()
 

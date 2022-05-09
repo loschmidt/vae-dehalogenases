@@ -4,6 +4,7 @@ __date__ = "2021/06/09 00:30:00"
 import numpy as np
 import pickle
 import torch
+import torch.nn.functional as f
 
 from project_enums import SolubilitySetting
 from msa_handlers.msa_preprocessor import MSAPreprocessor as Convertor
@@ -135,12 +136,16 @@ class Transformer(metaclass=Singleton):
         return ret_dict
 
     @staticmethod
-    def idx2onehot(idx, n):
+    def idx2onehot(idx, n, x):
         assert torch.max(idx).item() < n
 
         if idx.dim() == 1:
             idx = idx.unsqueeze(1)
-        onehot = torch.zeros(idx.size(0), n).to(idx.device)
+
+        if x.dim() == 3:
+            return f.one_hot(idx)
+        else:
+            onehot = torch.zeros(idx.size(0), n).to(idx.device)
         onehot.scatter_(1, idx, 1)
         return onehot
 
@@ -149,6 +154,8 @@ class Transformer(metaclass=Singleton):
         """ Adding condition to input for the case of conditional vae"""
         x = x.to(torch.float32)
         if c is not None:
-            c = Transformer.idx2onehot(c, n=SolubilitySetting.SOLUBILITY_BINS.value)
+            c = Transformer.idx2onehot(c, n=SolubilitySetting.SOLUBILITY_BINS.value, x=x)
+            if x.dim() == 1:
+                x = x.unsqueeze(0)
             x = torch.cat((x, c), dim=-1)
         return x

@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from sequence_transformer import Transformer
+from project_enums import SolubilitySetting
 
 
 class VAEInterface(nn.Module):
@@ -101,6 +102,9 @@ class VAEInterface(nn.Module):
             # Expand in specific way, stack same tensor next to each other
             eps = torch.randn_like(mu)
             z = mu + sigma * eps
+            if c is not None:
+                c = torch.tensor([SolubilitySetting.SOL_BIN_HIGH.value for _ in range(store_shape)])
+                c = c.expand(num_samples, c.shape[0])
             # Decode it
             expanded_number_sequences = self.z_to_number_sequences(z, c)
             # Flat list and group same sequences in a row
