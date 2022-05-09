@@ -152,14 +152,17 @@ class CmdHandler(metaclass=Singleton):
         print("\n" + Helper.LOG_DELIMETER.value)
         model_arch = "convolution" if self.convolution else "dense linear"
         print(" Parser Handler message: : running with parameters\n"
-              "                     model architecture : {}\n"
+              "                     model architecture : {}, {}\n"
               "                           weight decay : {}\n"
               "                           layers setup : {}\n"
               "                         dimensionality : {}\n"
               "                            C parameter : {}\n"
               "                           Epochs count : {}\n"
               "                             Model name : {}\n"
-              "                                    MSA : Clustering = {}".format(model_arch, self.decay, self.layers,
+              "                                    MSA : Clustering = {}".format(model_arch,
+                                                                                 "Conditional"
+                                                                                 if self.conditional else "",
+                                                                                 self.decay, self.layers,
                                                                                  self.dimensionality,
                                                                                  self.C, self.epochs, self.model_name,
                                                                                  self.msa_clustering))
@@ -262,6 +265,20 @@ class CmdHandler(metaclass=Singleton):
         for layer in layers:
             self.layers.append(int(layer))
         self.layersString = layers_str
+
+    def get_solubility_data(self, solubility_set='solubilities', slice_indices=None):
+        """
+        Returns solubility array corresponding with training alignment indices.
+        Apply slicing if provided
+        """
+        # In the case of CVAE
+        solubility = None
+        if self.solubility_file and self.conditional:
+            with open(self.pickles_fld + '/{}.pkl'.format(solubility_set), 'rb') as file_handle:
+                solubility = pickle.load(file_handle)
+                if slice_indices is not None:
+                    solubility = solubility[slice_indices]
+        return solubility
 
 
 if __name__ == '__main__':

@@ -26,14 +26,18 @@ aligner = AncestorsHandler(cmd_line)
 #     """ Gathers plots of all statistical outputs """
 
 
-def show_latent_space_features(ax, anc_msa_file):
+def show_latent_space_features(ax, anc_msa_file, setuper):
     """ Plots statistics latent space -> where is query, Babkovas ancestors. """
     print("   Creating and plotting latent space...")
     with open(cmd_line.pickles_fld + "/training_alignment.pkl", 'rb') as file_handle:
         train_dict = pickle.load(file_handle)
     msa_binary, weights, msa_keys = transformer.sequence_dict_to_binary(train_dict)
     msa_binary = torch.from_numpy(msa_binary)
-    mu, sigma = vae.propagate_through_VAE(msa_binary, weights, msa_keys)
+
+    # In the case of CVAE
+    solubility = setuper.get_solubility_data()
+
+    mu, sigma = vae.propagate_through_VAE(msa_binary, weights, msa_keys, solubility)
 
     query_index = msa_keys.index(cmd_line.query_id)
     query_coords = mu[query_index]
@@ -129,7 +133,7 @@ def make_overview():
     highlight_dir = cmd_line.high_fld
 
     fig, axs = plt.subplots(4, 2, figsize=(12, 16), gridspec_kw={'height_ratios': [1, 1, 1, 1]})
-    show_latent_space_features(axs[0, 0], cmd_line.highlight_files)
+    show_latent_space_features(axs[0, 0], cmd_line.highlight_files, cmd_line)
     create_bench_plot(axs[0, 1], highlight_dir)
     create_seq_identity_plot(axs[1, 0], highlight_dir)
     create_depths_tree_corr_plot(axs[1, 1], highlight_dir, "correlations.pkl",

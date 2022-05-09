@@ -157,5 +157,7 @@ class Transformer(metaclass=Singleton):
             c = Transformer.idx2onehot(c, n=SolubilitySetting.SOLUBILITY_BINS.value, x=x)
             if x.dim() == 1:
                 x = x.unsqueeze(0)
+            if x.device.type != c.device.type:
+                c = c.cuda()
             x = torch.cat((x, c), dim=-1)
         return x

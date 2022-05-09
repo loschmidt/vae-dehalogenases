@@ -238,25 +238,26 @@ def run_setup():
     print("   Shannon entropy and single frequencies calculation ............... DONE")
 
     # 2nd order statistics
-    # Logger.print_for_update("   Mutual information, pair frequencies and covariance for MSA ...... {}", str(0) + "%")
-    # mutual_msa, mutual_msa_frequencies, cov_msa = stat_obj.mutual_information(msa_dataset, msa_shannon)
-    # Logger.update_msg("DONE", True)
-    # Logger.print_for_update("   Mutual information, pair frequencies and covariance for SAMPLE ... {}", str(0)+"%")
-    # mutual_sampled, mutual_sampled_frequencies, cov_gen = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
-    # Logger.update_msg("DONE", True)
+    if stat_obj.vae.use_cuda:
+        # On cuda device, there is a problem with subprocess initialization so run it in parallel
+        Logger.print_for_update("   Mutual information, pair frequencies and covariance for MSA ...... {}", str(0) + "%")
+        mutual_msa, mutual_msa_frequencies, cov_msa = stat_obj.mutual_information(msa_dataset, msa_shannon)
+        Logger.update_msg("DONE", True)
+        Logger.print_for_update("   Mutual information, pair frequencies and covariance for SAMPLE ... {}", str(0)+"%")
+        mutual_sampled, mutual_sampled_frequencies, cov_gen = stat_obj.mutual_information(sampled_dataset, sampled_shannon)
+        Logger.update_msg("DONE", True)
+    else:
+        # In parallel process aligning
+        pool_values = [(msa_dataset, msa_shannon, 0), (sampled_dataset, sampled_shannon, 1)]
+        Logger.init_multiprocess_msg(" 2nd order stats computation .... {}", processes=2, init_value=str(0) + "%")
+        pool = Pool(processes=2)
+        pool_results = pool.starmap(stat_obj.mutual_information, pool_values)
+        mutual_msa, mutual_msa_frequencies, cov_msa = pool_results[0]
+        mutual_sampled, mutual_sampled_frequencies, cov_gen = pool_results[1]
+        pool.close()
+        pool.join()
+        print()
 
-    # In parallel process aligning
-    pool_values = [(msa_dataset, msa_shannon, 0), (sampled_dataset, sampled_shannon, 1)]
-    Logger.init_multiprocess_msg(" 2nd order stats computation .... {}", processes=2, init_value=str(0) + "%")
-    pool = Pool(processes=2)
-    pool_results = pool.starmap(stat_obj.mutual_information, pool_values)
-    mutual_msa, mutual_msa_frequencies, cov_msa = pool_results[0]
-    mutual_sampled, mutual_sampled_frequencies, cov_gen = pool_results[1]
-    pool.close()
-    pool.join()
-    print()
-    # print(cov_gen.reshape(21**2, -1), cov_gen.reshape(21**2, -1).shape)
-    # print(msa_frequencies)
     # plot 1st order data statistics and frequencies statistics
     print("=" * 80)
     print(" Creating first and second order statistics to  {}".format(stat_obj.target_dir))

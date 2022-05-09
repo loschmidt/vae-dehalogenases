@@ -284,5 +284,7 @@ class VAEAccessor:
                 flags = numpy_flags
             else:
                 flags = torch.tensor([SolubilitySetting.SOL_BIN_HIGH.value for _ in range(cnt)]).unsqueeze(1)
-            return flags.cuda() if self.use_cuda else flags
+            if torch.is_tensor(flags):
+                return flags.cuda() if self.use_cuda else flags
+            return torch.from_numpy(flags).cuda() if self.use_cuda else flags
         return None

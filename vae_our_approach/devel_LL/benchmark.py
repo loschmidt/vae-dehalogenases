@@ -18,7 +18,7 @@ from VAE_accessor import VAEAccessor
 from msa_handlers.download_MSA import Downloader
 from msa_handlers.msa_preprocessor import MSAPreprocessor as BinaryCovertor
 from parser_handler import CmdHandler
-from project_enums import ScriptNames, VaePaths
+from project_enums import ScriptNames, VaePaths, SolubilitySetting
 from sequence_transformer import Transformer
 
 ## LAMBDAS FUNCTIONS FOR CONVERSION AND PAIRWWISE COMPARISON OF SEQUENCES
@@ -33,10 +33,16 @@ class Benchmarker:
         self.setuper = setuper
         self.positive = positive_control
         if train_data is not None:
-            self.train_data = train_data[random.sample(range(0, train_data.shape[0]), positive_control.shape[0])] # Same amount of samples
+            indexes = random.sample(range(0, train_data.shape[0]), positive_control.shape[0])
+            self.train_data = train_data[indexes]  # Same amount of samples
+            self.solubility_data = setuper.get_solubility_data(solubility_set='solubility_train_set',
+                                                               slice_indices=indexes)
 
         if generate_negative:
-            self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1], profile_data=train_data)
+            self.negative = self._generate_negative(count=positive_control.shape[0], s_len=positive_control.shape[1],
+                                                    profile_data=train_data)
+            self.negative_cond = np.array([random.randint(0, SolubilitySetting.SOLUBILITY_BINS.value-1)
+                                           for _ in range(positive_control.shape[0])]) if setuper.conditional else None
         self.vae_handler = VAEAccessor(setuper, model_name=setuper.get_model_to_load())
         self.binaryConv = BinaryCovertor(self.setuper)
         self.transformer = Transformer(setuper)
@@ -58,9 +64,12 @@ class Benchmarker:
         os.makedirs(self.bench_data, exist_ok=True)
 
     def make_bench(self):
-        marginals_train, self.dataset_str = self.bench(self.train_data), "Training"
-        marginals_positive, self.dataset_str = self.bench(self.positive), "Positive"
-        marginals_negative, self.dataset_str = self.bench(self.negative), "Negative"
+        marginals_train, self.dataset_str = self.bench(self.train_data, self.solubility_data), "Training"
+        marginals_positive, self.dataset_str = self.bench(self.positive,
+                                                          self.setuper.get_solubility_data(
+                                                              solubility_set='solubility_positive')
+                                                          ), "Positive"
+        marginals_negative, self.dataset_str = self.bench(self.negative, self.negative_cond), "Negative"
         self._store_marginals(marginals_train, marginals_positive, marginals_negative)
 
         mean_p = sum(marginals_positive) / len(marginals_positive)
@@ -124,14 +133,14 @@ class Benchmarker:
         observing_probs = self.bench(binary)
         return observing_probs
 
-    def prepareMusSigmas(self, data):
+    def prepareMusSigmas(self, data, c=None):
         data_t, msa_weight = Transformer.shape_binary_for_vae(data)
         rand_keys = ['k_'.format(i) for i in range(data.shape[0])]
-        mus, sigmas = self.vae_handler.propagate_through_VAE(data_t, weights=msa_weight, keys=rand_keys)
+        mus, sigmas = self.vae_handler.propagate_through_VAE(data_t, weights=msa_weight, keys=rand_keys, c=c)
         return mus, sigmas
 
-    def bench(self, data):
-        mus, sigmas = self.prepareMusSigmas(data)
+    def bench(self, data, c=None):
+        mus, sigmas = self.prepareMusSigmas(data, c)
         return self._sample(mus, sigmas, data)
 
     def _sample(self, mus, sigmas, data):
