@@ -149,10 +149,10 @@ class VAEAccessor:
         anc_dict = self.transformer.back_to_amino(num_seqs)
         return anc_dict
 
-    def decode_z_to_number(self, z: np.ndarray) -> np.ndarray:
+    def decode_z_to_number(self, z: np.ndarray, c) -> np.ndarray:
         """ Decode z from latent space and return amino acid in numbers """
         z = tensor(z)
-        solubility = self.get_conditional_label(z.shape[0])
+        solubility = self.get_conditional_label(z.shape[0], c)
         if self.use_cuda:
             z = z.cuda()
             # solubility = solubility.cuda() if solubility else None
@@ -286,5 +286,5 @@ class VAEAccessor:
                 flags = torch.tensor([SolubilitySetting.SOL_BIN_HIGH.value for _ in range(cnt)]).unsqueeze(1)
             if torch.is_tensor(flags):
                 return flags.cuda() if self.use_cuda else flags
-            return torch.from_numpy(flags).cuda() if self.use_cuda else flags
+            return torch.from_numpy(flags).cuda() if self.use_cuda else torch.from_numpy(flags)
         return None

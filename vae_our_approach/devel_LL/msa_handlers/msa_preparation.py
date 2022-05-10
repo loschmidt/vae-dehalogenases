@@ -99,6 +99,21 @@ class MSA:
     def solubility_bin(sol_val: float):
         if sol_val < 0.40:
             return SolubilitySetting.SOL_BIN_LOW.value
-        if sol_val <= 72.5:
+        if sol_val <= 0.725:
             return SolubilitySetting.SOL_BIN_MEDIUM.value
         return SolubilitySetting.SOL_BIN_HIGH.value
+
+    @staticmethod
+    def parse_solubility_file_to_cat(file_name):
+        """ Parse solubility file and return solubility categories """
+        if file_name is None:
+            return None
+        solubilities = []
+        with open(file_name, "r") as sol_data:
+            for i, record in enumerate(sol_data):
+                if i == 0:  # header
+                    continue
+                _, sol = record.split("\t")
+                solubilities.append(sol)
+            sol_vals = np.array(solubilities).astype(float)
+        return np.array([MSA.solubility_bin(s) for s in sol_vals])

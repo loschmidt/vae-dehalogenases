@@ -46,13 +46,13 @@ class Reconstructor:
         ret = self.transformer.slice_msa_by_pos_indexes(MSA.load_msa(fasta_msa_file))
         return ret
 
-    def measure_reconstruct_ability(self, msa: Dict[str, str]) -> Tuple[List[float], float]:
+    def measure_reconstruct_ability(self, msa: Dict[str, str], c: List = None) -> Tuple[List[float], float]:
         """
         Get how well can VAE reconstruct sequences for N times random
         sampling around coordinates in the latent space
         """
         binaries, weights, keys = self.transformer.sequence_dict_to_binary(msa)
-        z, _ = self.vae.propagate_through_VAE(binaries, weights, keys)
+        z, _ = self.vae.propagate_through_VAE(binaries, weights, keys, c)
         reconstructed_msa = self.vae.decode_z_to_aa_dict(z, ref_name="ref")
 
         # now match identity
@@ -91,11 +91,12 @@ def run_input_dataset_reconstruction():
     cmdline = CmdHandler()
     reconstructor = Reconstructor(cmdline)
     msa = reconstructor.get_sequences_to_reconstruct(cmdline.in_file, False)
+    cond = MSA.parse_solubility_file_to_cat(cmdline.solubility_file)
 
     print("=" * 80)
     print("     Measuring input dataset reconstruction for {} model".format(cmdline.get_model_to_load()))
 
-    identities, query_identity = reconstructor.measure_reconstruct_ability(msa)
+    identities, query_identity = reconstructor.measure_reconstruct_ability(msa, cond)
     reconstructor.plot_reconstructions(identities, query_identity, "Input dataset reconstruction",
                                        "input_training_reconstruction.png")
     print("     Saving plot into ", reconstructor.target_dir + "input_training_reconstruction.png")

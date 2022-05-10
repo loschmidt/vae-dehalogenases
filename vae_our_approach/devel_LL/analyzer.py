@@ -65,10 +65,10 @@ class Highlighter:
             # plt.legend(loc='center left', bbox_to_anchor=(1.04, 0.5))
             if focus:
                 # now later you get a new subplot; change the geometry of the existing
-                x1 = high_data[0][0]
-                x2 = high_data[-1][0]
-                y1 = high_data[0][1]
-                y2 = high_data[-1][1]
+                x1 = min(high_data[:, 0])  # high_data[0][0]
+                x2 = max(high_data[:, 0])  # high_data[-1][0]
+                y1 = min(high_data[:, 1])  # high_data[0][1]
+                y2 = max(high_data[:, 1])  # high_data[-1][1]
                 x1, x2 = (x1, x2) if x1 < x2 else (x2, x1)
                 y1, y2 = (y1, y2) if y1 < y2 else (y2, y1)
                 plt.set_xlim([x1 - 0.5, x2 + 0.5])
@@ -81,15 +81,18 @@ class Highlighter:
             print("Class highlighter saving graph to", save_path)
             self.fig.savefig(save_path, bbox_inches='tight')
 
-    def highlight_mutants(self, ancs, names, mutants, mut_names=None, file_name='mutants', focus=False):
-        colors = ['green', 'red', 'blue', 'black', 'magenta', 'chocolate', 'tomato', 'orangered', 'sienna']
+    def highlight_mutants(self, ancs, names, mutants, mut_names=None, file_name='mutants', focus=False,
+                          one_by_one=True):
+        # colors = ['green', 'blue', 'black', 'magenta', 'chocolate', 'tomato', 'orangered', 'sienna']
+        colors = ["tab:orange", "tab:green", "tab:purple", "tab:brown", "tab:olive", "tab:cyan", "tab:blue"]
         self.plt = self._init_plot()
         # Check if names at mutants are given, otherwise init them
         if mut_names is None:
             mut_names = ['' for _ in range(len(mutants))]
         for i, m in enumerate(mutants):
             self._highlight(name=mut_names[i], high_data=m, wait=True, no_init=True, color=colors[i % len(colors)])
-        self._highlight(name=names, high_data=ancs, no_init=True, file_name=file_name, one_by_one=True, focus=focus)
+        self._highlight(name=names, high_data=ancs, no_init=True, file_name=file_name, one_by_one=one_by_one,
+                        focus=focus)
 
     def highlight_line_deviation(self, query_pos, points, mean, maxDev, loss, mu, file_name='robustness_plot'):
         """ Higlight deviation against line for robustness purposes """
@@ -120,9 +123,9 @@ class Highlighter:
             data = self._name_match(names)
             self._highlight(name=name, high_data=data)
 
-    def highlight_name(self, name):
+    def highlight_name(self, name, wait=False):
         data = self._name_match([name])
-        self._highlight(name=name, high_data=data, no_init=True)
+        self._highlight(name=name, high_data=data, no_init=True, wait=wait)
 
     def plot_probabilities(self, probs, ancestors, dynamic=False, file_notion=''):
         '''This method plots probabilities of sequences into three plots.'''

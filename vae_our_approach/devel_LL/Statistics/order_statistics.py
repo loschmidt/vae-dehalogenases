@@ -16,7 +16,7 @@ parentDir = os.path.dirname(currentDir)
 sys.path.insert(0, parentDir)
 
 from parser_handler import CmdHandler
-from project_enums import VaePaths
+from project_enums import VaePaths, SolubilitySetting
 from msa_handlers.msa_preparation import MSA
 from sequence_transformer import Transformer
 from VAE_accessor import VAEAccessor
@@ -56,6 +56,7 @@ class OrderStatistics:
         self.pickle = setuper.pickles_fld
         self.target_dir = setuper.high_fld + "/" + VaePaths.FREQUENCIES_STATS.value + "/"
         self.data_dir = self.target_dir + "data/"
+        self.cond = setuper.conditional
         self.setup_output_folder()
 
         # Keep calculations of amino appearances in columns, reshape later
@@ -164,7 +165,8 @@ class OrderStatistics:
     def sample_dataset_from_normal(self, origin: np.ndarray, scale: float, N: int) -> np.ndarray:
         """ Sample from the model N data points and transform them to ndarray """
         z = np.random.multivariate_normal(origin, np.identity(self.dimensions) * scale, N)
-        return self.vae.decode_z_to_number(z)
+        c = np.random.randint(low=0, high=SolubilitySetting.SOLUBILITY_BINS.value, size=N) if self.cond else None
+        return self.vae.decode_z_to_number(z, c)
 
     def plot_order_statistics(self, train, sampled, label_x, label_y, file_name, show_gap,
                               frequencies: bool = False):

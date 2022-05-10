@@ -13,7 +13,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
 from EVO.create_library import CommandHandler, Curator
-from analyzer import AncestorsHandler
+from analyzer import AncestorsHandler, Highlighter
 from VAE_accessor import VAEAccessor
 from benchmark import Benchmarker as Vae_encoder
 from reconstruction.cma_ev import update_mean, update_pc, update_Cov, update_ps, path_length_control
@@ -49,7 +49,7 @@ class EvolutionSearch:
         run with additional options source_txt to specify path to library description file
     """
 
-    def __init__(self, setuper, cmd_handler):
+    def __init__(self, setuper, cmd_handler, runs):
         self.curator = Curator(cmd_handler)
         self.transformer = Transformer(setuper)
         self.setuper = setuper
@@ -61,7 +61,7 @@ class EvolutionSearch:
         self.fitness_class_setting = (0.7, 0.25, 1.5, 0.5)
         self.log_str = ""
         self.exp_stats_handler = ExperimentStatistics(setuper, experiment_name="cma_search")
-        self.best_sequences_stats = {"dict": {}, "coords": []}
+        self.best_sequences_stats = {"dict": {}, "coords": [], "run_coords": [np.array([]) for _ in range(runs)]}
         self.run = 0
 
         with open(self.pickle + "/reference_seq.pkl", 'rb') as file_handle:
@@ -86,6 +86,7 @@ class EvolutionSearch:
 
         fasta_aligned_file = self.setuper.pickles_fld + "/aligned_mutants_evo.fasta"
         if not path.isfile(fasta_aligned_file):
+            print("  Evolution search message: preparing mutation library with Tm for Gaussian processes:")
             mutant_aligned = AncestorsHandler(setuper=self.setuper).align_to_ref(msa=mutants)
             self.exp_stats_handler.store_ancestor_dict_in_fasta(mutant_aligned, fasta_aligned_file, msg=msg)
         else:
@@ -185,7 +186,7 @@ class EvolutionSearch:
         best_identity = 0.0
 
         step, means = 0, [m]
-        while abs(best_identity - identity) > 0.04 and step < generations:
+        while abs(best_identity - identity) > 0.005 and step < generations:
             samples = norm.rvs(mean=m, cov=sigma * cov, size=members)
             xs = self.fitness(samples, target_identity=identity, pareto=pareto)
             xs = rescale_fit(xs)
@@ -198,7 +199,7 @@ class EvolutionSearch:
             p_s = update_ps(p_s, cov, m_prev, xs, mu, n)
             sigma = path_length_control(sigma, p_s, m_prev, xs, mu, n)
 
-            mean_stats = self.fitness(np.array([m]), target_identity=identity)
+            mean_stats = self.fitness(np.array([m]), target_identity=identity, pareto=pareto)
             self.log(step, sigma, xs, mean_stats[0], filename)
             step += 1
             best_identity = xs[0][2][1]
@@ -206,6 +207,7 @@ class EvolutionSearch:
 
             if filename is not None and step % 10 == 0:
                 print("# Progress report : step {} / {}".format(step, generations))
+
         self.log_to_file(filename)
         return means
 
@@ -236,7 +238,7 @@ class EvolutionSearch:
             fitness_value, tm = 0.0, -6.666  # Magic constant
             # Enough confidence to include it?
             if abs(MSE[i]) < 2.5:
-                fitness_value += gp_c * tm_pred[i] * (3.5 - abs(MSE))
+                fitness_value += gp_c * (tm_pred[i] + (3.5 - abs(MSE[i])))
                 tm = tm_pred[i]
             # Percentage identity
             query_identity = sum([1 if a == b else 0 for a, b in zip(self.query_seq, seqs[i])]) / self.seq_len
@@ -285,6 +287,8 @@ class EvolutionSearch:
 
         self.best_sequences_stats["dict"]["evo_run_{}_anc_{}".format(self.run, step)] = "".join(mean[2][4])
         self.best_sequences_stats["coords"].append(mean[1])
+        self.best_sequences_stats["run_coords"][self.run - 1] = \
+            np.append(self.best_sequences_stats["run_coords"][self.run - 1], mean[1])
 
         if filename is None:
             print(self.log_str)
@@ -337,6 +341,24 @@ class EvolutionSearch:
         animation.save(self.out_dir + gif, writer="imagemagick")  # save animation as gif
         print("Animation {} saved into {}".format(gif, self.out_dir))
 
+    def make_plot_with_subplot(self, runs):
+        """ Prepare plots for visualisation """
+        trajectory_cnt = 7
+        trajectories = [c.reshape(-1, 2) for c in self.best_sequences_stats["run_coords"][:trajectory_cnt]]
+        ancestors = np.array([t[-1] for t in trajectories])  # all last sequences
+        ancestor_names = [str(i) for i in range(trajectory_cnt)]
+
+        # append query
+        mu = self.encode(self.query)
+        ancestors = np.append(ancestors, mu).reshape(-1, 2)
+        ancestor_names.append('Query')
+
+        h = Highlighter(self.setuper)
+        h.highlight_mutants(ancestors, ancestor_names, trajectories[:trajectory_cnt], file_name="trajectory")
+        h = Highlighter(self.setuper)
+        h.highlight_mutants(ancestors, ancestor_names, trajectories[:trajectory_cnt], file_name="trajectory_focus",
+                            focus=True)
+
 
 def run_cma_es_evolution():
     """ Setup for running Covariance matrix adaptation evolution strategy """
@@ -344,34 +366,36 @@ def run_cma_es_evolution():
     cmd_line = CommandHandler()
 
     # Prepare evo class
-    evo = EvolutionSearch(tar_dir, cmd_line)
+    RUNS = 10
+    evo = EvolutionSearch(tar_dir, cmd_line, runs=RUNS)
     coords = evo.fit_landscape()
 
     ##########################
     # Experiment setup
-    experiment_runs = 10
+    experiment_runs = RUNS
     experiment_generations = 50
-    population = 64
-    sigma_step = 0.5
-    target_identity = 0.75
+    population = 128
+    sigma_step = 0.22
+    target_identity = 0.925
     query_coords = evo.encode(evo.query)[0]
     PARETO, WEIGHT = True, False
     # Fitness influence of: Tm, identity, distance to center, likelihood. Applies only in weight mode!!
-    evo.fitness_class_setting = (0.7, 0.35, 1.1, 0.8)
+    evo.fitness_class_setting = (1, 1, 1, 1) # (0.7, 0.35, 1.1, 0.8)
 
     ##########################
     # Run experiments
     run_trajectories = []
     for run_i in range(experiment_runs):
-        evo.run = run_i+1
+        evo.run = run_i + 1
         print("=" * 80)
         print("# Run {} out of {}".format(run_i + 1, experiment_runs))
         ret = evo.search(experiment_generations, population, query_coords, target_identity,
                          sigma_step, pareto=PARETO, filename="run_pokus{}.csv".format(run_i + 1))
         run_trajectories.append(ret)
     # evo.animate(run_trajectories, experiment_generations)
-    evo.exp_stats_handler.create_and_store_ancestor_statistics(evo.best_sequences_stats["dict"], "cma_evolution.fasta",
-                                                               evo.best_sequences_stats["coords"])
+    evo.make_plot_with_subplot(run_trajectories)
+    # evo.exp_stats_handler.create_and_store_ancestor_statistics(evo.best_sequences_stats["dict"], "cma_evolution.fasta",
+    #                                                            evo.best_sequences_stats["coords"])
 
 
 if __name__ == "__main__":
