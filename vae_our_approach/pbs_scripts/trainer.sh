@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -N norm
+#PBS -N cvae_deep
 #PBS -q gpu -l select=1:ngpus=1:mem=16gb:scratch_local=10gb
 # -l select=1:ncpus=1:mem=16gb:scratch_local=1gb
 #PBS -l walltime=24:00:00
@@ -9,8 +9,9 @@
 DATADIR_BASE=/storage/brno2/home/xkohou15 # substitute to your home directory
 DATASET=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/datasets/datasets.tar.gz
 RESULTS=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/results/.
-DATADIR=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/devel_LL # substitute username and path to to your real username and path
-LOGDIR=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/devel_LL/devel_log/ # substitute for your log directory
+CLUSTAL=/storage/brno2/home/xkohou15/AI_dir/submissiondp/submission/clustal
+DATADIR=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/scripts # substitute username and path to to your real username and path
+LOGDIR=/storage/brno2/home/xkohou15/AI_dir/vae-for-hlds/vae_our_approach/scripts/devel_log/ # substitute for your log directory
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
 # this information helps to find a scratch directory in case the job fails and you need to remove the scratch directory manually
@@ -23,12 +24,15 @@ conda activate #vae-env
 echo "Sourcing anaconda succesful" >> $LOGDIR/jobs_info.txt
 
 ## copy project to scratch directory
-LOCALPROJECT=${SCRATCHDIR}/devel_LL/.
+LOCALPROJECT=${SCRATCHDIR}/scripts/.
 
 cp -r $DATADIR $SCRATCHDIR || { echo >&2 "Error while copying input file(s)!"; exit 2; }
 
 ## transfer datasets
 cp $DATASET $SCRATCHDIR
+
+## transfer clustalo
+cp -r $CLUSTAL $SCRATCHDIR
 
 ## Run pipeline
 cd $SCRATCHDIR
@@ -45,9 +49,9 @@ python3 runner.py msa_handlers/msa_preprocessor.py
 python3 runner.py train.py
 
 ## Order statistics
-python3 runner.py benchmark.py
-python3 runner.py run_task.py --run_generative_evaluation
-python3 runner.py run_task.py --run_generative_evaluation_plot
+#python3 runner.py benchmark.py
+#python3 runner.py run_task.py --run_generative_evaluation
+#python3 runner.py run_task.py --run_generative_evaluation_plot
 
 ## transport results
 LOCALRESULTS=${SCRATCHDIR}/results/.
