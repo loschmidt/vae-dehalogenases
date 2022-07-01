@@ -1,0 +1,105 @@
+__author__ = "Pavel Kohout <xkohou15@vutbr.cz>"
+__date__ = "2022/07/01 10:06:00"
+
+import inspect
+import os
+import sys
+import torch
+import pickle
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import torch.distributions as D
+
+custom_style = {'grid.color': '0.5'}
+sns.set_theme(style="ticks")
+
+currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentDir = os.path.dirname(currentDir)
+sys.path.insert(0, parentDir)
+
+from parser_handler import CmdHandler
+from sequence_transformer import Transformer
+from VAE_accessor import VAEAccessor
+from project_enums import SolubilitySetting
+from msa_handlers.msa_preparation import MSA
+
+
+class EntropyLatent:
+    """
+    This class implements measurement of entropy by article Meaningful latent space representation
+    """
+
+    def __init__(self, setuper: CmdHandler):
+        self.vae = VAEAccessor(setuper, setuper.get_model_to_load())
+        self.transformer = Transformer(setuper)
+        self.cmd_line = setuper
+
+    def create_latent_space(self):
+        """ Creates latent space coordinates """
+        with open(self.cmd_line.pickles_fld + "/training_alignment.pkl", 'rb') as file_handle:
+            train_dict = pickle.load(file_handle)
+        msa_binary, weights, msa_keys = self.transformer.sequence_dict_to_binary(train_dict)
+        msa_binary = torch.from_numpy(msa_binary)
+
+        # In the case of CVAE
+        solubility = self.cmd_line.get_solubility_data()
+
+        mu, sigma = self.vae.propagate_through_VAE(msa_binary, weights, msa_keys, solubility)
+
+        query_index = msa_keys.index(self.cmd_line.query_id)
+        query_coords = mu[query_index]
+        return mu, query_coords
+
+    def calculate_entropies(self):
+        """
+        Get entropies for each point in the grid of latent space by formula
+            H(X|Z) = SUM p_theta(X|Z)_i * log(p_theta(X|Z)_i)
+        """
+        n_points = 100
+        xy_min, xy_max = -8, 8
+        z_grid = torch.stack([m.flatten() for m in torch.meshgrid(2 * [torch.linspace(xy_min, xy_max, n_points)])]).t()
+
+        solubility = self.cmd_line.get_solubility_data()
+
+        if solubility:
+            solubility = [SolubilitySetting.SOL_BIN_MEDIUM for _ in z_grid.shape[0]]
+
+        final_shape = (z_grid.shape[1], -1, len(MSA.aa) + 1)
+        log_p = self.vae.vae.decoder(z_grid, c=solubility)
+        probs = torch.unsqueeze(log_p, -1)
+        probs = probs.view(final_shape)
+        probs = torch.exp(probs)
+        d = D.Categorical(probs=probs)
+        entropies = d.entropy().sum(dim=-1)
+        # log_p = log_p.view(final_shape)
+
+        return entropies, z_grid
+
+    def create_plot(self):
+        """ Create plot """
+        fig, ax = plt.subplots(constrained_layout=True)
+        ent, z_grid = self.calculate_entropies()
+        zs, query = self.create_latent_space()
+        ax = EntropyLatent.fill_plot_entropy_latent(ax, ent, z_grid, zs, query)
+
+        fig.savefig(self.cmd_line.high_fld + "heatmap.png", dpi=600)
+
+    @staticmethod
+    def fill_plot_entropy_latent(ax, entropies, z_grid, embeddings, query_embedding):
+        """ Plot contour map with information entropy in the latent space """
+        ax.countourf(z_grid[:, 0], z_grid[:, 1], entropies, 40, levels=50, cmap='Greys_r', zorder=0)
+        ax.scatter(embeddings[:, 0], embeddings[:, 1])
+        ax.scatter(query_embedding[0], query_embedding[1], color='red')
+
+        return ax
+
+def run_setup():
+    """ Design the run setup for this package """
+    cmdline = CmdHandler()
+    entropy_gauge = EntropyLatent(cmdline)
+    entropy_gauge.create_plot()
+
+
+if __name__ == '__main__':
+    run_setup()
