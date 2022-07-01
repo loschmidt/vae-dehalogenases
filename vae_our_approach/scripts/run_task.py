@@ -13,6 +13,7 @@ if sys.argv[1] not in ["--help", "-h"]:
     from Statistics.order_statistics import run_setup as model_statistics_run
     from Statistics.reconstruction_ability import run_input_dataset_reconstruction as model_input_reconstruct_run
     from Statistics.stats_plot import make_overview as plot_overview
+    from Statistics.entropy_latent import run_entropy as model_entropy
 
     from reconstruction.mutagenesis import run_random_mutagenesis, run_straight_evolution
     from reconstruction.evo_search import run_cma_es_evolution
@@ -39,6 +40,8 @@ def get_package_parser() -> ArgumentParser:
                         help="Highlights sequence with label in the latent space")
     parser.add_argument("--run_package_stats_reconstruction", action='store_true', default=False,
                         help="Determines how well can model reconstruct sequences")
+    parser.add_argument("--run_package_stats_entropy", action='store_true', default=False,
+                        help="Highlight entropy in the latent space")
     parser.add_argument("--run_generative_evaluation_plot", action='store_true', default=False,
                         help="Plot all statistics in one plot")
     parser.add_argument("--run_generative_evaluation", action='store_true', default=False,
@@ -68,6 +71,8 @@ def run_package(parser: ArgumentParser):
         model_tree_run()
     if args.run_package_stats_mapper:
         model_mapper_run()
+    if args.run_package_stats_entropy:
+        model_entropy()
     if args.run_package_stats_reconstruction:
         model_input_reconstruct_run()
     if args.run_generative_evaluation_plot:

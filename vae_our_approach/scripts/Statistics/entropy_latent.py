@@ -94,7 +94,8 @@ class EntropyLatent:
 
         return ax
 
-def run_setup():
+
+def run_entropy():
     """ Design the run setup for this package """
     cmdline = CmdHandler()
     entropy_gauge = EntropyLatent(cmdline)
@@ -102,4 +103,4 @@ def run_setup():
 
 
 if __name__ == '__main__':
-    run_setup()
+    run_entropy()
