@@ -62,16 +62,19 @@ class EntropyLatent:
 
         solubility = self.cmd_line.get_solubility_data()
 
-        if solubility:
-            solubility = [SolubilitySetting.SOL_BIN_MEDIUM for _ in z_grid.shape[0]]
+        if solubility is not None:
+            solubility = torch.tensor([SolubilitySetting.SOL_BIN_MEDIUM.value for _ in range(z_grid.shape[0])])
 
-        final_shape = (z_grid.shape[1], -1, len(MSA.aa) + 1)
+        final_shape = (z_grid.shape[0], -1, len(MSA.aa) + 1)
         log_p = self.vae.vae.decoder(z_grid, c=solubility)
         probs = torch.unsqueeze(log_p, -1)
         probs = probs.view(final_shape)
         probs = torch.exp(probs)
         d = D.Categorical(probs=probs)
+        print(d)
         entropies = d.entropy().sum(dim=-1)
+        entropies = entropies.detach().numpy()
+        print(entropies.shape)
         # log_p = log_p.view(final_shape)
 
         return entropies, z_grid
@@ -86,9 +89,12 @@ class EntropyLatent:
         fig.savefig(self.cmd_line.high_fld + "heatmap.png", dpi=600)
 
     @staticmethod
-    def fill_plot_entropy_latent(ax, entropies, z_grid, embeddings, query_embedding):
+    def fill_plot_entropy_latent(ax, entropies, z_grid, embeddings, query_embedding, n_points=100):
         """ Plot contour map with information entropy in the latent space """
-        ax.countourf(z_grid[:, 0], z_grid[:, 1], entropies, 40, levels=50, cmap='Greys_r', zorder=0)
+        ax.contourf(z_grid[:, 0].reshape(n_points, n_points),
+                    z_grid[:, 1].reshape(n_points, n_points),
+                    entropies.reshape(n_points, n_points), 40, levels=50, cmap='Greys_r',
+                    zorder=0)
         ax.scatter(embeddings[:, 0], embeddings[:, 1])
         ax.scatter(query_embedding[0], query_embedding[1], color='red')
 
