@@ -83,7 +83,7 @@ class EntropyLatent:
         zs, query = self.create_latent_space()
         ax = EntropyLatent.fill_plot_entropy_latent(ax, ent, z_grid, zs, query)
 
-        fig.savefig(self.cmd_line.high_fld + "heatmap.png", dpi=600)
+        fig.savefig(self.cmd_line.high_fld + "/heatmap.png", dpi=600)
 
     @staticmethod
     def fill_plot_entropy_latent(ax, entropies, z_grid, embeddings, query_embedding, n_points=100):
