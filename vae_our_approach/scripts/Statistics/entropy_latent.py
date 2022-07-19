@@ -71,11 +71,8 @@ class EntropyLatent:
         probs = probs.view(final_shape)
         probs = torch.exp(probs)
         d = D.Categorical(probs=probs)
-        print(d)
         entropies = d.entropy().sum(dim=-1)
         entropies = entropies.detach().numpy()
-        print(entropies.shape)
-        # log_p = log_p.view(final_shape)
 
         return entropies, z_grid
 
@@ -95,8 +92,8 @@ class EntropyLatent:
                     z_grid[:, 1].reshape(n_points, n_points),
                     entropies.reshape(n_points, n_points), 40, levels=50, cmap='Greys_r',
                     zorder=0)
-        ax.scatter(embeddings[:, 0], embeddings[:, 1])
-        ax.scatter(query_embedding[0], query_embedding[1], color='red')
+        ax.scatter(embeddings[:, 0], embeddings[:, 1], s=1)
+        ax.scatter(query_embedding[0], query_embedding[1], s=1, color='red')
 
         return ax
 
