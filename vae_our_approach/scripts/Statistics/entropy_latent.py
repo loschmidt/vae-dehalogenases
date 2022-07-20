@@ -57,7 +57,7 @@ class EntropyLatent:
             H(X|Z) = SUM p_theta(X|Z)_i * log(p_theta(X|Z)_i)
         """
         n_points = 100
-        xy_min, xy_max = -8, 8
+        xy_min, xy_max = -11, 11
         z_grid = torch.stack([m.flatten() for m in torch.meshgrid(2 * [torch.linspace(xy_min, xy_max, n_points)])]).t()
 
         solubility = self.cmd_line.get_solubility_data()
