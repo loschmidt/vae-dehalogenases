@@ -23,6 +23,7 @@ from sequence_transformer import Transformer
 from VAE_accessor import VAEAccessor
 from project_enums import SolubilitySetting
 from msa_handlers.msa_preparation import MSA
+from vae_models.latent_priors.entropy_prior import DistNet
 
 
 class EntropyLatent:
@@ -30,10 +31,11 @@ class EntropyLatent:
     This class implements measurement of entropy by article Meaningful latent space representation
     """
 
-    def __init__(self, setuper: CmdHandler):
+    def __init__(self, setuper: CmdHandler, optimized_entropy):
         self.vae = VAEAccessor(setuper, setuper.get_model_to_load())
         self.transformer = Transformer(setuper)
         self.cmd_line = setuper
+        self.optimized_entropy = optimized_entropy
 
     def create_latent_space(self):
         """ Creates latent space coordinates """
@@ -70,6 +72,15 @@ class EntropyLatent:
         probs = torch.unsqueeze(log_p, -1)
         probs = probs.view(final_shape)
         probs = torch.exp(probs)
+
+        if self.optimized_entropy:
+            embeddings, _ = self.create_latent_space()
+            distnet = DistNet(self.cmd_line.dimensionality, 200)
+            distnet.kmeans_initializer(embeddings)
+
+            s = distnet(z_grid).view(*z_grid.shape[:-1], 1, 1)
+            probs = (1-s) * probs + s * probs.mean()
+
         d = D.Categorical(probs=probs)
         entropies = d.entropy().sum(dim=-1)
         entropies = entropies.detach().numpy()
@@ -98,10 +109,10 @@ class EntropyLatent:
         return ax
 
 
-def run_entropy():
+def run_entropy(optimized_entropy=False):
     """ Design the run setup for this package """
     cmdline = CmdHandler()
-    entropy_gauge = EntropyLatent(cmdline)
+    entropy_gauge = EntropyLatent(cmdline, optimized_entropy)
     entropy_gauge.create_plot()
 
 
