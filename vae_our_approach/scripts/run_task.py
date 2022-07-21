@@ -72,7 +72,7 @@ def run_package(parser: ArgumentParser):
     if args.run_package_stats_mapper:
         model_mapper_run()
     if args.run_package_stats_entropy:
-        model_entropy()
+        model_entropy(optimized_entropy=True)
     if args.run_package_stats_reconstruction:
         model_input_reconstruct_run()
     if args.run_generative_evaluation_plot:
