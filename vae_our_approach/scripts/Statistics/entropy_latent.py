@@ -5,6 +5,7 @@ import inspect
 import os
 import sys
 import torch
+import os.path as path
 import pickle
 
 import matplotlib.pyplot as plt
@@ -36,6 +37,20 @@ class EntropyLatent:
         self.transformer = Transformer(setuper)
         self.cmd_line = setuper
         self.optimized_entropy = optimized_entropy
+        self.distnet = self.init_distnet()
+
+    def init_distnet(self):
+        """ Check whether there is distnet already initialized """
+        distnet = DistNet(self.cmd_line.dimensionality, 200)
+
+        model_path = self.cmd_line.VAE_model_dir + "/distnet.model"
+        if path.isfile(model_path):
+            return distnet.load_state_dict()
+        embeddings, _ = self.create_latent_space()
+        distnet.kmeans_initializer(embeddings)
+
+        torch.save(distnet.state_dict(), model_path)
+        return distnet
 
     def create_latent_space(self):
         """ Creates latent space coordinates """
@@ -74,11 +89,7 @@ class EntropyLatent:
         probs = torch.exp(probs)
 
         if self.optimized_entropy:
-            embeddings, _ = self.create_latent_space()
-            distnet = DistNet(self.cmd_line.dimensionality, 200)
-            distnet.kmeans_initializer(embeddings)
-
-            s = distnet(z_grid).view(*z_grid.shape[:-1], 1, 1)
+            s = self.distnet(z_grid).view(*z_grid.shape[:-1], 1, 1)
             probs = (1-s) * probs + s * probs.mean()
 
         d = D.Categorical(probs=probs)
