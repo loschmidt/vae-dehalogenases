@@ -45,7 +45,8 @@ class EntropyLatent:
 
         model_path = self.cmd_line.VAE_model_dir + "/distnet.model"
         if path.isfile(model_path):
-            return distnet.load_state_dict()
+            distnet.load_state_dict(torch.load(model_path))
+            return distnet
         embeddings, _ = self.create_latent_space()
         distnet.kmeans_initializer(embeddings)
 
@@ -98,14 +99,19 @@ class EntropyLatent:
 
         return entropies, z_grid
 
-    def create_plot(self):
+    def create_plot(self, ax_p=None):
         """ Create plot """
-        fig, ax = plt.subplots(constrained_layout=True)
+        if ax_p is None:
+            fig, ax = plt.subplots(constrained_layout=True)
+        else:
+            ax = ax_p
         ent, z_grid = self.calculate_entropies()
         zs, query = self.create_latent_space()
         ax = EntropyLatent.fill_plot_entropy_latent(ax, ent, z_grid, zs, query)
 
-        fig.savefig(self.cmd_line.high_fld + "/heatmap.png", dpi=600)
+        if ax_p is None:
+            fig.savefig(self.cmd_line.high_fld + "/entropy_net.png", dpi=600)
+        return ax
 
     @staticmethod
     def fill_plot_entropy_latent(ax, entropies, z_grid, embeddings, query_embedding, n_points=100):
