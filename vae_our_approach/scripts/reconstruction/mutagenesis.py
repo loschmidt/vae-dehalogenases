@@ -115,7 +115,7 @@ class MutagenesisGenerator:
 
         return mutant_seqs
 
-    def _mutants_positions(self, seqs):
+    def mutants_positions(self, seqs):
         """ Get mutants position in the latent space from dictionary """
         binary, weights, keys = self.transformer.sequence_dict_to_binary(seqs)
         data, _ = self.handler.propagate_through_VAE(binary, weights, keys)
@@ -123,7 +123,7 @@ class MutagenesisGenerator:
 
     def get_closest_mutant(self, mutants):
         """ Get mutant with highest proximity to the origin """
-        mutants_pos = self._mutants_positions(mutants)
+        mutants_pos = self.mutants_positions(mutants)
         seqs = list(mutants.values())
         min_dist = float("inf")
         ancestor = []
@@ -149,7 +149,7 @@ class MutagenesisGenerator:
          The class returns only ancestors!!!
         """
         print(" Mutagenesis message : Straight ancestors generating process started")
-        ref_pos = self._mutants_positions(self.cur)
+        ref_pos = self.mutants_positions(self.cur)
         coor_tuple = tuple(ref_pos[0])
         tuple_dim = range(len(ref_pos[0]))
         step_list = [0.0 for _ in tuple_dim]
