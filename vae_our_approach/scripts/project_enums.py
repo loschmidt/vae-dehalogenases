@@ -56,6 +56,8 @@ class Helper(Enum):
     CONV = "Set this up to use encoder and decoder build up from from 2D convolution layers"
     CVAE = "Conditional variational autoencoder variant. The soluprot file should be provided in option solubility_file"
     SOL_FILE = "File with soluprot predictions for sequences in the dataset (proposed by enzymeMiner tool) "
+    DYNAMIC_DECAY = "From given decay or (in default) 0.05 value decrease decay factor linearly to 0.0 for 1/4 of " \
+                    "epochs every tenth epoch"
 
 class VaePaths(Enum):
     # Experiment directory paths

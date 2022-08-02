@@ -39,6 +39,7 @@ class CmdHandler(metaclass=Singleton):
         self.ancestral_samples = self.args.ancestors
         self.focus = self.args.focus
         self.dimensionality = self.args.dimensionality
+        self.dynamic_decay = self.args.dynamic_decay
 
         self.highlight_files = self.args.highlight_files
         self.highlight_seqs = self.args.highlight_seqs
@@ -122,6 +123,7 @@ class CmdHandler(metaclass=Singleton):
         parser.add_argument('--convolution', action='store_true', default=False, help=Helper.CONV.value)
         parser.add_argument('--conditional', action='store_true', default=False, help=Helper.CVAE.value)
         parser.add_argument('--solubility_file', type=str, default=None, help=Helper.SOL_FILE.value)
+        parser.add_argument('--dynamic_decay', action='store_true', default=False, help=Helper.DYNAMIC_DECAY.value)
         # Clustal path option
         parser.add_argument('--clustalo_path', type=str, default='../clustal/clustalo',
                             help=Helper.CLUSTAL.value)
