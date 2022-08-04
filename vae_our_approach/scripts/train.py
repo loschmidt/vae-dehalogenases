@@ -160,6 +160,7 @@ class Train:
                     optimizer.step()
                     if (epoch+1) % 10 == 0 and self.setuper.dynamic_decay:
                         optimizer.param_groups[0]['weight_decay'] = dynamic_decay[decay_epoch_cnt]
+                        print(" Decay weight value {}".format(optimizer.param_groups[0]['weight_decay']))
                         decay_epoch_cnt += 1
                     train_loss_tmp.append(loss.item())
 
@@ -167,8 +168,6 @@ class Train:
                 print_limit = 5 if self.setuper.convolution else 50
                 if (epoch + 1) % print_limit == 0:
                     print("Fold: {}, Epoch: {:>4}, loss: {:>4.2f}".format(k, epoch, train_loss_list[-1]), flush=True)
-                    print(" Decay weight value {}".format(optimizer.param_groups[0]['weight_decay']))
-                    print(dynamic_decay)
 
             ## cope trained model to cpu and save it
             if self.use_cuda:
