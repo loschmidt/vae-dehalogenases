@@ -4,7 +4,7 @@ __date__ = "2022/02/10 14:12:00"
 import os
 import sys
 import inspect
-import pickle
+import math
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -57,16 +57,23 @@ class LatentSpaceMapper:
                 sequences.append([seq_id, experimental, float(soluprot)])
         return sequences
 
-    def map_sequences_with_labels_to_space(self, seq_labels: list, hts_project_fasta: str):
+    def map_sequences_with_labels_to_space(self, seq_labels: list, hts_project_fasta: str, align_to: int):
         """ Assign labels to the sequences from the input set """
         whole_msa = MSA.load_msa(self.in_file)
-        hts_msa = self.aligner_obj.align_fasta_to_original_msa(self.input_dir + hts_project_fasta, already_msa=False,
-                                                               verbose=True)
+
+        if align_to == 1:
+            hts_msa = self.aligner_obj.align_fasta_to_original_msa(self.input_dir + hts_project_fasta,
+                                                                   already_msa=False,
+                                                                   verbose=True)
+        else:
+            seq_to_align = MSA.load_msa(self.input_dir + hts_project_fasta)
+            hts_msa = self.aligner_obj.align_to_ref(seq_to_align)
         labels, soluprot_labels = [], []
         selected_sequences_dict = {}
+        slicing_selected_sequences_dict = {}
         for seq_id, label, soluprot_label in seq_labels:
             try:
-                selected_sequences_dict[seq_id] = whole_msa[seq_id]
+                slicing_selected_sequences_dict[seq_id] = whole_msa[seq_id]
                 labels.append(label)
                 soluprot_labels.append(soluprot_label)
             except KeyError:
@@ -78,20 +85,30 @@ class LatentSpaceMapper:
                 except KeyError:
                     print("    Key {} not found in hts project".format(seq_id))
 
-        sliced_selected = self.transformer.slice_msa_by_pos_indexes(selected_sequences_dict)
+        sliced_selected = self.transformer.slice_msa_by_pos_indexes(slicing_selected_sequences_dict)
+        # add the already sliced sequences
+        for k, v in selected_sequences_dict.items():
+            sliced_selected[k] = v
+
         binaries, weights, keys = self.transformer.sequence_dict_to_binary(sliced_selected)
+
         mus, _ = self.vae.propagate_through_VAE(binaries, weights, keys)
         return mus, labels, soluprot_labels
 
     def plot_labels(self, z: np.ndarray, labels: list, latent_space: bool):
         """ Plot depth into latent space """
-        plt.scatter(z[:, 0], z[:, 1], c=labels, s=1.5, cmap='jet', vmin=min(labels), vmax=max(labels))
-
         if latent_space:
             binaries = self.transformer.msa_binary
             binaries, weights = self.transformer.shape_binary_for_vae(binaries)
             mus, _ = self.vae.propagate_through_VAE(binaries, weights, self.transformer.keys_list)
             plt.plot(mus[:, 0], mus[:, 1], '.', alpha=0.1, markersize=3, color='grey')
+
+        plt.scatter(z[:, 0], z[:, 1], c=labels, s=1.5, cmap='Blues', vmin=min(labels), vmax=max(labels))
+
+    def plot_focus(self, z: np.ndarray):
+        """ Plot heatmap of the mapped sequence """
+        plt.xlim([min(z[:, 0]) - 0.5, max(z[:, 0]) + 0.5])
+        plt.ylim([min(z[:, 1]) - 0.5, max(z[:, 1]) + 0.5])
 
     def finalize_plot(self, file_name: str, axis_label: str):
         """ Store and finalize plot """
@@ -114,10 +131,44 @@ def run_latent_mapper():
 
     latent_mapper = LatentSpaceMapper(cmdline)
     labels_with_sequences = latent_mapper.load_training_sequence_labels(label_file)
-    z, labels, soluprot_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta)
+    z, labels, soluprot_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta,
+                                                                                  align_to=1)
     latent_mapper.plot_labels(z, labels, True)
     latent_mapper.finalize_plot(plot_file, "Solubility")
     print("  Storing mapped plot in ", latent_mapper.target_dir + plot_file)
     latent_mapper.plot_labels(z, soluprot_labels, True)
     latent_mapper.finalize_plot(plot_soluprot_file, "Solubility")
     print("  Storing mapped soluprot plot in ", latent_mapper.target_dir + plot_soluprot_file)
+
+
+def run_latent_dhaa115_mapper():
+    """ Map DhaA115 mutant to the latent space """
+    cmdline = CmdHandler()
+    label_file = "dhaa115_mut_values.txt"
+    hts_fasta = "dhaa115_mut.fasta"
+    plot_file = "mapped_dhaa115_dTm.png"
+    plot_soluprot_file = "mapped_dhaa115_dTm_vals.png"
+
+    print("=" * 80)
+    print("   Mapping DhaA115 sequence variants with labels to latent space")
+
+    latent_mapper = LatentSpaceMapper(cmdline)
+    labels_with_sequences = latent_mapper.load_training_sequence_labels(label_file)
+    z, labels, dTm_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta,
+                                                                             align_to=2)
+    latent_mapper.plot_labels(z, labels, True)
+    latent_mapper.finalize_plot(plot_file, "dTm")
+    print("  Storing mapped plot in ", latent_mapper.target_dir + plot_file)
+    latent_mapper.plot_labels(z, dTm_labels, True)
+    latent_mapper.finalize_plot(plot_soluprot_file, "dTm.1")
+    print("  Storing mapped dTm.1 plot in ", latent_mapper.target_dir + plot_soluprot_file)
+
+    # focused variants
+    latent_mapper.plot_labels(z, labels, True)
+    latent_mapper.plot_focus(z)
+    latent_mapper.finalize_plot(plot_file, "dTm")
+    print("  Storing mapped plot in ", latent_mapper.target_dir + "focus_" + plot_file)
+    latent_mapper.plot_labels(z, dTm_labels, True)
+    latent_mapper.plot_focus(z)
+    latent_mapper.finalize_plot(plot_soluprot_file, "dTm.1")
+    print("  Storing mapped dTm.1 plot in ", latent_mapper.target_dir + "focus_" + plot_soluprot_file)

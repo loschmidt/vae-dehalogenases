@@ -136,6 +136,7 @@ class CmdHandler(metaclass=Singleton):
                 ('--run_package_stats_fireprot' not in unknown and len(unknown) > 0) and \
                 ('--run_package_stats_tree' not in unknown and len(unknown) > 0) and \
                 ('--run_package_stats_mapper' not in unknown and len(unknown) > 0) and \
+                ('--run_package_stats_map_dhaa115' not in unknown and len(unknown) > 0) and \
                 ('--run_package_stats_reconstruction' not in unknown and len(unknown) > 0) and \
                 ('--run_generative_evaluation_plot' not in unknown and len(unknown) > 0) and \
                 ('--run_generative_evaluation' not in unknown and len(unknown) > 0) and \
