@@ -47,17 +47,21 @@ def show_latent_space_features(ax, anc_msa_file, setuper):
     ancestor_msa, ancestor_weight, ancestor_keys = transformer.sequence_dict_to_binary(ancestor_aligned)
     ancestor_mus, ancestor_sigma = vae.propagate_through_VAE(ancestor_msa, ancestor_weight, ancestor_keys)
 
-    # highlight query
-    ax.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, )
-    ax.plot(query_coords[0], query_coords[1], '.', color='red')
+    fig_lat, ax_lat = plt.subplots(1, 1)
 
-    # Highlight Babkovas ancestors
-    for ancestor_idx, anc_mu in enumerate(ancestor_mus):
-        ax.plot(anc_mu[0], anc_mu[1], '.', color='black', alpha=1, markersize=3,
-                label=ancestor_keys[ancestor_idx] + '({})'.format(ancestor_idx))
-        ax.annotate(str(ancestor_idx), (anc_mu[0], anc_mu[1]))
-    ax.set_xlabel("$Z_1$")
-    ax.set_ylabel("$Z_2$")
+    # highlight query
+    for ax in [ax, ax_lat]:
+        ax.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3, )
+        ax.plot(query_coords[0], query_coords[1], '.', color='red')
+
+        # Highlight Babkovas ancestors
+        for ancestor_idx, anc_mu in enumerate(ancestor_mus):
+            ax.plot(anc_mu[0], anc_mu[1], '.', color='black', alpha=1, markersize=3,
+                    label=ancestor_keys[ancestor_idx] + '({})'.format(ancestor_idx))
+            ax.annotate(str(ancestor_idx), (anc_mu[0], anc_mu[1]))
+        ax.set_xlabel("$Z_1$")
+        ax.set_ylabel("$Z_2$")
+    fig_lat.savefig(setuper.high_fld + "/latent_space.png")
 
 
 def create_bench_plot(ax, highlight_folder_path):
