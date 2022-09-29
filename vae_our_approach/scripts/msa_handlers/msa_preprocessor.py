@@ -62,7 +62,7 @@ class MSAPreprocessor:
         with open(self.pickle + "/reference_seq.pkl", 'wb') as file_handle:
             pickle.dump(ref_seq, file_handle)
 
-    def filter_gap_positions(self, msa: Dict[str, str], threshold: int = 0.2) -> Dict[str, List[np.array]]:
+    def filter_gap_positions(self, msa: Dict[str, str], threshold: float = 0.2) -> Dict[str, List[np.array]]:
         """
         Remove positions with too many gaps. All columns with query no gap position are held
         except those including (1 - threshold) gaps in other sequences. These query positions
@@ -150,7 +150,7 @@ class MSAPreprocessor:
                 pass
         return msa
 
-    def filter_query_no_overlap_sequences(self, msa: Dict[str, List[np.array]], threshold: int = 0.5) -> np.array:
+    def filter_query_no_overlap_sequences(self, msa: Dict[str, List[np.array]], threshold: float = 0.5) -> np.array:
         """
         In the final MSA only sequences with significant overlap with the query are left.
         The default overlap is 0.5
