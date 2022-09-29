@@ -7,6 +7,14 @@ import numpy as np
 from math import sqrt
 from random import randrange, sample
 
+import os
+import sys
+import inspect
+
+currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentDir = os.path.dirname(currentDir)
+sys.path.insert(0, parentDir)
+
 from analyzer import Highlighter, AncestorsHandler
 from VAE_accessor import VAEAccessor
 from msa_handlers.download_MSA import Downloader
@@ -244,8 +252,8 @@ if __name__ == '__main__':
 
     mut = MutagenesisGenerator(setuper=tar_dir, num_point_mut=tar_dir.mut_points)
     names, ancestors, probs = mut.get_straight_ancestors()
-    # given_anc_probs, given_anc_names = mut.measure_probability_given_ancestors()
+    given_anc_probs, given_anc_names = mut.measure_probability_given_ancestors()
     # h.highlight_mutants(ancs=ancestors, names=names, mutants=[], file_name='straight_ancestors_no_focus', focus=False)
     h = Highlighter(tar_dir)
     h.plot_probabilities(probs, ancestors)
-    # h.plot_straight_probs_against_ancestors(probs, given_anc_probs, given_anc_names)
+    h.plot_straight_probs_against_ancestors(probs, given_anc_probs, given_anc_names)
