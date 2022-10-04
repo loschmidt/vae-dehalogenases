@@ -93,5 +93,5 @@ class SolubilitySetting(Enum):
     SOL_BIN_LOW = 0
     SOL_BIN_MEDIUM = 1
     SOL_BIN_HIGH = 2
-    LOW_TH = 0.4
-    MED_TH = 0.725
+    LOW_TH = 0.35
+    MED_TH = 0.55

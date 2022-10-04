@@ -5,8 +5,8 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
-LOW = 0.25
-MED = 0.6
+LOW = 0.35
+MED = 0.55
 
 
 def solubility_dist(file, keys):
