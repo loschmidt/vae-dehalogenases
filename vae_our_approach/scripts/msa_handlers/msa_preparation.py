@@ -97,9 +97,9 @@ class MSA:
 
     @staticmethod
     def solubility_bin(sol_val: float):
-        if sol_val < SolubilitySetting.LOW_TH:
+        if sol_val < SolubilitySetting.LOW_TH.value:
             return SolubilitySetting.SOL_BIN_LOW.value
-        if sol_val <= SolubilitySetting.MED_TH:
+        if sol_val <= SolubilitySetting.MED_TH.value:
             return SolubilitySetting.SOL_BIN_MEDIUM.value
         return SolubilitySetting.SOL_BIN_HIGH.value
 
