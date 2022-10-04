@@ -115,12 +115,12 @@ def run_riemannian_ancestors(sequence=None):
     curve = riemannian.numeric_curve_optimizer(curve)
     print(curve.parameters)
     # trajectory = curve(torch.linspace(0, 1, cmd_line.ancestral_samples + 1)).detach()
-    merge_trajectory = torch.ones((2, 101))
+    merge_trajectory = torch.ones((101, 2))
     trajectory = curve(torch.linspace(0, 1, 11)).detach()
     for i in range(10):
         curve = DiscreteCurve(trajectory[i], trajectory[i+1])
         curve = riemannian.numeric_curve_optimizer(curve)
-        merge_trajectory[:, i*10:i+11] = curve(torch.linspace(0, 1, 11)).detach()
+        merge_trajectory[i*10:i*10+11, :] = curve(torch.linspace(0, 1, 11)).detach()
 
     trajectory = merge_trajectory
     # plot and create report
