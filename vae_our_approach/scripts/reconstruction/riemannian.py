@@ -128,6 +128,9 @@ def run_riemannian_ancestors(sequence=None):
     riemannian.entropy_latent.create_plot(ax)
     ax.scatter(trajectory[:, 0], trajectory[:, 1], s=1, c="#985C2F")
     fig.savefig(cmd_line.high_fld + "/riemannian_ancestors.png", dpi=600)
+    ax.set_xlim(min(trajectory[:, 0]), max(trajectory[:, 0]))
+    ax.set_ylim(min(trajectory[:, 1]), max(trajectory[:, 1]))
+    fig.savefig(cmd_line.high_fld + "/riemannian_ancestors_focus.png", dpi=600)
 
     experiment = ExperimentStatistics(cmd_line, experiment_name="riemannian_ancestors")
     ancestors_to_store = riemannian.vae.decode_z_to_aa_dict(trajectory, cmd_line.query_id)
