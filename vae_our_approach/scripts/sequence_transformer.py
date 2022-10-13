@@ -70,7 +70,8 @@ class Transformer(metaclass=Singleton):
         """ Adds excluded Amino acids from query in MSA preprocessing """
         aa_sequence = "".join(aa_sequence)  # Secure string format
         for query_pos, query_aa in self.excluded_query_pos_and_aa:
-            aa_sequence = aa_sequence[:query_pos] + query_aa + aa_sequence[query_pos:]
+            gaps_pos = sum([x == "-" for x in aa_sequence[:query_pos]])
+            aa_sequence = aa_sequence[:query_pos + gaps_pos] + query_aa + aa_sequence[query_pos + gaps_pos:]
         return aa_sequence
 
     def sequence_dict_to_binary(self, seq_dict):
