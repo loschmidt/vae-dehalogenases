@@ -21,16 +21,23 @@ def parse_csv(file):
     return probs, wt_identity, closest_identity, residues90, indels_cnt
 
 
-def plot_dual_axis(prs, wt, cl, res, inds, file):
+def plot_dual_axis(prs, wt, cl, res, inds, file, positions):
     plt.figure(figsize=(30, 6), dpi=400)
     matplotlib.rc('ytick', labelsize=20)
     matplotlib.rc('xtick', labelsize=8)
 
+    global SUCCESSORS
+    if not SUCCESSORS:
+        prs = prs[30:]
+        wt, cl, res, inds = wt[30:], cl[30:], res[30:], inds[30:]
     ancs = range(len(prs))
     fig, ax = plt.subplots()
     fig.set_size_inches(28.5, 15.5)
     plt.xticks(ancs, ancs)
-    plt.xticks(ancs, [x if i != 30 else 'Q' for i, x in enumerate(ancs)])
+    if SUCCESSORS:
+        plt.xticks(ancs, [x if i != 30 else 'Q' for i, x in enumerate(ancs)])
+    else:
+        plt.xticks(ancs, [x if i != 0 else 'Q' for i, x in enumerate(ancs)])
     ax.plot(ancs, prs, color="red", marker="o", label='Probability')
     ax.plot(ancs, wt, color="green", marker="v", label='WT')
     ax.plot(ancs, cl, color="orange", marker="^", label='Closest')
@@ -47,7 +54,10 @@ def plot_dual_axis(prs, wt, cl, res, inds, file):
     ax2.set_ylabel("Residue cnt", color="blue", fontsize=20)
     ax2.legend(loc='upper right', bbox_to_anchor=(0.8, 1.07),
                ncol=2, fancybox=True, shadow=True, fontsize=18)
-    plt.vlines(30, 0, 314, color='black', linestyles='dashed')
+    if SUCCESSORS:
+        plt.vlines(30, 0, 314, color='black', linestyles='dashed')
+    for pos in positions:
+        plt.vlines(pos, 0, 314, color='black', linestyles='dashed')
     # save the plot as a file
     name = (file.split('/')[-1]).split('.')[0] + '.jpg'
     print(" Dual axis report : saving plot into", name)
@@ -60,8 +70,11 @@ def plot_dual_axis(prs, wt, cl, res, inds, file):
 # Program parse ready
 parser = argparse.ArgumentParser(description='Script for preparing plot with dual axis for mutants selection')
 parser.add_argument("--csv", help="Csv file with data")
+parser.add_argument("--pos", help="Highlight positions", default="")
 
 # Run script
+SUCCESSORS = False
 args = parser.parse_args()
+positions = [int(s) for s in args.pos.split(",")]
 pr, wt, cl, res, inds = parse_csv(args.csv)
-plot_dual_axis(pr, wt, cl, res, inds, args.csv)
+plot_dual_axis(pr, wt, cl, res, inds, args.csv, positions)
