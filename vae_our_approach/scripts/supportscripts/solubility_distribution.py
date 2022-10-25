@@ -36,16 +36,9 @@ def solubility_dist(file, keys):
         n, bins, patches = ax2.hist(solubility_bins, 3)
         ax2.set_xtitle = f'Solubility bins (LOW <{LOW}<= MEDIUM <={MED}< HIGH)'
         ax2.set_ytitle = 'Frequencies'
+        ax2.set_xticks([0.4, 1, 1.7], minor=False)
+        ax2.set_xticklabels(["LOW", "MEDIUM", "HIGH"], fontdict=None, minor=False)
         fig.savefig('sol_dist.png')
-
-        # Make some labels.
-        rects = ax2.patches
-        labels = ["LOW", "MEDIUM", "HIGH"]
-
-        for rect, label in zip(rects, labels):
-            height = rect.get_height()
-            ax2.text(rect.get_x() + rect.get_width() / 2, height + 0.01, label,
-                    ha='center', va='bottom')
 
 
 # Program parse ready
