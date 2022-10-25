@@ -38,6 +38,15 @@ def solubility_dist(file, keys):
         ax2.set_ytitle = 'Frequencies'
         fig.savefig('sol_dist.png')
 
+        # Make some labels.
+        rects = ax2.patches
+        labels = ["LOW", "MEDIUM", "HIGH"]
+
+        for rect, label in zip(rects, labels):
+            height = rect.get_height()
+            ax2.text(rect.get_x() + rect.get_width() / 2, height + 0.01, label,
+                    ha='center', va='bottom')
+
 
 # Program parse ready
 parser = argparse.ArgumentParser(description='Script for solubility distributions')
