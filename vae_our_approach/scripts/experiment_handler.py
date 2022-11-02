@@ -76,7 +76,8 @@ class ExperimentStatistics:
 
         # Measuring the identity with Query decoded from binary, extend query by excluded residues
         query_dict = self.transformer.get_seq_dict_by_key(self.query_name)
-        query_seq_ext = self.transformer.add_excluded_query_residues(query_dict[self.query_name])
+        query_seq_ext = self.transformer.add_excluded_query_residues(query_dict[self.query_name],
+                                                                     query_dict[self.query_name])
         query_seq = query_dict[self.query_name]
         self._log_msg(msg="The identity statistics are done against sequence with ID " + self.query_name)
 
@@ -100,7 +101,8 @@ class ExperimentStatistics:
                                                                        residues_prob_above, closest_sequences)):
                 seq_str = ''
                 # Extend sequence by removed residues during preprocessing
-                extended_seq = self.transformer.add_excluded_query_residues(seq_str.join(seq))
+                extended_seq = self.transformer.add_excluded_query_residues(seq_str.join(seq),
+                                                                            query_dict[self.query_name])
                 query_iden = ExperimentStatistics.sequence_identity(seq, query_seq)
                 subs_list, indels = ExperimentStatistics.query_indels_and_substitution(extended_seq, query_seq_ext)
                 writer.writerow([i, name, extended_seq, prob, c[0], c[1], query_iden, res_p,

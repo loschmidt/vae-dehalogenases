@@ -75,21 +75,24 @@ class Riemannian:
         """ as described in https://doi.org/10.1038/s41467-022-29443-w"""
         return torch.sqrt(self.curve_energy(curve))
 
-    def numeric_curve_optimizer(self, curve):
-        optimizer = torch.optim.Adam([curve.parameters], lr=1e-2)
-        alpha = torch.linspace(0, 1, 50).reshape((-1, 1))
+    def numeric_curve_optimizer(self, curve, lr=1e-2, iters=100):
+        optimizer = torch.optim.Adam([curve.parameters], lr=lr)
+        alpha = torch.linspace(0, 1, 150).reshape((-1, 1))
         best_curve, best_loss = deepcopy(curve), float('inf')
-        for i in range(10):
+        for i in range(iters):
+            if i % 15 == 0:
+                print(i)
             optimizer.zero_grad()
             loss = self.curve_energy(curve(alpha)).sum()
             loss.backward()
             optimizer.step()
             grad_size = torch.max(torch.abs(curve.parameters.grad))
-            if grad_size < 1e-3:
+            if grad_size < 1e-2:
                 break
             if loss.item() < best_loss:
                 best_curve = deepcopy(curve)
                 best_loss = loss.item()
+                print(f" best lost is {best_loss} at epoch {i}")
 
         return best_curve
 
@@ -110,16 +113,17 @@ def run_riemannian_ancestors(sequence=None):
 
     x2 = torch.tensor([0.0, 0.0])
     x1 = torch.tensor(sequence_encoding(sequence, cmd_line))
-    curve = DiscreteCurve(x1, x2)
+    curve = DiscreteCurve(x1, x2, num_nodes=50)
 
-    curve = riemannian.numeric_curve_optimizer(curve)
+    curve = riemannian.numeric_curve_optimizer(curve, iters=10)
     print(curve.parameters)
     # trajectory = curve(torch.linspace(0, 1, cmd_line.ancestral_samples + 1)).detach()
     merge_trajectory = torch.ones((101, 2))
-    trajectory = curve(torch.linspace(0, 1, 11)).detach()
+    trajectory = curve(torch.linspace(0, 1, 101)).detach()
     for i in range(10):
-        curve = DiscreteCurve(trajectory[i], trajectory[i+1])
-        curve = riemannian.numeric_curve_optimizer(curve)
+        print(f"{i} subset of line being optimized")
+        curve = DiscreteCurve(trajectory[max(i*10-14, 0)], trajectory[min((i+1)*10+15, 100)])
+        curve = riemannian.numeric_curve_optimizer(curve, lr=1e-3, iters=30)
         merge_trajectory[i*10:i*10+11, :] = curve(torch.linspace(0, 1, 11)).detach()
 
     trajectory = merge_trajectory
@@ -128,8 +132,8 @@ def run_riemannian_ancestors(sequence=None):
     riemannian.entropy_latent.create_plot(ax)
     ax.scatter(trajectory[:, 0], trajectory[:, 1], s=1, c="#985C2F")
     fig.savefig(cmd_line.high_fld + "/riemannian_ancestors.png", dpi=600)
-    ax.set_xlim(min(trajectory[:, 0]), max(trajectory[:, 0]))
-    ax.set_ylim(min(trajectory[:, 1]), max(trajectory[:, 1]))
+    ax.set_xlim(min(trajectory[:, 0])-0.5, max(trajectory[:, 0])+0.5)
+    ax.set_ylim(min(trajectory[:, 1])-0.5, max(trajectory[:, 1])+0.5)
     fig.savefig(cmd_line.high_fld + "/riemannian_ancestors_focus.png", dpi=600)
 
     experiment = ExperimentStatistics(cmd_line, experiment_name="riemannian_ancestors")

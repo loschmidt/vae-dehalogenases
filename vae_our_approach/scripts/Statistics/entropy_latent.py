@@ -41,7 +41,7 @@ class EntropyLatent:
 
     def init_distnet(self):
         """ Check whether there is distnet already initialized """
-        distnet = DistNet(self.cmd_line.dimensionality, 200)
+        distnet = DistNet(self.cmd_line.dimensionality, 2000)
 
         model_path = self.cmd_line.VAE_model_dir + "/distnet.model"
         if path.isfile(model_path):
@@ -69,13 +69,13 @@ class EntropyLatent:
         query_coords = mu[query_index]
         return mu, query_coords
 
-    def calculate_entropies(self):
+    def calculate_entropies(self, xy_min, xy_max):
         """
         Get entropies for each point in the grid of latent space by formula
             H(X|Z) = SUM p_theta(X|Z)_i * log(p_theta(X|Z)_i)
         """
         n_points = 100
-        xy_min, xy_max = -11, 11
+        xy_min, xy_max = xy_min - 1, xy_max + 1
         z_grid = torch.stack([m.flatten() for m in torch.meshgrid(2 * [torch.linspace(xy_min, xy_max, n_points)])]).t()
 
         solubility = self.cmd_line.get_solubility_data()
@@ -91,7 +91,7 @@ class EntropyLatent:
 
         if self.optimized_entropy:
             s = self.distnet(z_grid).view(*z_grid.shape[:-1], 1, 1)
-            probs = (1-s) * probs + s * probs.mean()
+            probs = (1 - s) * probs + s * probs.mean()
 
         d = D.Categorical(probs=probs)
         entropies = d.entropy().sum(dim=-1)
@@ -105,8 +105,8 @@ class EntropyLatent:
             fig, ax = plt.subplots(constrained_layout=True)
         else:
             ax = ax_p
-        ent, z_grid = self.calculate_entropies()
         zs, query = self.create_latent_space()
+        ent, z_grid = self.calculate_entropies(min([min(zs[:, 0]), min(zs[:, 0])]), max([max(zs[:, 0]), max(zs[:, 0])]))
         ax = EntropyLatent.fill_plot_entropy_latent(ax, ent, z_grid, zs, query)
 
         if ax_p is None:
@@ -116,13 +116,13 @@ class EntropyLatent:
     @staticmethod
     def fill_plot_entropy_latent(ax, entropies, z_grid, embeddings, query_embedding, n_points=100):
         """ Plot contour map with information entropy in the latent space """
-        ax.contourf(z_grid[:, 0].reshape(n_points, n_points),
-                    z_grid[:, 1].reshape(n_points, n_points),
-                    entropies.reshape(n_points, n_points), 40, levels=50, cmap='Greys_r',
-                    zorder=0)
+        m = ax.contourf(z_grid[:, 0].reshape(n_points, n_points),
+                        z_grid[:, 1].reshape(n_points, n_points),
+                        entropies.reshape(n_points, n_points), 40, levels=50, cmap='Greys_r',
+                        zorder=0)
         ax.scatter(embeddings[:, 0], embeddings[:, 1], s=1)
         ax.scatter(query_embedding[0], query_embedding[1], s=1, color='red')
-
+        plt.colorbar(m)
         return ax
 
 

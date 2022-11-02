@@ -66,12 +66,12 @@ class Transformer(metaclass=Singleton):
         """
         return MSA.number_to_amino(seq_dict)
 
-    def add_excluded_query_residues(self, aa_sequence):
+    def add_excluded_query_residues(self, aa_sequence, query_embedding):
         """ Adds excluded Amino acids from query in MSA preprocessing """
         aa_sequence = "".join(aa_sequence)  # Secure string format
         gaps_pos = 0
         for query_pos, query_aa in self.excluded_query_pos_and_aa:
-            gaps_pos = sum([x == "-" for x in aa_sequence[:query_pos + gaps_pos]])
+            gaps_pos = sum([x == "-" for x in query_embedding[:query_pos + gaps_pos]])
             aa_sequence = aa_sequence[:query_pos + gaps_pos] + query_aa + aa_sequence[query_pos + gaps_pos:]
         return aa_sequence
 
