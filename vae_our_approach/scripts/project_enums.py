@@ -65,6 +65,7 @@ class VaePaths(Enum):
     MODEL_DIR = "model"
     PICKLE_DIR = "pickles"
     HIGHLIGHT_DIR = "highlight"
+    ENSEMBLE = "Ensemble"
     STATS_DATA_SOURCE = "./../datasets/Statistics/data_source/"
     STATS_DATA_TREE = "./../datasets/Statistics/tree_source/"
     STATS_MAPPING_SOURCE = STATS_DATA_SOURCE + "/mapping_values/"
