@@ -111,7 +111,7 @@ def run_package(parser: ArgumentParser):
     if args.run_riemannian_anc_evolution:
         run_riemannian_ancestors()
     if args.run_ensemble_evolution:
-        run_riemannian_ancestors()
+        run_ensemble_evolution()
 
 
 if __name__ == '__main__':
