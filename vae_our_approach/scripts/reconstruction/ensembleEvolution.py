@@ -15,6 +15,7 @@ from parser_handler import CmdHandler
 from project_enums import VaePaths
 from robustness import Robustness
 from sequence_transformer import Transformer
+from experiment_handler import ExperimentStatistics
 
 
 class EnsembleEvo:
@@ -126,7 +127,7 @@ class EnsembleEvo:
             model_i_deviation = 0
             for cross_model_i in range(self.models_cnt):
                 model_embeddings = self.get_ancestors_embeddings(cross_model_i, model_ancestors)
-                cross_embeddings[model_i].append(model_embeddings)
+                cross_embeddings[cross_model_i].append(model_embeddings)
                 # get their deviations
                 average_dev, _ = Robustness.compute_deviation([model_query_emb], model_embeddings)
                 model_i_deviation += average_dev
@@ -144,13 +145,15 @@ class EnsembleEvo:
         plot_i = 0
         for ax_cur in [ax, ax_lat]:
             ax_cur.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3)
-            ax_cur.plot(query[0], query[1], 'x', color='black', markersize=3)
 
             # Highlight different models embeddings in the latent space
             for i, (emb, c) in enumerate(zip(model_embeddings, colors)):
                 ax_cur.plot(emb[:, 0], emb[:, 1], '.', color=c, alpha=1, markersize=3, label=f'Ancs model {i}')
+                ax_cur.plot(emb[0, 0], emb[0, 1], '*', color='black', markersize=5)
             if plot_i == 1:
                 ax_cur.legend(loc="upper right")
+
+            ax_cur.plot(query[0], query[1], 'x', color='black', markersize=5)
             ax_cur.title.set_text(f'Model {model_i}')
             ax_cur.set_xlabel("$Z_1$")
             ax_cur.set_ylabel("$Z_2$")
@@ -175,7 +178,8 @@ class EnsembleEvo:
         """
         Strategy to run ensemble evolution optimization, over more models
         """
-        models_embeddings, _ = self.measure_models_robustness()
+        models_embeddings, deviations = self.measure_models_robustness()
+        print(deviations)
         self.plot_cross_embeddings(models_embeddings)
 
 
