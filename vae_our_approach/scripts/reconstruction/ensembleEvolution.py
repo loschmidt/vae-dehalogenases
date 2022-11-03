@@ -10,11 +10,11 @@ import torch
 import matplotlib.cm as cm
 from matplotlib import pyplot as plt
 
-from scripts.VAE_accessor import VAEAccessor
-from scripts.parser_handler import CmdHandler
-from scripts.project_enums import VaePaths
-from scripts.robustness import Robustness
-from scripts.sequence_transformer import Transformer
+from VAE_accessor import VAEAccessor
+from parser_handler import CmdHandler
+from project_enums import VaePaths
+from robustness import Robustness
+from sequence_transformer import Transformer
 
 
 class EnsembleEvo:
@@ -38,7 +38,7 @@ class EnsembleEvo:
         self.model_ancs = []
         self.models_cnt = models_cnt
         for fold in range(models_cnt):
-            model_name = self.cmd.model_name + str(fold) + ".model"
+            model_name = self.cmd.model_name + f"_fold_{fold}.model"
             self.models.append(VAEAccessor(cmd_handler, model_name=model_name))
 
         self.models_latent_embeddings, self.query_model_embeddings = self.get_models_training_embeddings(cmd_handler)
@@ -92,8 +92,8 @@ class EnsembleEvo:
         self.set_active_model(model_i)
 
         ref_pos = self.query_model_embeddings[model_i]
-        coor_tuple = tuple(ref_pos[0])
-        latent_dim = range(len(ref_pos[0]))
+        coor_tuple = tuple(ref_pos)
+        latent_dim = range(len(ref_pos))
         step_list = [0.0 for _ in latent_dim]
         for i in latent_dim:
             step_list[i] = (coor_tuple[i] / cnt_of_anc)
@@ -105,7 +105,7 @@ class EnsembleEvo:
                 cur_coor[s_i] = coor_tuple[s_i] - (step_list[s_i] * i)
             to_highlight.append(tuple(cur_coor))
             i += 1
-        ancestors = self.active_model.decode_z_to_aa_dict(to_highlight, self.query[0], 0)
+        ancestors = self.active_model.decode_z_to_aa_dict(to_highlight, list(self.query.keys())[0], 0)
         return ancestors
 
     def get_ancestors_embeddings(self, model_i, ancestors):
@@ -141,27 +141,35 @@ class EnsembleEvo:
 
         fig_lat, ax_lat = plt.subplots(1, 1)
         colors = cm.rainbow(np.linspace(0, 1, self.models_cnt))
+        plot_i = 0
         for ax_cur in [ax, ax_lat]:
             ax_cur.plot(mu[:, 0], mu[:, 1], '.', alpha=0.1, markersize=3)
-            ax_cur.plot(query[0], query[1], '.', color='red')
+            ax_cur.plot(query[0], query[1], 'x', color='black', markersize=3)
 
             # Highlight different models embeddings in the latent space
             for i, (emb, c) in enumerate(zip(model_embeddings, colors)):
-                ax_cur.plot(emb[0], emb[1], '.', color=c, alpha=1, markersize=3, label=f'Ancs model {i}')
+                ax_cur.plot(emb[:, 0], emb[:, 1], '.', color=c, alpha=1, markersize=3, label=f'Ancs model {i}')
+            if plot_i == 1:
+                ax_cur.legend(loc="upper right")
+            ax_cur.title.set_text(f'Model {model_i}')
             ax_cur.set_xlabel("$Z_1$")
             ax_cur.set_ylabel("$Z_2$")
+            plot_i += 1
         fig_lat.savefig(self.plot_dir + f"/cross{model_i}.png")
 
     def plot_cross_embeddings(self, models_embeddings):
         """ Create plots with embeddings mapped to individual models """
         row_cnt = int(math.sqrt(self.models_cnt))
-        fig, ax = plt.subplots(row_cnt, row_cnt, gridspec_kw={'height_ratios': [1, 1, 1, 1]})
+        col_cnt = math.ceil((math.sqrt(self.models_cnt)))
+        fig, ax = plt.subplots(row_cnt, col_cnt)
 
         for model_i in range(self.models_cnt):
-            self.plot_one_model_embeddings(model_i, models_embeddings, ax[model_i // row_cnt, model_i % row_cnt])
-        handles, labels = ax.get_legend_handles_labels()
-        [[c.get_legend().remove() for c in r] for r in ax]  # remove legends from subplots
-        fig.legend(handles, labels, loc='upper center')
+            print(model_i // col_cnt, model_i % col_cnt)
+            self.plot_one_model_embeddings(model_i, models_embeddings, ax[model_i // col_cnt, model_i % col_cnt])
+        # handles, labels = ax.get_legend_handles_labels()
+        # [[c.get_legend().remove() for c in r] for r in ax]  # remove legends from subplots
+        # fig.legend(handles, labels, loc='upper center')
+        fig.savefig(self.plot_dir + "/cross_all.png")
 
     def ensemble_evolution(self):
         """
@@ -179,4 +187,4 @@ def run_ensemble_evolution():
 
 
 if __name__ == "__main__":
-    run_setup()
+    run_ensemble_evolution()
