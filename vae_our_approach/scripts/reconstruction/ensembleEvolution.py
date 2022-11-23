@@ -179,4 +179,4 @@ def run_ensemble_evolution():
 
 
 if __name__ == "__main__":
-    run_setup()
+    run_ensemble_evolution()
