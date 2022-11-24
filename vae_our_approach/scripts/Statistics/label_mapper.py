@@ -2,12 +2,14 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2022/02/10 14:12:00"
 
 import os
+import pickle
 import sys
 import inspect
-import math
+import torch
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.path as mpath
 
 currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentDir = os.path.dirname(currentDir)
@@ -40,6 +42,7 @@ class LatentSpaceMapper:
         self.pickle = setuper.pickles_fld
         self.input_dir = VaePaths.STATS_MAPPING_SOURCE.value
         self.target_dir = setuper.high_fld + "/" + VaePaths.MAPPING_DIR.value + "/"
+        self.cmd_line = setuper
         self.setup_output_folder()
 
     def setup_output_folder(self):
@@ -60,7 +63,7 @@ class LatentSpaceMapper:
     def map_sequences_with_labels_to_space(self, seq_labels: list, hts_project_fasta: str, align_to: int):
         """ Assign labels to the sequences from the input set """
         whole_msa = MSA.load_msa(self.in_file)
-
+        # self.aligner_obj.align_to_closest_msa(self.input_dir + hts_project_fasta, "solubility")
         if align_to == 1:
             hts_msa = self.aligner_obj.align_fasta_to_original_msa(self.input_dir + hts_project_fasta,
                                                                    already_msa=False,
@@ -98,12 +101,22 @@ class LatentSpaceMapper:
     def plot_labels(self, z: np.ndarray, labels: list, latent_space: bool):
         """ Plot depth into latent space """
         if latent_space:
-            binaries = self.transformer.msa_binary
-            binaries, weights = self.transformer.shape_binary_for_vae(binaries)
-            mus, _ = self.vae.propagate_through_VAE(binaries, weights, self.transformer.keys_list)
-            plt.plot(mus[:, 0], mus[:, 1], '.', alpha=0.1, markersize=3, color='grey')
+            with open(self.cmd_line.pickles_fld + "/training_alignment.pkl", 'rb') as file_handle:
+                train_dict = pickle.load(file_handle)
+            msa_binary, weights, msa_keys = self.transformer.sequence_dict_to_binary(train_dict)
+            msa_binary = torch.from_numpy(msa_binary)
+            # In the case of CVAE
+            solubility = self.cmd_line.get_solubility_data()
+            # binaries = self.transformer.msa_binary
+            # binaries, weights = self.transformer.shape_binary_for_vae(binaries)
+            mus, _ = self.vae.propagate_through_VAE(msa_binary, weights, msa_keys)
+            plt.plot(mus[:, 0], mus[:, 1], '.', alpha=0.3, markersize=3, color='blue')
+            query_index = msa_keys.index(self.cmd_line.query_id)
+            query_coords = mus[query_index]
+            plt.plot(query_coords[0], query_coords[1], '+', alpha=1, markersize=5, color='red')
 
-        plt.scatter(z[:, 0], z[:, 1], c=labels, s=1.5, cmap='Blues', vmin=min(labels), vmax=max(labels))
+        plt.scatter(z[:, 0], z[:, 1], marker=mpath.Path.unit_regular_star(6),
+                    c=labels, s=10, cmap='spring', vmin=min(labels), vmax=max(labels))
 
     def plot_focus(self, z: np.ndarray):
         """ Plot heatmap of the mapped sequence """
@@ -131,8 +144,9 @@ def run_latent_mapper():
 
     latent_mapper = LatentSpaceMapper(cmdline)
     labels_with_sequences = latent_mapper.load_training_sequence_labels(label_file)
-    z, labels, soluprot_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta,
-                                                                                  align_to=1)
+    z, labels, soluprot_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences,
+                                                                                  hts_fasta,
+                                                                                  align_to=2)
     latent_mapper.plot_labels(z, labels, True)
     latent_mapper.finalize_plot(plot_file, "Solubility")
     print("  Storing mapped plot in ", latent_mapper.target_dir + plot_file)
@@ -156,6 +170,10 @@ def run_latent_dhaa115_mapper():
     labels_with_sequences = latent_mapper.load_training_sequence_labels(label_file)
     z, labels, dTm_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta,
                                                                              align_to=2)
+    # Corrected Tm value from wild-type not DhaA115 variant dTm DhaA115 > 23 degree
+    labels = list(map(lambda x: x + 23, labels))
+    dTm_labels = list(map(lambda x: x + 23, dTm_labels))
+
     latent_mapper.plot_labels(z, labels, True)
     latent_mapper.finalize_plot(plot_file, "dTm")
     print("  Storing mapped plot in ", latent_mapper.target_dir + plot_file)
@@ -166,9 +184,9 @@ def run_latent_dhaa115_mapper():
     # focused variants
     latent_mapper.plot_labels(z, labels, True)
     latent_mapper.plot_focus(z)
-    latent_mapper.finalize_plot(plot_file, "dTm")
+    latent_mapper.finalize_plot("focus_" + plot_file, "dTm")
     print("  Storing mapped plot in ", latent_mapper.target_dir + "focus_" + plot_file)
     latent_mapper.plot_labels(z, dTm_labels, True)
     latent_mapper.plot_focus(z)
-    latent_mapper.finalize_plot(plot_soluprot_file, "dTm.1")
+    latent_mapper.finalize_plot("focus_" + plot_soluprot_file, "dTm.1")
     print("  Storing mapped dTm.1 plot in ", latent_mapper.target_dir + "focus_" + plot_soluprot_file)
