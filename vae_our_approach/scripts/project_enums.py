@@ -58,6 +58,7 @@ class Helper(Enum):
     SOL_FILE = "File with soluprot predictions for sequences in the dataset (proposed by enzymeMiner tool) "
     DYNAMIC_DECAY = "From given decay or (in default) 0.05 value decrease decay factor linearly to 0.0 for 1/4 of " \
                     "epochs every tenth epoch"
+    ENSEMBLE = "Count of models used in ensemble method evaluation. Default value is 5"
 
 class VaePaths(Enum):
     # Experiment directory paths

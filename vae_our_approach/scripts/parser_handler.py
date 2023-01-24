@@ -49,6 +49,9 @@ class CmdHandler(metaclass=Singleton):
         self.in_file = self.args.in_file
         self.msa_clustering = self.args.msa_not_cluster
         self.clustalo_path = self.args.clustalo_path
+
+        # Ensemble
+        self.ens_cnt = self.args.ensemble_cnt
         
         # modelarch setup
         self.convolution = self.args.convolution
@@ -127,6 +130,8 @@ class CmdHandler(metaclass=Singleton):
         # Clustal path option
         parser.add_argument('--clustalo_path', type=str, default='../clustal/clustalo',
                             help=Helper.CLUSTAL.value)
+        # Ensemble
+        parser.add_argument('--ensemble_cnt', type=int, default=5, help=Helper.ENSEMBLE.value)
         # Robustness options
         parser.add_argument('--robustness_train', action='store_true', default=False, help=Helper.ROB_TRAIN.value)
         parser.add_argument('--robustness_measure', action='store_true', default=False, help=Helper.ROB_MEA.value)

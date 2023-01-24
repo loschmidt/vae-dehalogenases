@@ -8,6 +8,12 @@ import json
 
 runner_json = "model_configurations/runner-hts.json"
 
+if len(sys.argv) < 4:
+    print("\tYou did not specified proper cmd line input for script")
+    print("\tPlease run as follow: "
+          "\n\t\tpython3 runner.py [script to run] --json [path_to_config]")
+    exit(1)
+
 if sys.argv[1] in ["--help", "-h"]:
     print("")
     print("  Help of VAE ancestral reconstruction protocol:")
@@ -19,6 +25,12 @@ if sys.argv[1] in ["--help", "-h"]:
     print("\nrun_task.py options:\n")
     sp.run("python3 run_task.py --help", shell=True)
     exit(0)
+
+if sys.argv[2] in ["--json", "--config"]:
+    runner_json = sys.argv[3]
+else:
+    print("\tUse --json or --config options to pass configuration file!!!")
+    exit(1)
 
 print("\n\t\tRunning with {} configuration file!".format(runner_json))
 
