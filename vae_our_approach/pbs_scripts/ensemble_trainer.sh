@@ -37,6 +37,9 @@ cp -r $CLUSTAL $SCRATCHDIR
 
 ## transfer preprocessed MSA data for ensembles here
 ## it will create also results directory for this model
+cd $SCRATCHDIR
+mkdir $EXPDIR
+cd $EXPDIR
 cp -r $PICKLES $SCRATCHDIR
 
 ## run project

@@ -234,6 +234,7 @@ class CmdHandler(metaclass=Singleton):
         # Directory structure variables
         root_dir = VaePaths.RESULTS.value + self.exp_dir + "/"
         _dir = root_dir + self.args.experiment.replace('/', '-')
+        self.cur_exp = _dir
         self.VAE_model_dir = _dir + "/" + VaePaths.MODEL_DIR.value
         self.pickles_fld = _dir + "/" + VaePaths.PICKLE_DIR.value
         self.high_fld = _dir + "/" + VaePaths.HIGHLIGHT_DIR.value
