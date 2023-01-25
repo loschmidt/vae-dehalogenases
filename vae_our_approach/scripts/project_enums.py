@@ -59,6 +59,7 @@ class Helper(Enum):
     DYNAMIC_DECAY = "From given decay or (in default) 0.05 value decrease decay factor linearly to 0.0 for 1/4 of " \
                     "epochs every tenth epoch"
     ENSEMBLE = "Count of models used in ensemble method evaluation. Default value is 5"
+    ENSEMBLE_MODEL = "Ensemble model number important for training script parallelization"
 
 class VaePaths(Enum):
     # Experiment directory paths

@@ -52,6 +52,7 @@ class CmdHandler(metaclass=Singleton):
 
         # Ensemble
         self.ens_cnt = self.args.ensemble_cnt
+        self.ens_num = self.args.ensemble_num
         
         # modelarch setup
         self.convolution = self.args.convolution
@@ -132,6 +133,7 @@ class CmdHandler(metaclass=Singleton):
                             help=Helper.CLUSTAL.value)
         # Ensemble
         parser.add_argument('--ensemble_cnt', type=int, default=5, help=Helper.ENSEMBLE.value)
+        parser.add_argument('--ensemble_num', type=int, default=1, help=Helper.ENSEMBLE_MODEL.value)
         # Robustness options
         parser.add_argument('--robustness_train', action='store_true', default=False, help=Helper.ROB_TRAIN.value)
         parser.add_argument('--robustness_measure', action='store_true', default=False, help=Helper.ROB_MEA.value)

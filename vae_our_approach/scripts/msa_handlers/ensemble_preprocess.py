@@ -2,23 +2,16 @@ __author__ = "Pavel Kohout <xkohou15@vutbr.cz>"
 __date__ = "2023/01/22 11:30:00"
 
 import os, sys, inspect
+import pickle
+import random
+
+import numpy as np
+
 currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentDir = os.path.dirname(currentDir)
 sys.path.insert(0, parentDir)
 
-import pickle
-import random
-from copy import deepcopy
-from random import randint
-from typing import Dict, List, Tuple
-
-import numpy as np
-import pandas as pd
-
-from msa_handlers.msa_preparation import MSA
 from parser_handler import CmdHandler
-from project_enums import Helper
-from VAE_logger import Logger
 
 
 class EnsembleMSAPreprocess:
@@ -101,7 +94,7 @@ class EnsembleMSAPreprocess:
             self.store_ensemble(f'validation_set{i}.pkl', validation_subset)
             self.store_ensemble(f'solubility_set{i}.pkl', solubility[train_idx])
 
-            print(f"\tData generated for model {i+1} out of {models_cnt}")
+            print(f"\tData generated for model {i + 1} out of {models_cnt}")
 
     def init_msa_meta_data(self):
         try:

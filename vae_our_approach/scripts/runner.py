@@ -2,6 +2,7 @@ __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2022/02/21 15:00:00"
 __description__ = " Additional layer over project parser to simplify project setup "
 
+import os
 import sys
 import subprocess as sp
 import json
@@ -26,8 +27,17 @@ if sys.argv[1] in ["--help", "-h"]:
     sp.run("python3 run_task.py --help", shell=True)
     exit(0)
 
-if sys.argv[2] in ["--json", "--config"]:
-    runner_json = sys.argv[3]
+# Get param order for config
+config_i = 2
+
+# Run task on trained model
+run_string = "python3 {} ".format(sys.argv[1])  # add script name to run
+if sys.argv[1] == "run_task.py":
+    run_string += "{} ".format(sys.argv[2])  # in case of statistics mode
+    config_i += 1
+
+if sys.argv[config_i] in ["--json", "--config"]:
+    runner_json = sys.argv[config_i+1]
 else:
     print("\tUse --json or --config options to pass configuration file!!!")
     exit(1)
@@ -37,9 +47,12 @@ print("\n\t\tRunning with {} configuration file!".format(runner_json))
 with open(runner_json, "r") as json_file:
     run_setup = json.load(json_file)
 
-run_string = "python3 {} ".format(sys.argv[1])
-if len(sys.argv) > 2:
-    run_string += "{} ".format(sys.argv[2])  # in case of statistics mode
+# set environment variable to hold configuration file
+os.environ["VAE_CONF"] = runner_json
+
+# we are running ensemble training, and we are passing ensemble number of model to be trained
+if sys.argv[config_i+2] == "--ensemble_num":
+    run_string += f"{sys.argv[config_i+2]} {sys.argv[config_i+3]} "
 
 on_found = False
 on_experiment = {}
