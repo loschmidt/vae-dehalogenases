@@ -28,6 +28,8 @@ echo "Sourcing anaconda successful" >> $LOGDIR/jobs_info.txt
 ## copy project to scratch directory
 LOCALPROJECT=${SCRATCHDIR}/scripts/.
 
+echo "scratch directory is " $SCRATCHDIR
+
 cp -r $DATADIR $SCRATCHDIR || { echo >&2 "Error while copying input file(s)!"; exit 2; }
 
 ## transfer clustalo
