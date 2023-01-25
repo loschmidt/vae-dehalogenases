@@ -4,9 +4,9 @@
 #PBS -m ae
 
 # Parse passed sequence code throught param
-CONFFILE=${conf_path}
-PICKLEFLD=${pkl_fld}
-MODEL=${model}
+#CONFFILE=${conf_path}
+#PICKLEFLD=${pkl_fld}
+#MODEL=${model}
 
 # define a DATADIR variable: directory where the input files are taken from and where output will be copied to
 DATADIR_BASE=/storage/brno2/home/xkohou15 # substitute to your home directory

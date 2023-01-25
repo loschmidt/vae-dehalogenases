@@ -15,7 +15,7 @@ conf_file_path = os.environ["VAE_CONF"]
 pkl_path = cmd_liner.pickles_fld[5:]  # remove characters ./../results... in script path
 
 for model_i in range(cmd_liner.ens_cnt):
-    cmd = f'qsub -N ens_tr{model_i} -v conf_path="{conf_file_path}", pkl_fld="{pkl_path}", model="{model_i}" ' \
+    cmd = f'qsub -N ens_tr{model_i} -v CONFFILE="{conf_file_path}",PICKLEFLD="{pkl_path}",MODEL="{model_i}" ' \
           f'./../pbs_scripts/ensemble_trainer.sh'
     print(f"\tSubmitted job ens_tr{model_i} by running command ", cmd)
     os.system(cmd)
