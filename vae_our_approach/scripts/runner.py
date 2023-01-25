@@ -50,9 +50,12 @@ with open(runner_json, "r") as json_file:
 # set environment variable to hold configuration file
 os.environ["VAE_CONF"] = runner_json
 
+if len(sys.argv) <= config_i + 2:
+    pass
 # we are running ensemble training, and we are passing ensemble number of model to be trained
-if sys.argv[config_i+2] == "--ensemble_num":
-    run_string += f"{sys.argv[config_i+2]} {sys.argv[config_i+3]} "
+else:
+    if sys.argv[config_i+2] == "--ensemble_num":
+        run_string += f"{sys.argv[config_i+2]} {sys.argv[config_i+3]} "
 
 on_found = False
 on_experiment = {}
