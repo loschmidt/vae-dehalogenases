@@ -1,0 +1,31 @@
+{
+  "core_params": ["--model_name test_arch",
+    "--exp_dir final_models",
+    "--align",
+    "--solubility_file results/PF00561/MSA/soluprot.txt",
+    "--stats", "--K 1",
+    "--training_subsets 5", "--source_txt EVO/mutations.txt"],
+  "variable_params": [
+    "--layers {}", "--dimensionality {}", "--num_epoch {}","--experiment {}",
+    "--C {}", "--weight_decay {}", "--mut_points {}", "--mut_samples {}", "--query {}", "--in_file {}",
+    "--highlight_seqs {}", "--ancestors {}"],
+  "experiments": [
+  {
+    "status": "off",
+    "experiment": "novelEnzyme_Jiri",
+    "layers": "299",
+    "dimensionality": 2,
+    "C": 2,
+    "in_file": "results/PF00561/MSA/identified_targets_msa.fa",
+    "query": "P59336_S14",
+    "highlight_seqs": "P59336_S14",
+    "num_epoch": 16500,
+    "weight_decay": 0.0,
+    "Note": "Mapping of HLDs families into the latent space",
+    "mut_points": 1,
+    "mut_samples": 100,
+    "ancestors": 100,
+    "flags" : [ "focus", "msa_not_cluster" ]
+  }
+  ]
+}
