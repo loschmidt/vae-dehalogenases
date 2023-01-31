@@ -38,6 +38,9 @@ def show_latent_space_features(ax, anc_msa_file, setuper):
     solubility = setuper.get_solubility_data()
 
     mu, sigma = vae.propagate_through_VAE(msa_binary, weights, msa_keys, solubility)
+    with open(setuper.pickles_fld + "/embeddings.pkl", "wb") as embeddings_pkl:
+        store_values = {"keys": msa_keys, "mu": mu}
+        pickle.dump(store_values, embeddings_pkl)
 
     query_index = msa_keys.index(cmd_line.query_id)
     query_coords = mu[query_index]
