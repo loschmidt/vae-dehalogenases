@@ -37,11 +37,17 @@ class MSAPreprocessor:
         msa_filtered = msa_no_gaps
         if self.setuper.msa_clustering:
             msa_filtered = self.identity_filtering(msa_no_gaps)
-        msa_overlap = self.filter_query_no_overlap_sequences(msa_filtered)
-        self.weight_sequences(msa_overlap)
-        MSA.number_to_binary(msa_overlap, self.pickle)
+        # msa_overlap = self.filter_query_no_overlap_sequences(msa_filtered)
+        seq_weight = np.ones(msa.shape)
+        # self.weight_sequences(msa_overlap)
+        with open(self.pickle + "/seq_weight.pkl", 'wb') as file_handle:
+            pickle.dump(seq_weight, file_handle)
+        MSA.number_to_binary(msa_filtered, self.pickle)
         self.prepare_solubility_data()
-        self._stats(msa_overlap)
+        self._stats(msa_filtered)
+        # MSA.number_to_binary(msa_overlap, self.pickle)
+        # self.prepare_solubility_data()
+        # self._stats(msa_overlap)
 
     def prepare_aligned_msa_for_Vae(self, msa: Dict[str, str]):
         """
