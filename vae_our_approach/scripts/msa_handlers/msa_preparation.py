@@ -30,7 +30,7 @@ class MSA:
         Logger.print_for_update(' MSA preparation message: Loading fasta format file {}', value="in process...")
         # Check format of file and proceed fasta format here
         if file is not None:
-            if file.endswith('.fasta') or file.endswith('.fa'):
+            if file.endswith('.fasta') or file.endswith('.fa') or file.endswith('.fas'):
                 fasta_sequences = SeqIO.parse(open(file), 'fasta')
                 for fasta in fasta_sequences:
                     name, seq = fasta.id, str(fasta.seq)
