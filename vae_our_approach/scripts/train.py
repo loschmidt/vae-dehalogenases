@@ -80,7 +80,7 @@ class Train:
         elbo_all_list = []
 
         # Count of validations run is for robustness just one
-        K = 1 if self.setuper.robustness_train else self.K
+        K = self.K  #1 if self.setuper.robustness_train else self.K  # train with same subset
         for k in range(K):
             print("Start the {}th fold training".format(k))
             print("-" * 60)
@@ -118,7 +118,7 @@ class Train:
                                    weight_decay=self.setuper.decay)
 
             # collect training and validation data indices
-            validation_idx = idx_subset[k]
+            validation_idx = idx_subset[0] if self.setuper.robustness_train else idx_subset[k]
             validation_idx.sort()
 
             train_idx = np.array(list(set(range(self.num_seq)) - set(validation_idx)))
