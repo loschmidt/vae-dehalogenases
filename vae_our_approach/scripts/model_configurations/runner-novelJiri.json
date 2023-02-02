@@ -2,7 +2,7 @@
   "core_params": ["--model_name test_arch",
     "--exp_dir final_models",
     "--align",
-    "--solubility_file results/PF00561/MSA/soluprot.txt",
+    "--solubility_file ../datasets/soluprot.txt",
     "--stats", "--K 1",
     "--training_subsets 5", "--source_txt EVO/mutations.txt"],
   "variable_params": [
@@ -11,12 +11,12 @@
     "--highlight_seqs {}", "--ancestors {}"],
   "experiments": [
   {
-    "status": "off",
+    "status": "on",
     "experiment": "novelEnzyme_Jiri",
     "layers": "299",
     "dimensionality": 2,
     "C": 2,
-    "in_file": "results/PF00561/MSA/identified_targets_msa.fa",
+    "in_file": "../datasets/hlds_dataset.fa",
     "query": "P59336_S14",
     "highlight_seqs": "P59336_S14",
     "num_epoch": 16500,
