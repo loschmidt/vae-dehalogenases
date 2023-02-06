@@ -48,6 +48,9 @@ class MSA:
                         seq_dict[seq_id] = seq.upper()
         else:
             Logger.update_msg(value="cannot be done! No file parameter passed to the function", new_line=True)
+        if len(list(seq_dict.keys())) == 0:
+            Logger.update_msg(value="MSA parsing did not identify any sequence.\n "
+                                    "Maybe wrong file passed!!!", new_line=True)
         return seq_dict
 
     @staticmethod
