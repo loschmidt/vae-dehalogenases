@@ -73,6 +73,9 @@ class CmdHandler(metaclass=Singleton):
         # Prepare project structure
         self.setup_struct()
 
+        # Source dataset file
+        self.set_msa_file(self.args.in_file)
+
         # Load ref sequence if not specified
         if self.args.query is not None:
             self.query_id = self.args.query

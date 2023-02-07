@@ -16,10 +16,11 @@ sys.path.insert(0, parentDir)
 from parser_handler import CmdHandler
 from msa_handlers.msa_preprocessor import MSAPreprocessor
 
-# Get command line arguments and prepare directory
-cmd_liner = CmdHandler()
-msa = MSAPreprocessor(setuper=cmd_liner)
-msa.simple_preprocess_msa()
-print("#" * 80)
-print(f"     MSA for projection is ready in {cmd_liner.exp_dir}")
-print("#" * 80)
+if __name__ == "__main__":
+    # Get command line arguments and prepare directory
+    cmd_liner = CmdHandler()
+    msa = MSAPreprocessor(setuper=cmd_liner)
+    msa.simple_preprocess_msa()
+    print("#" * 80)
+    print(f"     MSA for projection is ready in {cmd_liner.exp_dir}")
+    print("#" * 80)

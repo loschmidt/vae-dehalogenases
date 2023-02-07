@@ -32,7 +32,7 @@ class MSAPreprocessor:
         """ Simplified preprocessing of msa for purposes of highlighting dataset in the latent space """
         msa = MSA.load_msa(self.setuper.msa_file)
         msa_col_num = self.filter_gap_positions(msa)  # converted to numbers
-        msa_no_gaps = self.filter_many_gap_sequences(msa_col_num, threshold=0.4)
+        msa_no_gaps = self.filter_many_gap_sequences(msa_col_num, threshold=0.5)
         self.save_query_sequence(msa_no_gaps)
 
         msa_filtered = msa_no_gaps
