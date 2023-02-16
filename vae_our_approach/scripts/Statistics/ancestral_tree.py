@@ -362,7 +362,7 @@ def run_tree_highlighter():
     anc_tree_handler = AncestralTree(cmdline)
     over_tree_corr, R2_all, PCC_all, roots, directions = [], [], [], np.array([]), []
     for i in range(n):
-        if i in [5, 11, 2]:
+        if not os.path.exists(os.path.join(anc_tree_handler.tree_dir, file_tree_templ.format(i))):
             continue  # These alignments do not have ancestors by Fireprot
         print("   Level parsing and plotting tree for ", file_tree_templ.format(i), " ", file_bigmsa_templ.format(i))
         # levels = anc_tree_handler.get_tree_levels(file_tree_templ.format(i))
