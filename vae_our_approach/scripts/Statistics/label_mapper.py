@@ -170,6 +170,11 @@ def run_latent_dhaa115_mapper():
     labels_with_sequences = latent_mapper.load_training_sequence_labels(label_file)
     z, labels, dTm_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta,
                                                                              align_to=2)
+    # Store coordinates into specific files
+    embedding_map_file = os.path.join(latent_mapper.target_dir, "tm_embeddings.pkl")
+    with open(embedding_map_file, "wb") as file:
+        pickle.dump({"z": z, "labels": labels, "dTm": dTm_labels}, file)
+
     # Corrected Tm value from wild-type not DhaA115 variant dTm DhaA115 > 23 degree
     labels = list(map(lambda x: x + 23, labels))
     dTm_labels = list(map(lambda x: x + 23, dTm_labels))
