@@ -1,6 +1,7 @@
 __author__ = "Pavel Kohout <xkohou15@stud.fit.vutbr.cz>"
 __date__ = "2022/02/24 14:40:00"
 
+import os.path
 import pickle
 
 import matplotlib.pyplot as plt
@@ -49,6 +50,11 @@ def show_latent_space_features(ax, anc_msa_file, setuper):
     ancestor_aligned = aligner.align_to_ref(anc_msa)
     ancestor_msa, ancestor_weight, ancestor_keys = transformer.sequence_dict_to_binary(ancestor_aligned)
     ancestor_mus, ancestor_sigma = vae.propagate_through_VAE(ancestor_msa, ancestor_weight, ancestor_keys)
+
+    # Store coordinates of Babkovas sequences in the file
+    anc_embeddings = os.path.join(setuper.pickles_fld, "anc_embeddings.pkl")
+    with open(anc_embeddings, "wb") as anc_file:
+        pickle.dump({"mus": ancestor_mus, "keys": ancestor_keys}, anc_file)
 
     fig_lat, ax_lat = plt.subplots(1, 1)
 
