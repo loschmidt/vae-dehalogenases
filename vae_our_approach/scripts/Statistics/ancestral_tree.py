@@ -82,6 +82,7 @@ class AncestralTree:
         self.transformer = Transformer(setuper)
         self.data_dir = VaePaths.STATS_DATA_SOURCE.value
         self.target_dir = setuper.high_fld + "/" + VaePaths.TREE_EVALUATION_DIR.value + "/"
+        self.coord_dir = os.path.join(self.target_dir, "coordinates_data/")
 
         dataset = (setuper.in_file.split("/")[-1]).split(".")[0]
         self.tree_dir = VaePaths.STATS_DATA_TREE.value + dataset + "/"
@@ -94,6 +95,7 @@ class AncestralTree:
         """ Creates directory in Highlight results directory """
         os.makedirs(self.target_dir, exist_ok=True)
         os.makedirs(self.tree_dir, exist_ok=True)
+        os.makedirs(self.coord_dir, exist_ok=True)
 
     def get_tree_levels(self, tree_nwk_file: str):
         """
@@ -139,7 +141,7 @@ class AncestralTree:
         sequence_dephts = {}
         for clade, depth in depths_dict.items():
             if clade in terminals:
-                sequence_dephts[clade.name.replace("\"", "")] = depth #self.max_depth
+                sequence_dephts[clade.name.replace("\"", "")] = depth  # self.max_depth
             else:
                 sequence_dephts["ancestral_" + str(clade.confidence)] = depth
                 clade.name = "ancestral_" + str(clade.confidence)
@@ -242,7 +244,7 @@ class AncestralTree:
         branches = ["query", "OUT68545.1", "WP_012286701.1", "TFG98623.1", "PYV12062.1", "TDI51065.1", "TDJ42344.1"]
         print("PCA tree branch correlation proceeding...")
         for k in range(len(leaf)):
-            print(k, flush=True, end=("," if (k+1) % 40 != 0 else "\n"))
+            print(k, flush=True, end=("," if (k + 1) % 40 != 0 else "\n"))
 
             leaf_name = "\"" + leaf[k] + "\""
             idx = key.index(leaf[k])
@@ -335,6 +337,7 @@ class AncestralTree:
         plt.ylim(-7, 7)
         plt.savefig(self.target_dir + "roots.png", dpi=600)
 
+
 # Number of randomly created MSAs and then trees
 n = 13
 
@@ -375,13 +378,19 @@ def run_tree_highlighter():
         # branches correlations
         branches = anc_tree_handler.get_tree_branches(file_tree_templ.format(i))
         correlations = anc_tree_handler.calculate_latent_branch_depth_correlation(branches, depths, msa)
-        r2, pcc, dire, root = anc_tree_handler.tree_pca_component_correlation(file_tree_templ.format(i), depths_coords[:, :2],
-                                                                  list(msa.keys()), i)
+        r2, pcc, dire, root = anc_tree_handler.tree_pca_component_correlation(file_tree_templ.format(i),
+                                                                              depths_coords[:, :2],
+                                                                              list(msa.keys()), i)
         over_tree_corr.extend(correlations)
         R2_all.extend(r2)
         PCC_all.extend(pcc)
         directions.extend(dire)
         roots = np.append(root, roots)
+
+        # store depths and coordinates to the file
+        with open(os.path.join(anc_tree_handler.coord_dir, f"tree_coordinates_{i}.npy"), "wb") as np_file:
+            np.save(np_file, depths_coords)
+
     # anc_tree_handler.finalize_plot("latent_tree.png")
     anc_tree_handler.plot_corr_histogram(over_tree_corr, "tree_depths_corr.png",
                                          "Correlation of latent origin distance and depth in the tree")
