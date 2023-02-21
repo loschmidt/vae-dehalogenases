@@ -95,7 +95,7 @@ class MSASubsampler:
                 embeddings_pkl = pickle.load(embed_file)
             key_to_mu = {k: mu for k, mu in zip(embeddings_pkl['keys'], embeddings_pkl['mu'])}
             mu = embeddings_pkl['mu']
-            keys = embeddings_pkl['keys']
+            keys = np.array(embeddings_pkl['keys'])
         except FileNotFoundError:
             print("   Please prepare MSA embedding before you run this case!!\n"
                   "   run python3 runner.py run_task.py --run_package_generative_plots --json config.file")
@@ -105,13 +105,12 @@ class MSASubsampler:
         query_emb = key_to_mu[self.query_id]
         latent_space_points = [vector_rotation(query_emb, i * 13) for i in range(1, 21)]  # 20 points in circle
         mu_idx = [closest_node(p, mu) for p in latent_space_points]
-        selected_seqs = [self.query_id] + keys[mu_idx]
+        selected_seqs = [self.query_id]
+        selected_seqs.extend(keys[np.sort(mu_idx)])
 
         # Store it in fasta
         file_path = os.path.join(self.tree, 'circularSample.fasta')
         with open(file_path, 'w') as file_handle:
-            MSASubsampler.fasta_record(file_handle, self.query_id, "".join(query))  # Store query
-
             for key in selected_seqs:
                 MSASubsampler.fasta_record(file_handle, key, "".join(msa[key]))
         return file_path
