@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 
 if sys.argv[1] not in ["--help", "-h"]:
     from Statistics.ancestral_tree import run_sampler as model_sampler_run
+    from Statistics.ancestral_tree import run_circular_sampler
     from Statistics.ancestral_tree import run_tree_highlighter as model_tree_run
     from Statistics.ancestral_tree import plot_tree_to_latent_space
     from Statistics.label_mapper import run_latent_mapper as model_mapper_run
@@ -38,6 +39,8 @@ def get_package_parser() -> ArgumentParser:
                         help="Runs 1st and 2nd order statistics over model.")
     parser.add_argument("--run_package_stats_fireprot", action='store_true', default=False,
                         help="Creates MSAs for fireprotASR")
+    parser.add_argument("--run_package_stats_sample_circle", action='store_true', default=False,
+                        help="Creates MSAs in the circle around origin of latent space")
     parser.add_argument("--run_package_stats_tree", action='store_true', default=False,
                         help="Highlights phylo tree levels in the latent space")
     parser.add_argument("--run_package_stats_tree_plot", action='store_true', default=False,
@@ -79,6 +82,8 @@ def run_package(parser: ArgumentParser):
         model_statistics_run()
     if args.run_package_stats_fireprot:
         model_sampler_run()
+    if args.run_package_stats_sample_circle:
+        run_circular_sampler()
     if args.run_package_stats_tree:
         model_tree_run()
     if args.run_package_stats_tree_plot:

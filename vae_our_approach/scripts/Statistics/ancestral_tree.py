@@ -7,6 +7,7 @@ import sys
 import inspect
 
 from typing import List
+from math import cos, sin
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from ete3 import Tree
 import matplotlib.pyplot as plt
 from sklearn import linear_model
 import scipy.stats as stats
+from scipy.spatial import distance
 from sklearn.decomposition import PCA
 
 currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -35,23 +37,26 @@ class MSASubsampler:
 
     def __init__(self, setuper: CmdHandler):
         self.pickle = setuper.pickles_fld
+        self.tree = os.path.join(setuper.high_fld, VaePaths.TREE_EVALUATION_DIR.value)
         self.target_dir = VaePaths.STATS_DATA_SOURCE.value + "fireprots_msas/"
         self.query_id = setuper.query_id
+        self.setuper = setuper
         self.setup_output_folder()
 
     def setup_output_folder(self):
         """ Creates directory in Highlight results directory """
         os.makedirs(self.target_dir, exist_ok=True)
+        os.makedirs(self.tree, exist_ok=True)
+
+    @staticmethod
+    def fasta_record(file, key, seq):
+        n = 80
+        file.write(">" + key + "\n")
+        for i in range(0, len(seq), n):
+            file.write(seq[i:i + n] + "\n")
 
     def sample_msa(self, n: int, seq_cnt: int = 100):
         """ Sample MSA from training input space """
-
-        def fasta_record(file, key, seq):
-            n = 80
-            file.write(">" + key + "\n")
-            for i in range(0, len(seq), n):
-                file.write(seq[i:i + n] + "\n")
-
         with open(self.pickle + "/training_alignment.pkl", "rb") as file_handle:
             msa = pickle.load(file_handle)
         msa_keys = np.array(list(msa.keys()))
@@ -67,7 +72,49 @@ class MSASubsampler:
                 selected_seqs = msa_keys[np.random.randint(1, msa_keys.shape[0], seq_cnt, dtype=np.int)]
 
                 for key in selected_seqs:
-                    fasta_record(file_handle, key, "".join(msa[key]))
+                    MSASubsampler.fasta_record(file_handle, key, "".join(msa[key]))
+
+    def sample_representative(self):
+        """ Sample MSA from the circle with query like radius """
+
+        def vector_rotation(vec, angle):
+            theta = np.deg2rad(angle)
+            rot = np.array([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
+            return np.dot(rot, vec)
+
+        def closest_node(node, nodes):
+            closest_index = distance.cdist(np.array([node]), nodes).argmin()
+            return closest_index
+
+        with open(self.pickle + "/training_alignment.pkl", "rb") as file_handle:
+            msa = pickle.load(file_handle)
+        query = msa[self.query_id]
+
+        try:
+            with open(os.path.join(self.pickle, 'embeddings.pkl'), 'rb') as embed_file:
+                embeddings_pkl = pickle.load(embed_file)
+            key_to_mu = {k: mu for k, mu in zip(embeddings_pkl['keys'], embeddings_pkl['mu'])}
+            mu = embeddings_pkl['mu']
+            keys = embeddings_pkl['keys']
+        except FileNotFoundError:
+            print("   Please prepare MSA embedding before you run this case!!\n"
+                  "   run python3 runner.py run_task.py --run_package_generative_plots --json config.file")
+            exit(1)
+
+        # Get sequences on the circle around latent space
+        query_emb = key_to_mu[self.query_id]
+        latent_space_points = [vector_rotation(query_emb, i * 13) for i in range(1, 21)]  # 20 points in circle
+        mu_idx = [closest_node(p, mu) for p in latent_space_points]
+        selected_seqs = [self.query_id] + keys[mu_idx]
+
+        # Store it in fasta
+        file_path = os.path.join(self.tree, 'circularSample.fasta')
+        with open(file_path, 'w') as file_handle:
+            MSASubsampler.fasta_record(file_handle, self.query_id, "".join(query))  # Store query
+
+            for key in selected_seqs:
+                MSASubsampler.fasta_record(file_handle, key, "".join(msa[key]))
+        return file_path
 
 
 class AncestralTree:
@@ -353,6 +400,17 @@ def run_sampler():
     print("   MSAs created into ", sampler.target_dir)
 
 
+def run_circular_sampler():
+    """ Sample in the circle around center in same distance as query """
+    cmdline = CmdHandler()
+    sampler = MSASubsampler(cmdline)
+
+    print("=" * 80)
+    print("   Sample representatives")
+    file_path = sampler.sample_representative()
+    print("   MSAs created into ", file_path)
+
+
 def run_tree_highlighter():
     """ Get levels of the phylo tree and highlight it in latent space """
     cmdline = CmdHandler()
@@ -447,7 +505,7 @@ def plot_tree_to_latent_space():
         edges = []
         # Prepare edges for branches and plot them
         for branch in branches:
-            branch_edges = [(key_to_mu[branch[i-1]], key_to_mu[branch[i]]) for i in range(1, len(branch))]
+            branch_edges = [(key_to_mu[branch[i - 1]], key_to_mu[branch[i]]) for i in range(1, len(branch))]
             edges.extend(branch_edges)
 
         # Plot tree into latent space
