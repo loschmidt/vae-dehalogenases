@@ -447,11 +447,13 @@ def plot_tree_to_latent_space():
         edges = []
         # Prepare edges for branches and plot them
         for branch in branches:
-            edges = edges.extend([(key_to_mu[branch[i]], key_to_mu[branch[i]]) for i in range(1, len(branch))])
+            branch_edges = [(key_to_mu[branch[i-1]], key_to_mu[branch[i]]) for i in range(1, len(branch))]
+            edges.extend(branch_edges)
 
         # Plot tree into latent space
         plt.plot(embeddings[:, 0], embeddings[:, 1], '.', alpha=0.1, markersize=3, )
         for p1, p2 in edges:
             plt.plot([p1[0], p2[0]], [p1[1], p2[1]], color='black', linewidth=1.0)
-        plt.savefig(os.path.join(plot_dir, "tree_msa{i}.png"), dpi=600)
+        plt.savefig(os.path.join(plot_dir, f"tree_msa{i}.png"), dpi=600)
+        print(f"  Saving to tree_msa{i}.png")
         plt.clf()
