@@ -406,3 +406,52 @@ def run_tree_highlighter():
         pickle.dump(R2_all, file_handle)
     with open(anc_tree_handler.target_dir + "pcc_correlations.pkl", "wb") as file_handle:
         pickle.dump(PCC_all, file_handle)
+
+
+def plot_tree_to_latent_space():
+    """
+    Plot tree structure into the latent space
+    @WARNING please the tree newick file to highlight and
+    """
+    cmdline = CmdHandler()
+    anc_tree_handler = AncestralTree(cmdline)
+    plot_dir = os.path.join(anc_tree_handler.target_dir, "latent_space_trees")
+    os.makedirs(plot_dir, exist_ok=True)
+
+    try:
+        with open(os.path.join(cmdline.pickles_fld, 'embeddings.pkl'), 'rb') as embed_file:
+            embeddings_pkl = pickle.load(embed_file)
+    except FileNotFoundError:
+        print("   Please prepare MSA embedding before you run this case!!\n"
+              "   run python3 runner.py run_task.py --run_package_generative_plots --json config.file")
+        exit(1)
+
+    embeddings = embeddings_pkl['mu']
+
+    print("=" * 80)
+    print("   Plotting tree into the latent space ")
+    file_tree_templ = "msa_tree{}.nwk"
+    file_bigmsa_templ = "bigMSA{}.fasta"
+
+    # Prepare data one by one
+    for i in range(n):
+        if not os.path.exists(os.path.join(anc_tree_handler.tree_dir, file_tree_templ.format(i))):
+            continue
+        print("   Latent space tree ", file_tree_templ.format(i), " ", file_bigmsa_templ.format(i))
+        depths = anc_tree_handler.get_tree_depths(file_tree_templ.format(i))
+        depths_coords, msa = anc_tree_handler.encode_sequences_with_depths(depths, file_bigmsa_templ.format(i),
+                                                                           file_tree_templ.format(i))
+        branches = anc_tree_handler.get_tree_branches(file_tree_templ.format(i))
+
+        key_to_mu = {k: d[:-1] for k, d in zip(msa.keys(), depths_coords)}
+        edges = []
+        # Prepare edges for branches and plot them
+        for branch in branches:
+            edges = edges.extend([(key_to_mu[branch[i]], key_to_mu[branch[i]]) for i in range(1, len(branch))])
+
+        # Plot tree into latent space
+        plt.plot(embeddings[:, 0], embeddings[:, 1], '.', alpha=0.1, markersize=3, )
+        for p1, p2 in edges:
+            plt.plot([p1[0], p2[0]], [p1[1], p2[1]], color='black', linewidth=1.0)
+        plt.savefig(os.path.join(plot_dir, "tree_msa{i}.png"), dpi=600)
+        plt.clf()

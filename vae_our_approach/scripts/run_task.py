@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 if sys.argv[1] not in ["--help", "-h"]:
     from Statistics.ancestral_tree import run_sampler as model_sampler_run
     from Statistics.ancestral_tree import run_tree_highlighter as model_tree_run
+    from Statistics.ancestral_tree import plot_tree_to_latent_space
     from Statistics.label_mapper import run_latent_mapper as model_mapper_run
     from Statistics.label_mapper import run_latent_dhaa115_mapper as model_dhaa115_run
     from Statistics.order_statistics import run_setup as model_statistics_run
@@ -39,6 +40,8 @@ def get_package_parser() -> ArgumentParser:
                         help="Creates MSAs for fireprotASR")
     parser.add_argument("--run_package_stats_tree", action='store_true', default=False,
                         help="Highlights phylo tree levels in the latent space")
+    parser.add_argument("--run_package_stats_tree_plot", action='store_true', default=False,
+                        help="Map tree to the latent space")
     parser.add_argument("--run_package_stats_mapper", action='store_true', default=False,
                         help="Highlights sequence with label in the latent space")
     parser.add_argument("--run_package_stats_map_dhaa115", action='store_true', default=False,
@@ -78,6 +81,8 @@ def run_package(parser: ArgumentParser):
         model_sampler_run()
     if args.run_package_stats_tree:
         model_tree_run()
+    if args.run_package_stats_tree_plot:
+        plot_tree_to_latent_space()
     if args.run_package_stats_mapper:
         model_mapper_run()
     if args.run_package_stats_map_dhaa115:
