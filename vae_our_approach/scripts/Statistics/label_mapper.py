@@ -178,7 +178,7 @@ def run_latent_dhaa115_mapper():
     # Store coordinates into specific files
     embedding_map_file = os.path.join(latent_mapper.target_dir, "tm_embeddings.pkl")
     with open(embedding_map_file, "wb") as file:
-        pickle.dump({"z": z, "labels": labels, "dTm": dTm_labels}, file)
+        pickle.dump({"z": z, "labels": labels, "dTm": dTm_labels, "ids": [s[0] for s in labels_with_sequences]}, file)
     latent_mapper.plot_labels(z, labels, True)
     latent_mapper.finalize_plot(plot_file, "dTm")
     print("  Storing mapped plot in ", latent_mapper.target_dir + plot_file)
