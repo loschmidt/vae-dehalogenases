@@ -14,6 +14,7 @@ if sys.argv[1] not in ["--help", "-h"]:
     from Statistics.label_mapper import run_latent_mapper as model_mapper_run
     from Statistics.label_mapper import run_latent_dhaa115_mapper as model_dhaa115_run
     from Statistics.order_statistics import run_setup as model_statistics_run
+    from Statistics.order_statistics import run_sampling_query as statistics_around_query
     from Statistics.reconstruction_ability import run_input_dataset_reconstruction as model_input_reconstruct_run
     from Statistics.stats_plot import make_overview as plot_overview
     from Statistics.entropy_latent import run_entropy as model_entropy
@@ -37,6 +38,8 @@ def get_package_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--run_package_stats_order", action='store_true', default=False,
                         help="Runs 1st and 2nd order statistics over model.")
+    parser.add_argument("--run_package_stats_order_query", action='store_true', default=False,
+                        help="Runs 1st and 2nd order statistics over model in query area.")
     parser.add_argument("--run_package_stats_fireprot", action='store_true', default=False,
                         help="Creates MSAs for fireprotASR")
     parser.add_argument("--run_package_stats_sample_circle", action='store_true', default=False,
@@ -80,6 +83,8 @@ def run_package(parser: ArgumentParser):
     args, unknown = parser.parse_known_args()
     if args.run_package_stats_order:
         model_statistics_run()
+    if args.run_package_stats_order_query:
+        statistics_around_query()
     if args.run_package_stats_fireprot:
         model_sampler_run()
     if args.run_package_stats_sample_circle:

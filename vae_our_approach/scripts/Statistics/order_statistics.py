@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Tuple
 from multiprocessing import Pool
+from scipy.spatial import distance
 
 currentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentDir = os.path.dirname(currentDir)
@@ -192,6 +193,16 @@ class OrderStatistics:
                 ]
 
     @staticmethod
+    def get_plot_query_data_file_names():
+        """ Returns names of data files for plotting """
+        return ["msa_shannon_query.pkl", "msa_frequencies_query.pkl",
+                "sampled_shannon_query.pkl", "sampled_frequencies_query.pkl",
+                "mutual_msa_query.pkl", "mutual_msa_frequencies_query.pkl",
+                "mutual_sampled_query.pkl", "mutual_sampled_frequencies_query.pkl",
+                "covariances_msa_query.pkl", "covariances_generated_query.pkl"
+                ]
+
+    @staticmethod
     def created_subplot(ax, train, sampled, label_x, label_y, show_gap, frequencies):
         """ Method plotting desired graph into given subplot """
         my_rho = np.corrcoef(train.flatten(), sampled.flatten())
@@ -218,7 +229,7 @@ def run_setup():
     with open(cmdline.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
         msa_original_binary = pickle.load(file_handle)
 
-    sample_cnt = 600
+    sample_cnt = 3000
     random_idx = np.random.permutation(range(0, msa_original_binary.shape[0]))
 
     msa_dataset = Transformer.binaries_to_numbers_coding(msa_original_binary[random_idx[:sample_cnt]])
@@ -279,6 +290,90 @@ def run_setup():
     data_to_store = [msa_shannon, msa_frequencies, sampled_shannon, sampled_frequencies,
                      mutual_msa, mutual_msa_frequencies, mutual_sampled, mutual_sampled_frequencies, cov_msa, cov_gen]
     data_files = OrderStatistics.get_plot_data_file_names()
+    for f, data in zip(data_files, data_to_store):
+        with open(stat_obj.data_dir + f, 'wb') as file_handle:
+            pickle.dump(data, file_handle)
+
+
+def run_sampling_query():
+    """ Sample around the query embedding """
+    def get_nodes_closer_from_node_than(node, limit, nodes):
+        d = distance.cdist(np.array([node]), nodes)
+        _, closer_indexes = (d < limit).nonzero()
+        return closer_indexes
+
+    cmdline = CmdHandler()
+    limit = 2.0
+
+    with open(cmdline.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
+        msa_original_binary = pickle.load(file_handle)
+
+    try:
+        with open(os.path.join(cmdline.pickles_fld, 'embeddings.pkl'), 'rb') as embed_file:
+            embeddings = pickle.load(embed_file)
+    except FileNotFoundError:
+        print("   Please prepare MSA embedding before you run this case!!\n"
+              "   run python3 runner.py run_task.py --run_package_generative_plots --json config.file")
+        exit(1)
+
+    key_to_mu = {k: mu for k, mu in zip(embeddings['keys'], embeddings['mu'])}
+    query_embedding = key_to_mu[cmdline.query_id]
+    indx = get_nodes_closer_from_node_than(query_embedding, limit, embeddings['mu'])
+    sample_cnt = indx.shape[0]
+
+    print(f"  Creating order statistics around query with limit {limit} and {sample_cnt} samples...")
+
+    msa_dataset = Transformer.binaries_to_numbers_coding(msa_original_binary[indx])
+    stat_obj = OrderStatistics(cmdline)
+    sampled_dataset = stat_obj.sample_dataset_from_normal(query_embedding, limit, sample_cnt)
+    # 1st order stats
+    msa_shannon, msa_frequencies = stat_obj.shannon_entropy(msa_dataset)
+    sampled_shannon, sampled_frequencies = stat_obj.shannon_entropy(sampled_dataset)
+    print("   Shannon entropy and single frequencies for Query embedding calculation ............... DONE")
+
+    # 2nd order statistics
+    if stat_obj.vae.use_cuda:
+        # On cuda device, there is a problem with subprocess initialization so run it in parallel
+        Logger.print_for_update("   Mutual information, pair frequencies and covariance for query MSA ...... {}",
+                                str(0) + "%")
+        mutual_msa, mutual_msa_frequencies, cov_msa = stat_obj.mutual_information(msa_dataset, msa_shannon)
+        Logger.update_msg("DONE", True)
+        Logger.print_for_update("   Mutual information, pair frequencies and covariance for query SAMPLE ... {}",
+                                str(0) + "%")
+        mutual_sampled, mutual_sampled_frequencies, cov_gen = stat_obj.mutual_information(sampled_dataset,
+                                                                                          sampled_shannon)
+        Logger.update_msg("DONE", True)
+    else:
+        # In parallel process aligning
+        pool_values = [(msa_dataset, msa_shannon, 0), (sampled_dataset, sampled_shannon, 1)]
+        Logger.init_multiprocess_msg(" 2nd order query stats computation .... {}", processes=2, init_value=str(0) + "%")
+        pool = Pool(processes=2)
+        pool_results = pool.starmap(stat_obj.mutual_information, pool_values)
+        mutual_msa, mutual_msa_frequencies, cov_msa = pool_results[0]
+        mutual_sampled, mutual_sampled_frequencies, cov_gen = pool_results[1]
+        pool.close()
+        pool.join()
+        print()
+
+    # plot 1st order data statistics and frequencies statistics
+    print("=" * 80)
+    print(" Creating first and second order statistics  for query to  {}".format(stat_obj.target_dir))
+    stat_obj.plot_order_statistics(msa_shannon, sampled_shannon, 'Training Data Entropy', 'VAE Sampled Entropy',
+                                   'first_order_query.png', show_gap=False)
+    stat_obj.plot_order_statistics(mutual_msa, mutual_sampled, 'Training Mutual Information',
+                                   'Generated Mutual Information', 'second_order_query.png', show_gap=False)
+    stat_obj.plot_order_statistics(cov_msa, cov_gen, 'Target MSA covariances',
+                                   'Generated MSA covariances', 'second_covariances_query.png', show_gap=False)
+    stat_obj.plot_order_statistics(msa_frequencies, sampled_frequencies,
+                                   'Training Data Frequencies', 'VAE Sampled Frequencies',
+                                   'first_order_frequencies_query.png', show_gap=True, frequencies=True)
+    stat_obj.plot_order_statistics(mutual_msa_frequencies, mutual_sampled_frequencies,
+                                   'Training Mutual Frequencies', 'Generated Mutual Frequencies',
+                                   'second_order_frequencies_query.png', show_gap=False, frequencies=True)
+
+    data_to_store = [msa_shannon, msa_frequencies, sampled_shannon, sampled_frequencies,
+                     mutual_msa, mutual_msa_frequencies, mutual_sampled, mutual_sampled_frequencies, cov_msa, cov_gen]
+    data_files = OrderStatistics.get_plot_query_data_file_names()
     for f, data in zip(data_files, data_to_store):
         with open(stat_obj.data_dir + f, 'wb') as file_handle:
             pickle.dump(data, file_handle)
