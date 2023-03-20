@@ -208,7 +208,7 @@ class OrderStatistics:
         my_rho = np.corrcoef(train.flatten(), sampled.flatten())
 
         ax.scatter(train.flatten(), sampled.flatten(), s=0.5)
-        ax.title.set_text('Correlation = ' + "{:.4f}".format(my_rho[0, 1]))
+        ax.title.set_text('Correlation = ' + "{:.2f}".format(my_rho[0, 1]))
         ax.set(xlabel=label_x, ylabel=label_y)
 
         if frequencies:
