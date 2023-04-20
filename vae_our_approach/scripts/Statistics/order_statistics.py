@@ -303,7 +303,7 @@ def run_sampling_query():
         return closer_indexes
 
     cmdline = CmdHandler()
-    limit = 2.0
+    limit = 2.5
 
     with open(cmdline.pickles_fld + "/seq_msa_binary.pkl", 'rb') as file_handle:
         msa_original_binary = pickle.load(file_handle)
@@ -317,7 +317,7 @@ def run_sampling_query():
         exit(1)
 
     key_to_mu = {k: mu for k, mu in zip(embeddings['keys'], embeddings['mu'])}
-    query_embedding = key_to_mu[cmdline.query_id]
+    query_embedding = 2.*key_to_mu[cmdline.query_id]/3.
     indx = get_nodes_closer_from_node_than(query_embedding, limit, embeddings['mu'])
     sample_cnt = indx.shape[0]
 
