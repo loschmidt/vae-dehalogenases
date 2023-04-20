@@ -103,15 +103,18 @@ class MSASubsampler:
 
         # Get sequences on the circle around latent space
         query_emb = key_to_mu[self.query_id]
-        latent_space_points = [vector_rotation(query_emb, i * 13) for i in range(1, 21)]  # 20 points in circle
+        latent_space_points = [vector_rotation(query_emb, i * 2) for i in range(1, 181)]  # 180 points in circle
         mu_idx = [closest_node(p, mu) for p in latent_space_points]
         selected_seqs = [self.query_id]
         selected_seqs.extend(keys[np.sort(mu_idx)])
+        # Only unique sequences
+        unique_keys = list(set(selected_seqs))
+        print(f" The total number of selected sequences is {len(selected_seqs)} out of are unique {len(unique_keys)}")
 
         # Store it in fasta
         file_path = os.path.join(self.tree, 'circularSample.fasta')
         with open(file_path, 'w') as file_handle:
-            for key in selected_seqs:
+            for key in unique_keys:
                 MSASubsampler.fasta_record(file_handle, key, "".join(msa[key]))
         return file_path
 
