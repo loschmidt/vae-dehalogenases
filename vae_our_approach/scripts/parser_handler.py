@@ -50,6 +50,11 @@ class CmdHandler(metaclass=Singleton):
         self.msa_clustering = self.args.msa_not_cluster
         self.clustalo_path = self.args.clustalo_path
 
+        self.tree_nwk = self.args.tree_nwk
+        self.tree_msa = self.args.tree_msa
+        self.tree_msa_align = self.args.tree_msa_align
+        self.tree_leaves = self.args.tree_leaves
+
         # Ensemble
         self.ens_cnt = self.args.ensemble_cnt
         self.ens_num = self.args.ensemble_num
@@ -118,6 +123,11 @@ class CmdHandler(metaclass=Singleton):
         parser.add_argument('--in_file', type=str, default='', help=Helper.MSA_FILE.value)
         parser.add_argument('--msa_not_cluster', action='store_false', default=True,
                             help=Helper.MSA_NOT_CLUSTER.value)
+        # Tree inputs
+        parser.add_argument('--tree_nwk', type=str, default=None, help=Helper.TREE_NWK.value)
+        parser.add_argument('--tree_msa', type=str, default=None, help=Helper.TREE_MSA.value)
+        parser.add_argument('--tree_msa_align', action='store_true', default=False, help=Helper.TREE_ALIGN.value)
+        parser.add_argument('--tree_leaves', type=str, default="", help=Helper.TREE_LEAF.value)
         # Model setup options
         parser.add_argument('--model_name', type=str, default="model", help=Helper.MODEL_NAME.value)
         parser.add_argument('--C', type=float, default=2.0, help=Helper.C.value)

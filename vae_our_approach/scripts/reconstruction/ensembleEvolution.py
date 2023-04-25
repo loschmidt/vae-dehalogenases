@@ -158,7 +158,7 @@ class EnsembleEvo:
             ax_cur.set_xlabel("$Z_1$")
             ax_cur.set_ylabel("$Z_2$")
             plot_i += 1
-        fig_lat.savefig(self.plot_dir + f"/cross{model_i}.png")
+        fig_lat.savefig(self.plot_dir + f"/cross{model_i}.png", dpi=900)
 
     def plot_cross_embeddings(self, models_embeddings):
         """ Create plots with embeddings mapped to individual models """

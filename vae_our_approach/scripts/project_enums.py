@@ -61,6 +61,12 @@ class Helper(Enum):
     ENSEMBLE = "Count of models used in ensemble method evaluation. Default value is 5"
     ENSEMBLE_MODEL = "Ensemble model number important for training script parallelization"
 
+    TREE_NWK = "File with the newick format tree for the sequences in the tree_msa parameter"
+    TREE_MSA = "File with the sequences in the tree passed through tree_nwk parameter. MSA can be in the shape of VAE " \
+               "training (columns excluded, or indicate they should be aligned by --tree_msa_align)"
+    TREE_ALIGN = "Option to align sequence in tree MSA to those used in VAE training"
+    TREE_LEAF = "String with comma delimeter of leaves which branches will be plotted into the latent space"
+
 class VaePaths(Enum):
     # Experiment directory paths
     RESULTS = "./../results/"

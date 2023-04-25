@@ -80,7 +80,10 @@ for param in run_setup["core_params"]:
     run_string += param + " "
 for var_param in run_setup["variable_params"]:
     param_name = var_param.split(" ")[0][2:]
-    run_string += var_param.format(on_experiment[param_name]) + " "
+    try:
+        run_string += var_param.format(on_experiment[param_name]) + " "
+    except:
+        pass
 for flag in on_experiment["flags"]:
     run_string += "--{} ".format(flag)
 
