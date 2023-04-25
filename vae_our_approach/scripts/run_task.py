@@ -18,6 +18,8 @@ if sys.argv[1] not in ["--help", "-h"]:
     from Statistics.reconstruction_ability import run_input_dataset_reconstruction as model_input_reconstruct_run
     from Statistics.stats_plot import make_overview as plot_overview
     from Statistics.entropy_latent import run_entropy as model_entropy
+    
+    from mappers.tree_mapper import run_map_tree
 
     from reconstruction.mutagenesis import run_random_mutagenesis, run_straight_evolution
     from reconstruction.evo_search import run_cma_es_evolution
@@ -72,6 +74,8 @@ def get_package_parser() -> ArgumentParser:
                         help="Run riemannian manifold strategy for origin ancestral strategy")
     parser.add_argument("--run_ensemble_evolution", action='store_true', default=False,
                         help="Run ensemble straight ancestor evolution for more models")
+    parser.add_argument("--map_tree", action='store_true', default=False,
+                        help="Map given tree into the latent space")
     return parser
 
 
@@ -127,6 +131,8 @@ def run_package(parser: ArgumentParser):
         run_riemannian_ancestors()
     if args.run_ensemble_evolution:
         run_ensemble_evolution()
+    if args.map_tree:
+        run_map_tree()
 
 
 if __name__ == '__main__':

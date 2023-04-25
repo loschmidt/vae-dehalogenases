@@ -481,9 +481,9 @@ class AncestorsHandler:
                 node.add_feature('mapped_leaf', node)
             else:
                 # Get the most identical leaf
-                msa_name = "ancestral_{}".format(node.name)
-                node.name = msa_name
-                sequence = tree_msa[msa_name]
+                # msa_name = "{}".format(node.name)
+                # node.name = msa_name
+                sequence = tree_msa[node.name]
 
                 max_identity, most_identical_node = -1, None
                 for leaf in node.get_leaves():
