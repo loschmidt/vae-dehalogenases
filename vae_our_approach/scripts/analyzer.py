@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from Bio import pairwise2
 from Bio.Align.Applications import ClustalOmegaCommandline
+from Bio.Blast.Applications import NcbiblastpCommandline, NcbimakeblastdbCommandline
 from ete3 import Tree
 from multiprocessing import Pool
 
@@ -307,7 +308,7 @@ class AncestorsHandler:
                 original_msa = MSA.load_msa(self.setuper.in_file)
             mapped_tree = AncestorsHandler.map_tree_node_to_closest_leaf(tree_path, tree_seq_dict, original_msa,
                                                                          self.setuper.query_id)
-            msg ="   Aligned {} sequences and using 12 processes"
+            msg = "   Aligned {} sequences and using 12 processes"
             Logger.print_for_update(msg, '0')
             pool_values, pool_keys, align_cnt = [], [], 1
             for tree_key, seq in tree_seq_dict.items():
@@ -468,6 +469,94 @@ class AncestorsHandler:
             aligned[name] = [item for i, item in enumerate(alignment[name]) if i in pos_idx]
         return aligned
 
+    def align_to_closest_msa(self, fasta_file_to_find: str, labels_for: str, force_align: bool = True):
+        """
+            Aligns sequences in fasta dictionary to the closest sequences in input MSA.
+            We need to find the closest sequence if not occurring in MSA and then align to it.
+            We perform blast search for that
+
+            Usage example: mapping mutants values into the latent space to check landscape.
+        """
+        store_file = self.pickle + f"/aligned_{labels_for}.fasta"
+        aligned_dict = {}
+
+        fasta_dict = MSA.load_msa(fasta_file_to_find)
+
+        if os.path.exists(store_file) and os.path.getsize(store_file) > 0 and force_align:
+            print(f"   Using aligned {labels_for} values in {store_file}")
+            aligned_dict = MSA.load_msa(store_file)
+        else:
+            with Capturing() as output:
+                original_msa = MSA.load_msa(self.setuper.in_file)
+
+            AncestorsHandler.blast_search_for_closest(self.pickle, original_msa, fasta_dict)
+            exit(0)
+            to_align_keys, to_align_seqs = list(fasta_dict.keys()), list(fasta_dict.values())
+
+
+
+            # In parallel process aligning
+            pool = Pool(processes=12)
+            pool_results = pool.starmap(AncestorsHandler.align_to_seq, pool_values)
+            for pool_key, result in zip(pool_keys, pool_results):
+                aligned_dict[pool_key] = result
+            pool.close()
+            pool.join()
+
+            Logger.update_msg("every node ", True)
+
+            # slice all aligned sequence to its original templates
+            with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
+                pos_idx = pickle.load(file_handle)
+
+            for name, seq in aligned_dict.items():
+                aligned_dict[name] = [item for i, item in enumerate(seq) if i in pos_idx]
+
+            ExperimentStatistics(self.setuper).store_ancestor_dict_in_fasta(aligned_dict, store_file,
+                                                                            "Storing tree nodes into ")
+        return aligned_dict
+
+    @staticmethod
+    def blast_search_for_closest(dest_dit_path: str, to_db_sequences: dict, closest_to_seqs: dict, force: bool = True):
+        """
+        Create or use existing blast DB or force creating new DB. Then search for the closest sequences in DB
+        to those in closest_to_seqs dictionary.
+
+        Return list of pairs (sequence_name, the closest sequence in DB name)
+        """
+        # prepare blast DB with input sequences
+        blast_db_fasta = dest_dit_path + "/blast_DB.fasta"
+        out_blast_db_path = dest_dit_path + "/blast_db.db"
+        if not os.path.exists(blast_db_fasta) or not os.path.getsize(blast_db_fasta) > 0 or force:
+            # create fasta file
+            with open(blast_db_fasta, "w") as blast_db_file:
+                first_sequence = True
+                for k, v in to_db_sequences.items():
+                    v = v.replace("-", "")
+                    fasta_record = f"\n>{k}\n{v}"
+                    if first_sequence:
+                        first_sequence = False
+                        fasta_record = fasta_record[1:]  # remove new line at the beginning
+                    blast_db_file.write(fasta_record)
+            # create blast db from fasta file
+            db_cmd = NcbimakeblastdbCommandline(dbtype="prot", input_file=blast_db_fasta, out=out_blast_db_path)
+            stdout, stderr = db_cmd()
+
+        # make actual blast search on db
+        for name, seq in closest_to_seqs.items():
+            # create temporary fasta file
+            sequence_fasta = dest_dit_path + "/tmp_blasta.fasta"
+            with open(sequence_fasta, "w") as tmp_f:
+                fasta_record = f">{k}\n{v}"
+                tmp_f.write(fasta_record)
+            result_file = dest_dit_path + "/result_search.seq"
+            blast_cmd = NcbiblastpCommandline(query=sequence_fasta,
+                                              db=out_blast_db_path,
+                                              out=result_file,
+                                              evalue=1e-10)
+            stdout, stderr = blast_cmd()
+
+
     @staticmethod
     def map_tree_node_to_closest_leaf(tree_path, tree_msa: dict, input_msa: dict, query_id):
         """
@@ -506,6 +595,7 @@ class AncestorsHandler:
         #         clade.name = "ancestral_" + str(clade.confidence)
         #         names[clade.name] = clade
         # return names
+
 
 if __name__ == '__main__':
     tar_dir = CmdHandler()
