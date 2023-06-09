@@ -5,6 +5,7 @@ __description__ = " Handling command line arguments and setting up and checking 
 
 import argparse
 import datetime
+import json
 import os
 import pickle
 import subprocess as sp  # command line handling
@@ -16,10 +17,30 @@ from metaclasses import Singleton
 # from sequence_transformer import Transformer
 
 
+class MyAttrClass:
+    def __getattr__(self, attr_name):
+        fallback_values = {
+            "focus": False,
+            "msa_not_cluster": False,
+            "dynamic_decay": False,
+            "robustness_train": False,
+            "highlight_dim": False,
+            "clustalo_path": '../clustal/clustalo'
+        }
+        if attr_name in fallback_values:
+            return fallback_values[attr_name]
+        else:
+            return None
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attr_name}'")
+
+
 class CmdHandler(metaclass=Singleton):
-    def __init__(self):
+    def __init__(self, json_file=None):
         # Setup all parameters
-        self.exp_dir, self.args = self.get_parser()
+        if json_file is not None:
+            self.exp_dir, self.args = get_handler_by_json(json_file)
+        else:
+            self.exp_dir, self.args = self.get_parser()
 
         self.msa_file = ""
         self.stats = self.args.stats
@@ -29,10 +50,10 @@ class CmdHandler(metaclass=Singleton):
         self.train_subsets = self.args.training_subsets
         self.C = self.args.C
         # MSA processing handling
-        self.preserve_catalytic = self.args.preserve_catalytic
-        self.ec = self.args.ec_num
-        self.filter_score = self.args.no_score_filter
-        self.paper_pipe = self.args.paper_pipeline
+        # self.preserve_catalytic = self.args.preserve_catalytic
+        # self.ec = self.args.ec_num
+        # self.filter_score = self.args.no_score_filter
+        # self.paper_pipe = self.args.paper_pipeline
         self.align = self.args.align
         self.mut_points = self.args.mut_points
         self.mutant_samples = self.args.mut_samples
@@ -74,9 +95,9 @@ class CmdHandler(metaclass=Singleton):
         self.model_name = self.args.model_name # + Helper.MODEL_FOLD.value
 
         ## Setup enviroment variable
-        os.environ['PIP_CAT'] = str(self.preserve_catalytic)
-        os.environ['PIP_PAPER'] = str(self.paper_pipe)
-        os.environ['PIP_SCORE'] = str(self.filter_score)
+        # os.environ['PIP_CAT'] = str(self.preserve_catalytic)
+        # os.environ['PIP_PAPER'] = str(self.paper_pipe)
+        # os.environ['PIP_SCORE'] = str(self.filter_score)
 
         # Prepare project structure
         self.setup_struct()
@@ -310,6 +331,59 @@ class CmdHandler(metaclass=Singleton):
                 if slice_indices is not None:
                     solubility = solubility[slice_indices]
         return solubility
+
+
+def get_handler_by_json(json_path):
+    """
+    @json_path: path to the json configuration file to be run the experiment with:
+    return: CmdHandler initilized object
+    """
+    def convert_to_numeric(string):
+        try:
+            value = int(string)
+            return value
+        except ValueError:
+            try:
+                value = float(string)
+                return value
+            except ValueError:
+                return string
+
+    try:
+        with open(json_path, "r") as json_file:
+            handler_setup = json.load(json_file)
+    except FileExistsError:
+        print(f"  Sorry the provided configuration file was not found... {json_path}")
+        exit(1)
+    args = MyAttrClass()
+    # Add core parameters
+    for p in handler_setup['core_params']:
+        param = p.split(' ')
+        if len(param) > 1:
+            setattr(args, param[0][2:], convert_to_numeric(param[1]))
+        else:
+            setattr(args, param[0][2:], True)
+    # Get active experiment and process it
+    exps = handler_setup['experiments']
+    on_exp = None
+    for exp in exps:
+        if exp['status'] == 'on':
+            on_exp = exp
+            break
+    for param_name, param_val in on_exp.items():
+        if isinstance(param_val, list):  # flags
+            for flag in param_val:
+                setattr(args, flag, True)
+        else:
+            setattr(args, param_name, convert_to_numeric(param_val))
+    # copy config file to the results directory
+    now = datetime.datetime.now()
+    file_name = now.strftime("%Y-%m-%d_%H-%M.json")
+    config_dir_path = os.path.join('./..', VaePaths.RESULTS.value[2:], args.exp_dir, 'configs')
+    os.makedirs(config_dir_path, exist_ok=True)
+    json.dump(handler_setup, open(os.path.join(config_dir_path, f"{file_name}"), 'w'))
+    print(f"Configuration file stored in {config_dir_path}")
+    return args.exp_dir, args
 
 
 if __name__ == '__main__':
