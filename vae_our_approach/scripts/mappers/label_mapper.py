@@ -29,18 +29,20 @@ class LatentSpaceMapper:
     The class expect having these sequences (or its names having it in training dataset) and
     values in the file in the following format:
         ProteinName;ProteinIdentificator;InSilicoVal;WetLabVal
+    or you can customize up to you preferences
+        ProteinName;ProteinIdentificator;label_val1;...
     example:
         DfxA;WP_071046332.1;73.4;24.2
     """
 
-    def __init__(self, setuper: CmdHandler):
+    def __init__(self, setuper: CmdHandler, input_dir: str = VaePaths.STATS_MAPPING_SOURCE.value):
         self.model_name = setuper.get_model_to_load()
         self.vae = VAEAccessor(setuper, self.model_name)
         self.transformer = Transformer(setuper)
         self.aligner_obj = AncestorsHandler(setuper)
         self.in_file = setuper.in_file
         self.pickle = setuper.pickles_fld
-        self.input_dir = VaePaths.STATS_MAPPING_SOURCE.value
+        self.input_dir = input_dir
         self.target_dir = setuper.high_fld + "/" + VaePaths.MAPPING_DIR.value + "/"
         self.cmd_line = setuper
         self.setup_output_folder()
@@ -49,8 +51,8 @@ class LatentSpaceMapper:
         """ Creates directory in Highlight results directory """
         os.makedirs(self.target_dir, exist_ok=True)
 
-    def load_training_sequence_labels(self, file_name: str):
-        """ Loads training sequence binaries and label them from file """
+    def load_label_with_insilico(self, file_name: str):
+        """ Loads experimental and in silico values """
         sequences = []
 
         with open(self.input_dir + file_name, "r") as lines:
@@ -60,16 +62,33 @@ class LatentSpaceMapper:
                 sequences.append([seq_id, experimental, float(soluprot)])
         return sequences
 
-    def map_sequences_with_labels_to_space(self, seq_labels: list, hts_project_fasta: str, align_to: int):
-        """ Assign labels to the sequences from the input set """
+    def load_labels(self, file_name: str):
+        """ Single label values """
+        sequences = []
+
+        with open(os.path.join(self.input_dir, file_name), "r") as lines:
+            for line in lines:
+                prot_id, seq_id, value = line.split(";")
+                value = float(value.split("\n")[0])
+                sequences.append([seq_id, value])
+        return sequences
+
+    def map_sequence_with_single_label_to_space(self, seq_labels: list, hts_project_fasta: str, align_to: int = 2):
+        """ Align sequences with single one label to the latent space """
+        add_label_val_list = [l.append(0.0) for l in seq_labels]  # artificially add labels to use two label method
+        mus, labels, _ = self.map_sequences_with_two_labels_to_space(add_label_val_list, hts_project_fasta, align_to)
+        return mus, labels
+
+    def map_sequences_with_two_labels_to_space(self, seq_labels: list, hts_project_fasta: str, align_to: int):
+        """ Assign labels to the sequences from the input set"""
         whole_msa = MSA.load_msa(self.in_file)
         # self.aligner_obj.align_to_closest_msa(self.input_dir + hts_project_fasta, "solubility")
         if align_to == 1:
-            hts_msa = self.aligner_obj.align_fasta_to_original_msa(self.input_dir + hts_project_fasta,
+            hts_msa = self.aligner_obj.align_fasta_to_original_msa(os.path.join(self.input_dir, hts_project_fasta),
                                                                    already_msa=False,
                                                                    verbose=True)
         else:
-            seq_to_align = MSA.load_msa(self.input_dir + hts_project_fasta)
+            seq_to_align = MSA.load_msa(os.path.join(self.input_dir, hts_project_fasta))
             hts_msa = self.aligner_obj.align_to_ref(seq_to_align)
         labels, soluprot_labels = [], []
         selected_sequences_dict = {}
@@ -134,6 +153,36 @@ class LatentSpaceMapper:
 def run_latent_mapper():
     """ Map label to the sequences in the latent space """
     cmdline = CmdHandler()
+    label_file = cmdline.label_file
+    label_fasta = cmdline.label_fasta
+    plot_file = "mapped_labels.png"
+    embedding_map_file = "label_embedding_dict.pkl"
+    input_dir = os.path.dirname(label_file)
+    if input_dir != os.path.dirname(label_fasta):
+        print("The label files are in the different directories. Please move them to one directory")
+        exit(1)
+    label_file = os.path.basename(label_file)
+    label_fasta = os.path.basename(label_fasta)
+
+    print("=" * 80)
+    print("   Mapping sequence with labels to latent space")
+
+    latent_mapper = LatentSpaceMapper(cmdline, input_dir=input_dir)
+    labels_with_sequences = latent_mapper.load_labels(label_file)
+    z, labels = latent_mapper.map_sequence_with_single_label_to_space(labels_with_sequences, label_fasta)
+    latent_mapper.plot_labels(z, labels, True)
+    latent_mapper.finalize_plot(plot_file, label_file.split(".")[0])
+    print("  Storing mapped plot in ", latent_mapper.target_dir + plot_file)
+
+    path_to_emb = os.path.join(latent_mapper.target_dir, embedding_map_file)
+    with open(path_to_emb, "wb") as file:
+        pickle.dump({'z': z, 'labels': labels}, file)
+        print(f"  Storing labels and their coordinates into ... {embedding_map_file}")
+
+
+def run_latent_solubility_mapper():
+    """ Map solubility label to the sequences in the latent space (experimental and in silico)"""
+    cmdline = CmdHandler()
     label_file = "hts_project.txt"
     hts_fasta = "hts_project.fasta"
     plot_file = "mapped_hts_solubility.png"
@@ -143,10 +192,10 @@ def run_latent_mapper():
     print("   Mapping sequence with labels to latent space")
 
     latent_mapper = LatentSpaceMapper(cmdline)
-    labels_with_sequences = latent_mapper.load_training_sequence_labels(label_file)
-    z, labels, soluprot_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences,
-                                                                                  hts_fasta,
-                                                                                  align_to=2)
+    labels_with_sequences = latent_mapper.load_label_with_insilico(label_file)
+    z, labels, soluprot_labels = latent_mapper.map_sequences_with_two_labels_to_space(labels_with_sequences,
+                                                                                      hts_fasta,
+                                                                                      align_to=2)
     latent_mapper.plot_labels(z, labels, True)
     latent_mapper.finalize_plot(plot_file, "Solubility")
     print("  Storing mapped plot in ", latent_mapper.target_dir + plot_file)
@@ -167,9 +216,9 @@ def run_latent_dhaa115_mapper():
     print("   Mapping DhaA115 sequence variants with labels to latent space")
 
     latent_mapper = LatentSpaceMapper(cmdline)
-    labels_with_sequences = latent_mapper.load_training_sequence_labels(label_file)
-    z, labels, dTm_labels = latent_mapper.map_sequences_with_labels_to_space(labels_with_sequences, hts_fasta,
-                                                                             align_to=2)
+    labels_with_sequences = latent_mapper.load_label_with_insilico(label_file)
+    z, labels, dTm_labels = latent_mapper.map_sequences_with_two_labels_to_space(labels_with_sequences, hts_fasta,
+                                                                                 align_to=2)
 
     # Corrected Tm value from wild-type not DhaA115 variant dTm DhaA115 > 23 degree
     labels = list(map(lambda x: x + 23, labels))

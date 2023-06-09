@@ -351,12 +351,68 @@ class AncestorsHandler:
         Logger.update_msg(align_cnt, False)
         return pair_alignments[0][1]
 
+    def align_seq_to_seq_clustalw(self, template_seq, seq_to_align):
+        """
+        Align sequences to template sequence using clustaW.
+        """
+        clustal_seq1 = os.path.join(self.pickle, "clustal_seq1.fasta")
+        clustal_seq2 = os.path.join(self.pickle, "clustal_seq2.fasta")
+        with open(clustal_seq1, "w") as f:
+            f.write(f'>Template\n{template_seq.replace("-", "")}')
+        with open(clustal_seq2, "w") as f:
+            f.write(f'>ToBeAligned\n{seq_to_align.replace("-", "")}')
+        outfile = os.path.join(self.pickle, "clustal_pairwise_output.fasta")
+        clustalomega_cline = ClustalOmegaCommandline(cmd=self.setuper.clustalo_path,
+                                                     profile1=clustal_seq1,
+                                                     profile2=clustal_seq2,
+                                                     outfile=outfile,
+                                                     threads=4,
+                                                     verbose=False, auto=True, isprofile=True, force=True)
+        _ = clustalomega_cline()
+        alignment = MSA.load_msa(outfile)
+        aligned_seq = alignment['ToBeAligned']
+        gapped_sequence = ""
+        aligned_pos = 0
+        for msa_i, msa_symbol in enumerate(template_seq):  # get back the gaps in the MSA to get correct MSA wise alignment
+            if msa_symbol == "-":
+                gapped_sequence += "-"
+                continue
+            gapped_sequence += aligned_seq[aligned_pos]
+            aligned_pos += 1
+        return gapped_sequence
+
+    def align_to_key(self, msa: dict, seq_id: str):
+        """
+        Align and embed sequences from msa to that one in training MSA with seq_id
+        @param msa: dictionary of key sequence values
+        @param seq_id: align sequences to that from training MSA
+        @return: aligned dictionary and original sequence trimmed
+        """
+        aligned = {}
+        original_msa = MSA.load_msa(self.setuper.in_file)
+        try:
+            seq = original_msa[seq_id]
+        except Exception as e:
+            print(f"The sequence name {seq_id} was not find in MSA for training")
+            exit(1)
+        i = 0
+        alignment = {}
+        for k in msa.keys():
+            i += 1
+            seq_to_align = msa[k]
+            alignment[k] = self.align_seq_to_seq_clustalw(seq, seq_to_align)
+        with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
+            pos_idx = pickle.load(file_handle)
+        for name in msa.keys():
+            aligned[name] = [item for i, item in enumerate(alignment[name]) if i in pos_idx]
+        template_sequence = [item for i, item in enumerate(seq) if i in pos_idx]
+        aligned['template'] = template_sequence
+        return aligned
+
     def align_to_ref(self, msa: dict = None, original_msa: dict = None):
         """
-            Align sequences to original MSA and then apply
-            the same position removal as in MSA processing.
-            In the case of msa_align False do iterative alignment
-            to only query sequence.
+            Align sequences to the reference sequence. Suited for mutant sequences. \
+            May not work properly for distinct sequecnes.
         """
         aligned = {}
         # Do iterative alignment only to query (not optimal solution)
@@ -370,8 +426,9 @@ class AncestorsHandler:
         for k in msa.keys():
             i += 1
             seq = msa[k]
-            pair_alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
-            alignment[k] = pair_alignments[0][1]
+            # pair_alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, -7, -1)
+            # alignment[k] = pair_alignments[0][1]
+            alignment[k] = self.align_seq_to_seq_clustalw(ref_seq, seq)
             # if len(seq) > ref_len:
             #     # length of sequence is bigger than ref query, cut sequence on reference query gap positions
             #     print(' AncestorHandler message: Len of seq is {0}, length of reference is {1}.\n '
@@ -402,8 +459,8 @@ class AncestorsHandler:
             #         alignments = pairwise2.align.globalms(ref_seq, seq, 3, 1, open_gap_pen, gap_pen)
             #         best_align = alignments[0][1]
             #     aligned[k] = alignments[0][1]
-            if self.setuper.stats:
-                print(k, ':', pair_alignments[0][2], len(alignment[k]))
+            # if self.setuper.stats:
+            #     print(k, ':', pair_alignments[0][2], len(alignment[k]))
         with open(self.pickle + "/seq_pos_idx.pkl", 'rb') as file_handle:
             pos_idx = pickle.load(file_handle)
 

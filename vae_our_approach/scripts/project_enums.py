@@ -67,6 +67,11 @@ class Helper(Enum):
     TREE_ALIGN = "Option to align sequence in tree MSA to those used in VAE training"
     TREE_LEAF = "String with comma delimeter of leaves which branches will be plotted into the latent space"
 
+    LABEL_FILE = "Path to the file with the label values in format: ProteinName;ProteinIdentificatorInMSA;label_val1;" \
+                 "Can be customized by the user. The proteins may be in training MSA. If not the sequence has to be " \
+                 "in label FASTA"
+    LABEL_FASTA = "Fasta file with sequences to be labeled"
+
 class VaePaths(Enum):
     # Experiment directory paths
     RESULTS = "./../results/"

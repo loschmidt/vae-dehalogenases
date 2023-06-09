@@ -55,7 +55,7 @@ class MSASubsampler:
         for i in range(0, len(seq), n):
             file.write(seq[i:i + n] + "\n")
 
-    def sample_msa(self, n: int, seq_cnt: int = 100):
+    def sample_msa(self, n: int, seq_cnt: int = 2000):
         """ Sample MSA from training input space """
         with open(self.pickle + "/training_alignment.pkl", "rb") as file_handle:
             msa = pickle.load(file_handle)
@@ -398,7 +398,7 @@ def run_sampler():
 
     print("=" * 80)
     print("   Creating Fireprot subsampled {} MSAs".format(n))
-    sampler.sample_msa(n)
+    sampler.sample_msa(1)
     print("   MSAs created into ", sampler.target_dir)
 
 
@@ -472,6 +472,7 @@ def plot_tree_to_latent_space():
     """
     Plot tree structure into the latent space
     @WARNING please the tree newick file to highlight and
+    @WARNING rename to distinguish from custom tree mapping
     """
     cmdline = CmdHandler()
     anc_tree_handler = AncestralTree(cmdline)

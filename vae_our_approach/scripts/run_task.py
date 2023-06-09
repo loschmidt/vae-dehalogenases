@@ -11,15 +11,17 @@ if sys.argv[1] not in ["--help", "-h"]:
     from Statistics.ancestral_tree import run_circular_sampler
     from Statistics.ancestral_tree import run_tree_highlighter as model_tree_run
     from Statistics.ancestral_tree import plot_tree_to_latent_space
-    from Statistics.label_mapper import run_latent_mapper as model_mapper_run
-    from Statistics.label_mapper import run_latent_dhaa115_mapper as model_dhaa115_run
     from Statistics.order_statistics import run_setup as model_statistics_run
     from Statistics.order_statistics import run_sampling_query as statistics_around_query
     from Statistics.reconstruction_ability import run_input_dataset_reconstruction as model_input_reconstruct_run
     from Statistics.stats_plot import make_overview as plot_overview
     from Statistics.entropy_latent import run_entropy as model_entropy
-    
+
+    from mappers.label_mapper import run_latent_solubility_mapper as model_mapper_run
+    from mappers.label_mapper import run_latent_dhaa115_mapper as model_dhaa115_run
+    from mappers.label_mapper import run_latent_mapper
     from mappers.tree_mapper import run_map_tree
+    from mappers.align_mapper import run_align_babkova
 
     from reconstruction.mutagenesis import run_random_mutagenesis, run_straight_evolution
     from reconstruction.evo_search import run_cma_es_evolution
@@ -50,10 +52,6 @@ def get_package_parser() -> ArgumentParser:
                         help="Highlights phylo tree levels in the latent space")
     parser.add_argument("--run_package_stats_tree_plot", action='store_true', default=False,
                         help="Map tree to the latent space")
-    parser.add_argument("--run_package_stats_mapper", action='store_true', default=False,
-                        help="Highlights sequence with label in the latent space")
-    parser.add_argument("--run_package_stats_map_dhaa115", action='store_true', default=False,
-                        help="Highlights sequence with label in the latent space of DhaA115 mutants")
     parser.add_argument("--run_package_stats_reconstruction", action='store_true', default=False,
                         help="Determines how well can model reconstruct sequences")
     parser.add_argument("--run_package_stats_entropy", action='store_true', default=False,
@@ -76,6 +74,15 @@ def get_package_parser() -> ArgumentParser:
                         help="Run ensemble straight ancestor evolution for more models")
     parser.add_argument("--map_tree", action='store_true', default=False,
                         help="Map given tree into the latent space")
+    parser.add_argument("--map_solubility", action='store_true', default=False,
+                        help="Highlights sequence with label in the latent space")
+    parser.add_argument("--map_dhaa115_dataset", action='store_true', default=False,
+                        help="Highlights sequence with label in the latent space of DhaA115 mutants")
+    parser.add_argument("--map_labels", action='store_true', default=False,
+                        help="Map sequence with labels to latent space. Pass corresponding files through "
+                             "label_file/fasta parameter option")
+    parser.add_argument("--map_babkova", action='store_true', default=False,
+                        help="Map babkova sequences from highlights_files to the latent space")
     return parser
 
 
@@ -97,10 +104,12 @@ def run_package(parser: ArgumentParser):
         model_tree_run()
     if args.run_package_stats_tree_plot:
         plot_tree_to_latent_space()
-    if args.run_package_stats_mapper:
+    if args.map_solubility:
         model_mapper_run()
-    if args.run_package_stats_map_dhaa115:
+    if args.map_dhaa115_dataset:
         model_dhaa115_run()
+    if args.map_labels:
+        run_latent_mapper()
     if args.run_package_stats_entropy:
         model_entropy(optimized_entropy=True)
     if args.run_package_stats_reconstruction:
@@ -133,6 +142,8 @@ def run_package(parser: ArgumentParser):
         run_ensemble_evolution()
     if args.map_tree:
         run_map_tree()
+    if args.map_babkova:
+        run_align_babkova()
 
 
 if __name__ == '__main__':

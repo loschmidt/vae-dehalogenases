@@ -30,7 +30,7 @@ def plot_dual_axis(prs, wt, cl, res, inds, file, positions):
     if not SUCCESSORS:
         prs = prs[30:]
         wt, cl, res, inds = wt[30:], cl[30:], res[30:], inds[30:]
-    ancs = range(len(prs))
+    ancs = range(1, len(prs)+1)
     fig, ax = plt.subplots()
     fig.set_size_inches(28.5, 15.5)
     plt.xticks(ancs, ancs)
@@ -63,7 +63,7 @@ def plot_dual_axis(prs, wt, cl, res, inds, file, positions):
     print(" Dual axis report : saving plot into", name)
     fig.savefig(name,
                 format='jpeg',
-                dpi=400,
+                dpi=800,
                 bbox_inches='tight')
 
 

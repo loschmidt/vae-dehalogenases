@@ -47,7 +47,7 @@ def show_latent_space_features(ax, anc_msa_file, setuper):
     query_coords = mu[query_index]
 
     anc_msa = MSA.load_msa(anc_msa_file)
-    ancestor_aligned = aligner.align_to_ref(anc_msa)
+    ancestor_aligned = aligner.align_fasta_to_original_msa(anc_msa_file, False)  # Ancestors aligned to entire MSA
     ancestor_msa, ancestor_weight, ancestor_keys = transformer.sequence_dict_to_binary(ancestor_aligned)
     ancestor_mus, ancestor_sigma = vae.propagate_through_VAE(ancestor_msa, ancestor_weight, ancestor_keys)
 
