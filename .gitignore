@@ -30,3 +30,13 @@ vae_our_approach/pfam_msa/*
 
 # Ignoire output
 original_brooks_2019/simulated_msa/output/*
+
+# Ingnore png and other generated staffs
+*.png
+*.pkl
+*.txt
+*/results/
+*.zip
+*.fas
+*.xlsx
+*.fa
