@@ -27,6 +27,7 @@ if sys.argv[1] not in ["--help", "-h"]:
     from reconstruction.evo_search import run_cma_es_evolution
     from reconstruction.riemannian import run_riemannian_ancestors
     from reconstruction.ensembleEvolution import run_ensemble_evolution
+    from reconstruction.grid_sampling import run_grid_generation
 
     from VAE_logger import Capturing
 
@@ -72,6 +73,8 @@ def get_package_parser() -> ArgumentParser:
                         help="Run riemannian manifold strategy for origin ancestral strategy")
     parser.add_argument("--run_ensemble_evolution", action='store_true', default=False,
                         help="Run ensemble straight ancestor evolution for more models")
+    parser.add_argument("--run_grid_sampling", action='store_true', default=False,
+                        help="Run generation of samples from grid distribution in the latent space")
     parser.add_argument("--map_tree", action='store_true', default=False,
                         help="Map given tree into the latent space")
     parser.add_argument("--map_solubility", action='store_true', default=False,
@@ -136,6 +139,8 @@ def run_package(parser: ArgumentParser):
         run_cma_es_evolution()
     if args.run_straight_evolution:
         run_straight_evolution()
+    if args.run_grid_sampling:
+        run_grid_generation()
     if args.run_riemannian_anc_evolution:
         run_riemannian_ancestors()
     if args.run_ensemble_evolution:

@@ -379,7 +379,7 @@ def get_handler_by_json(json_path):
     # copy config file to the results directory
     now = datetime.datetime.now()
     file_name = now.strftime("%Y-%m-%d_%H-%M.json")
-    config_dir_path = os.path.join('./..', VaePaths.RESULTS.value[2:], args.exp_dir, 'configs')
+    config_dir_path = os.path.join(VaePaths.RESULTS.value, args.exp_dir, args.experiment.replace('/', '-'), 'configs')
     os.makedirs(config_dir_path, exist_ok=True)
     json.dump(handler_setup, open(os.path.join(config_dir_path, f"{file_name}"), 'w'))
     print(f"Configuration file stored in {config_dir_path}")
