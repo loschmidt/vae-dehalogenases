@@ -1,0 +1,49 @@
+{
+  "core_params": ["--model_name vae-for-hlds",
+    "--exp_dir final_models",
+    "--align",
+    "--highlight_files ../datasets/ancestors.fasta",
+    "--solubility_file ../datasets/hldI_II_soluprot.txt",
+    "--stats", "--K 1",
+    "--training_subsets 5", "--source_txt EVO/mutations.txt"],
+  "variable_params": [
+    "--layers {}", "--dimensionality {}", "--num_epoch {}","--experiment {}",
+    "--C {}", "--weight_decay {}", "--mut_points {}", "--mut_samples {}", "--query {}", "--in_file {}",
+    "--highlight_seqs {}", "--ancestors {}"],
+  "experiments": [
+    {
+    "status": "on",
+    "experiment": "hld_I_IV",
+    "layers": "299",
+    "dimensionality": 2,
+    "C": 2,
+    "in_file": "../datasets/hldI_IV.fa",
+    "query": "P59336_S14",
+    "highlight_seqs": "P59336_S14",
+    "num_epoch": 16500,
+    "weight_decay": 0.0,
+    "Note": "HLD I-IV subfamily dataset used for Model 1",
+    "mut_points": 1,
+    "mut_samples": 100,
+    "ancestors": 100,
+    "flags" : [ "focus" ]
+  },
+  {
+    "status": "off",
+    "experiment": "hld_I_II",
+    "layers": "293",
+    "dimensionality": 2,
+    "C": 2,
+    "in_file": "../datasets/HLDI_II.fa",
+    "query": "DhaA_S19",
+    "highlight_seqs": "DhaA_S19",
+    "num_epoch": 6000,
+    "weight_decay": 0.1,
+    "Note": "HLD I-II pipeline used for Model 2",
+    "mut_points": 1,
+    "mut_samples": 100,
+    "ancestors": 100,
+    "flags" : [ "focus", "msa_not_cluster", "dynamic_decay"]
+  }
+  ]
+}
