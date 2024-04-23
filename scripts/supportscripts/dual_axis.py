@@ -81,4 +81,4 @@ if len(args.pos) > 0:
 else:
     positions = [0]
 pr, wt, cl, res, inds = parse_csv(args.csv)
-plot_dual_axis(pr, wt, cl, res, inds, args.csv, positions)
+plot_dual_axis(pr, wt, cl, res, inds, args.csv, positions, args.o)
