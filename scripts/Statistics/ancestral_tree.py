@@ -432,8 +432,12 @@ def run_tree_highlighter():
         # levels = anc_tree_handler.encode_levels(levels, file_bigmsa_templ.format(i))
         # anc_tree_handler.plot_levels(levels)
         depths = anc_tree_handler.get_tree_depths(file_tree_templ.format(i))
-        depths_coords, msa = anc_tree_handler.encode_sequences_with_depths(depths, file_bigmsa_templ.format(i),
-                                                                           file_tree_templ.format(i))
+        try:
+            depths_coords, msa = anc_tree_handler.encode_sequences_with_depths(depths, file_bigmsa_templ.format(i),
+                                                                               file_tree_templ.format(i))
+        except KeyError:
+            print(f"Tree {i} does not contain ancestral nodes, maybe FireProtAsr pipeline failed! Skipping tree {i}")
+            continue
         # anc_tree_handler.plot_depths(depths_coords)
         # branches correlations
         branches = anc_tree_handler.get_tree_branches(file_tree_templ.format(i))
