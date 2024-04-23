@@ -52,7 +52,7 @@ class ExperimentStatistics:
             for key, sequence in seq_dict.items():
                 file_handle.write(">" + key + "\n")
                 seq = "".join(sequence)
-                seq = seq.replace("_", "")
+                seq = seq.replace("-", "")
                 for i in range(0, len(seq), n):
                     file_handle.write(seq[i:i + n] + "\n")
         self._log_msg(msg + str(file_name_sequences))
