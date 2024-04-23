@@ -35,6 +35,7 @@ original_brooks_2019/simulated_msa/output/*
 *.png
 *.pkl
 *.txt
+!requirements.txt
 */results/
 *.zip
 *.fas
