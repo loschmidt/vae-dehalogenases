@@ -64,7 +64,7 @@ The commands above generate Figure 2A-C in the paper.
 Ancestors generation can be done simply via running the command corresponding to the straight line evolution strategy:
 
 ```bash
-python3 runner.py --run_task.py --run_straight_evolution --json model_configurations/runner-conf.json
+python3 runner.py run_task.py --run_straight_evolution --json model_configurations/runner-conf.json
 ``` 
 
 We also examined more strategies: 
@@ -75,8 +75,8 @@ the closest variant to the latent space origin (run_random_mutagenesis).
 <em>CMA-ES evolution</em> multi-objective optimization in the latent space.
 We focused on the simple straight evolutionary strategy in our paper.
 ```bash
-python3 runner.py --run_task.py --run_random_mutanesis --json model_configurations/runner-conf.json
-python3 runner.py --run_task.py --run_evolution --json model_configurations/runner-conf.json
+python3 runner.py run_task.py --run_random_mutanesis --json model_configurations/runner-conf.json
+python3 runner.py run_task.py --run_evolution --json model_configurations/runner-conf.json
 ``` 
 Results can be found in the same directory in the subdirectory ``Highlights/``
 
@@ -84,7 +84,7 @@ Results can be found in the same directory in the subdirectory ``Highlights/``
 
 To get the latent space, run:
 ```bash
-python3 runner.py --run_task.py --run_plot_latent_space --json model_configurations/runner-conf.json
+python3 runner.py run_task.py --run_plot_latent_space --json model_configurations/runner-conf.json
 ```
 
 The statistics plot for the evolutionary profile in the latent space (Figure 3C in the paper) can be produced:
