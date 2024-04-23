@@ -21,21 +21,21 @@ def parse_csv(file):
     return probs, wt_identity, closest_identity, residues90, indels_cnt
 
 
-def plot_dual_axis(prs, wt, cl, res, inds, file, positions):
+def plot_dual_axis(prs, wt, cl, res, inds, file, positions, out_path):
     plt.figure(figsize=(30, 6), dpi=400)
     matplotlib.rc('ytick', labelsize=20)
     matplotlib.rc('xtick', labelsize=8)
 
     global SUCCESSORS
     if not SUCCESSORS:
-        prs = prs[30:]
-        wt, cl, res, inds = wt[30:], cl[30:], res[30:], inds[30:]
+        prs = prs[3:]
+        wt, cl, res, inds = wt[3:], cl[3:], res[3:], inds[3:]
     ancs = range(1, len(prs)+1)
     fig, ax = plt.subplots()
     fig.set_size_inches(28.5, 15.5)
     plt.xticks(ancs, ancs)
     if SUCCESSORS:
-        plt.xticks(ancs, [x if i != 30 else 'Q' for i, x in enumerate(ancs)])
+        plt.xticks(ancs, [x if i != 3 else 'Q' for i, x in enumerate(ancs)])
     else:
         plt.xticks(ancs, [x if i != 0 else 'Q' for i, x in enumerate(ancs)])
     ax.plot(ancs, prs, color="red", marker="o", label='Probability')
@@ -55,13 +55,13 @@ def plot_dual_axis(prs, wt, cl, res, inds, file, positions):
     ax2.legend(loc='upper right', bbox_to_anchor=(0.8, 1.07),
                ncol=2, fancybox=True, shadow=True, fontsize=18)
     if SUCCESSORS:
-        plt.vlines(30, 0, 314, color='black', linestyles='dashed')
+        plt.vlines(3, 0, 314, color='black', linestyles='dashed')
     for pos in positions:
         plt.vlines(pos, 0, 314, color='black', linestyles='dashed')
     # save the plot as a file
-    name = (file.split('/')[-1]).split('.')[0] + '.jpg'
-    print(" Dual axis report : saving plot into", name)
-    fig.savefig(name,
+    # name = (file.split('/')[-1]).split('.')[0] + '.jpg'
+    print(" Dual axis report : saving plot into", out_path)
+    fig.savefig(out_path,
                 format='jpeg',
                 dpi=800,
                 bbox_inches='tight')
@@ -71,10 +71,14 @@ def plot_dual_axis(prs, wt, cl, res, inds, file, positions):
 parser = argparse.ArgumentParser(description='Script for preparing plot with dual axis for mutants selection')
 parser.add_argument("--csv", help="Csv file with data")
 parser.add_argument("--pos", help="Highlight positions", default="")
+parser.add_argument("--o", help="File where to store profile file.jpg", default="")
 
 # Run script
-SUCCESSORS = False
+SUCCESSORS = True
 args = parser.parse_args()
-positions = [int(s) for s in args.pos.split(",")]
+if len(args.pos) > 0:
+    positions = [int(s) for s in args.pos.split(",")]
+else:
+    positions = [0]
 pr, wt, cl, res, inds = parse_csv(args.csv)
 plot_dual_axis(pr, wt, cl, res, inds, args.csv, positions)
