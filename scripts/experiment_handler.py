@@ -100,7 +100,7 @@ class ExperimentStatistics:
         closest_sequences = self.vae_handler.get_identity_closest_dataset_sequence(sequences)
 
         # Store in csv file
-        file_name = os.path.join(self.high_fld, '/{0}_profile.csv'.format(file_name.split('.')[0]))
+        file_name = os.path.join(self.high_fld, '{0}_profile.csv'.format(file_name.split('.')[0]))
         with open(file_name, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["Number", "Ancestor", "Sequences", "Probability of observation", "Coordinate x",
