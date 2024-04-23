@@ -488,7 +488,7 @@ def plot_tree_to_latent_space():
             embeddings_pkl = pickle.load(embed_file)
     except FileNotFoundError:
         print("   Please prepare MSA embedding before you run this case!!\n"
-              "   run python3 runner.py run_task.py --run_package_generative_plots --json config.file")
+              "   run python3 runner.py run_task.py --run_plot_latent_space --json config.file")
         exit(1)
 
     embeddings = embeddings_pkl['mu']
@@ -504,8 +504,12 @@ def plot_tree_to_latent_space():
             continue
         print("   Latent space tree ", file_tree_templ.format(i), " ", file_bigmsa_templ.format(i))
         depths = anc_tree_handler.get_tree_depths(file_tree_templ.format(i))
-        depths_coords, msa = anc_tree_handler.encode_sequences_with_depths(depths, file_bigmsa_templ.format(i),
-                                                                           file_tree_templ.format(i))
+        try:
+            depths_coords, msa = anc_tree_handler.encode_sequences_with_depths(depths, file_bigmsa_templ.format(i),
+                                                                               file_tree_templ.format(i))
+        except KeyError:
+            print(f"Tree {i} does not contain ancestral nodes, maybe FireProtAsr pipeline failed! Skipping tree {i}")
+            continue
         branches = anc_tree_handler.get_tree_branches(file_tree_templ.format(i))
 
         key_to_mu = {k: d[:-1] for k, d in zip(msa.keys(), depths_coords)}

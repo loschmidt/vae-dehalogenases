@@ -168,5 +168,5 @@ def plot_latent_space():
     cmd_line = CmdHandler()
 
     fig, axs = plt.subplots(1, 1)
-    show_latent_space_features(axs[0], cmd_line.highlight_files, cmd_line)
+    show_latent_space_features(axs, cmd_line.highlight_files, cmd_line)
     print("Latent space features plotted in : {}".format(cmd_line.high_fld + "/latent_space.png"))
