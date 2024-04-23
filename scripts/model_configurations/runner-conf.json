@@ -34,7 +34,7 @@
     "layers": "293",
     "dimensionality": 2,
     "C": 2,
-    "in_file": "../datasets/HLDI_II.fa",
+    "in_file": "../datasets/hldI_II.fa",
     "query": "DhaA_S19",
     "highlight_seqs": "DhaA_S19",
     "num_epoch": 6000,
