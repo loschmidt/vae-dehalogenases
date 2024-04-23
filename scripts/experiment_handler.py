@@ -39,7 +39,7 @@ class ExperimentStatistics:
     def store_ancestor_dict_in_fasta(self, seq_dict: dict, file_name, msg="storing ancestors into "):
         """ Method store sequence dictionary in fasta file named expName_file_name.fasta """
         file_name_sequences = os.path.join(self.high_fld, file_name)
-        file_name = os.path.join(self.high_fld, self.exp_name, "_raw_msa_", file_name)
+        file_name = os.path.join(self.high_fld, self.exp_name, "_raw_msa_" + file_name)
         n = 80  # 80 characters per line
         with open(file_name, 'w') as file_handle:
             for key, sequence in seq_dict.items():
