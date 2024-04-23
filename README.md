@@ -90,7 +90,7 @@ python3 runner.py run_task.py --run_plot_latent_space --json model_configuration
 The statistics plot for the evolutionary profile in the latent space (Figure 3C in the paper) can be produced:
 
 ```bash
-python3 supportScripts/dual_axis.py --csv ../results/path/to/experiment/higlight_dir/generated.csv --pos ""
+python3 supportScripts/dual_axis.py --csv ../results/path/to/experiment/higlight_dir/selected_strategy_profile.csv --pos ""
 ```
 
 ## Description of repository
