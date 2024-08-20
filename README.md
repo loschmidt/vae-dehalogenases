@@ -43,7 +43,7 @@ The demonstration configuration file includes setups for Model1 and Model2 used 
 ```bash
 vim model_configurations/runner-conf.json
 ```
-<em>runner-conf.json</em> is the default configuration file.
+<em>runner-conf.json</em> is the default configuration file with examples.
 If you want to run your custom analysis, you can add their configuration entry and set it to **on**
 or modify a new configuration file with your models as needed. Then you need to use an additional
 parameter while running commands below `--json path_to_conf.json`
@@ -52,10 +52,10 @@ Then, the user can run pipeline preprocessing the selected MSA from the dataset 
 
 
 ```bash
-python3 runner.py msa_handlers/msa_preprocessor.py
-python3 runner.py train.py
-python3 runner.py benchmark.py
-python3 runner.py run_task.py --run_generative_evaluation
+python3 runner.py msa_handlers/msa_preprocessor.py --json model_configurations/runner-conf.json
+python3 runner.py train.py --json model_configurations/runner-conf.json
+python3 runner.py benchmark.py --json model_configurations/runner-conf.json
+python3 runner.py run_task.py --run_generative_evaluation --json model_configurations/runner-conf.json
 ```
 After that, the result can be found in the ``../results/dir_name/experiment_name`` directory, where ``dir`` and ``experiment``names are specified in the configuration file. 
 The commands above generate Figure 2A-C in the paper.
@@ -64,7 +64,7 @@ The commands above generate Figure 2A-C in the paper.
 Ancestors generation can be done simply via running the command corresponding to the straight line evolution strategy:
 
 ```bash
-python3 runner.py --run_task.py --run_straight_evolution
+python3 runner.py run_task.py --run_straight_evolution --json model_configurations/runner-conf.json
 ``` 
 
 We also examined more strategies: 
@@ -75,8 +75,8 @@ the closest variant to the latent space origin (run_random_mutagenesis).
 <em>CMA-ES evolution</em> multi-objective optimization in the latent space.
 We focused on the simple straight evolutionary strategy in our paper.
 ```bash
-python3 runner.py --run_task.py --run_random_mutanesis
-python3 runner.py --run_task.py --run_evolution
+python3 runner.py run_task.py --run_random_mutanesis --json model_configurations/runner-conf.json
+python3 runner.py run_task.py --run_evolution --json model_configurations/runner-conf.json
 ``` 
 Results can be found in the same directory in the subdirectory ``Highlights/``
 
@@ -84,13 +84,13 @@ Results can be found in the same directory in the subdirectory ``Highlights/``
 
 To get the latent space, run:
 ```bash
-python3 runner.py --run_task.py --run_plot_latent_space
+python3 runner.py run_task.py --run_plot_latent_space --json model_configurations/runner-conf.json
 ```
 
 The statistics plot for the evolutionary profile in the latent space (Figure 3C in the paper) can be produced:
 
 ```bash
-python3 supportScripts/dual_axis.py --csv ../results/path/to/experiment/higlight_dir/generated.csv --pos ""
+python3 supportscripts/dual_axis.py --csv ../results/path/to/experiment/higlight_dir/selected_strategy_profile.csv --pos "" --o path_to_profile.jpg
 ```
 
 ## Description of repository
