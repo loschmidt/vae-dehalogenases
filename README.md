@@ -28,11 +28,19 @@ Simply run `bash setup_datasets.sh` in the root directory of this repository.
 The above command will create the directory **datasets** with a description of extracted files and further information
 about preparing your custom data for phylogenetic mapping into the latent space in `README_datasets.md`.
 
+## Notebooks
+
+For easy experimentation with Variational Autoencoders (VAEs), we provide a set of Jupyter notebooks.
+The vae_pipeline notebook enables users to run the entire VAE workflow step by step using a simple configuration file.
+For detailed explanations of each step, please refer to the calculation cells within the notebook.
+
 ## Usage
 
 Use script ``setup_datasets.sh`` to setup the datasets directory
 
 For running the scripts, the user has to be in the ``scripts/`` directory. 
+
+
 
 ```bash
 cd scripts
