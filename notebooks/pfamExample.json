@@ -1,0 +1,37 @@
+{
+    "paths": {
+        "dataset": "../datasets/PF00201.alignment.full",
+        "result": "../results/pfam201"
+    },
+    "msa": {
+        "clustering": false,
+        "identity": 90,
+        "query": "A0A671LCQ2_9TELE/21-337",
+        "fixed_sequences": ["A0A671LCQ2_9TELE/21-337"]
+    },
+    "training_parameters": {
+        "epochs": 51,
+        "decay": -1,
+        "dynamic_decay": -1,
+        "batch_size": -1,
+        "K": -1
+    },
+    "model": {
+        "layers": -1,
+        "lat_dim": 2,
+        "weights": -1
+    },
+    "generative_capacity": {
+        "run_capacity_test": true,
+        "percentage_of_seq_for_evaluation": 5
+    },
+    "ancestral_generation": {
+        "evo_query": -1,
+        "ancestors": -1
+    },
+    "conditional_vae_setting": {
+        "conditional_labels": "../datasets/hldI_II_soluprot.txt",
+        "solubility_threshold1": 0.35,
+        "solubility_threshold2": 0.55
+    }
+}
