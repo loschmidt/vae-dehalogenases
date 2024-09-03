@@ -26,6 +26,7 @@ class RunSetup:
             attr_dir = os.path.join(conf['paths']["result"], exp_dir)
             os.makedirs(attr_dir, exist_ok=True)
             setattr(self, exp_dir, attr_dir)
+        self.root_dir = conf['paths']["result"]
         # set the rest of the keys
         for k, v in conf.items():
             for attr, attr_val in v.items():
