@@ -87,7 +87,7 @@ class HMMAligner:
         self.run.dataset = fix_hmm_fasta_path
         print(f"Dataset variable changed in current RunSetup instance, to keep it consistent, change the dataset field in you config to {fix_hmm_fasta_path}")
 
-    def encode_custom_seqs(self, fasta_path, model=f'vae_fold_0.model', batch_size=1):
+    def encode_custom_seqs(self, fasta_path, model=f'vae_fold_0.model', batch_size=1, c=None):
         afa_path = self.hmmer_align(fasta_path)
         df = self._aligned_df(afa_path)
         self.run.weights = os.path.join(self.run.root_dir, "model", model)
@@ -95,7 +95,7 @@ class HMMAligner:
         mu1_ = []
         mu2_ = []
         for i in range(0, len(df), batch_size):
-            latent_embeddings = latent_space.encode(df['trimmed_afa'].to_list()[i:i + batch_size])[0]
+            latent_embeddings = latent_space.encode(df['trimmed_afa'].to_list()[i:i + batch_size], c=c)[0]
             mu1_.append(latent_embeddings[:, 0])
             mu2_.append(latent_embeddings[:, 1])
         df['mu1'] = np.concatenate(mu1_)
