@@ -97,24 +97,6 @@ class Benchmarker:
         return probabilities
 
     def bench_dataset(self):
-        # print("STATS")
-        # print(self.positive_control.shape, MSA.binaries_to_tensor(self.positive_control).shape)
-        #
-        # input_Q = MSA.binaries_to_tensor(self.train_data[0])
-        # print(input_Q[:42])
-        # z_query, _ = self.vae.encoder(input_Q, c=None)
-        # z_query = torch.tensor([-4.00096035, 1.92028594])
-        # rec = self.vae.z_to_number_sequences(z_query)
-        # print("QUERY")
-        # print(MSA.number_to_amino({"query": MSA.binary_to_numbers_coding(self.train_data[0])}))
-        # print("RECON")
-        # print(z_query, MSA.number_to_amino({"rec": rec.numpy()}))
-        # qury = MSA.binary_to_numbers_coding(self.train_data[0])
-        #
-        #
-        # print(marginal(rec, qury))
-        # exit(0)
-
         marginals_positive = self._sample(MSA.binaries_to_tensor(self.positive_control), self.positive_labels)
         marginals_train = self._sample(MSA.binaries_to_tensor(self.train_data), self.train_labels)
         marginals_negative = self._sample(MSA.binaries_to_tensor(self.negative), self.negative_labels)
