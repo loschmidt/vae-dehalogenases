@@ -75,7 +75,6 @@ class StraightEvolution:
             number_sequences = self.vae.z_to_number_sequences(points, c).cpu().numpy()
             ancestor_dict_num = {f"anc{i}": seq for i, seq in enumerate(number_sequences)}
             ancestors_to_store = MSA.number_to_amino(ancestor_dict_num)
-        print(ancestors_to_store)
         file_name = 'straight_latent_ancestors.fasta'
         if profile:
             self.profiler.profile_sequences(ancestors_to_store, file_name, points.cpu().numpy())

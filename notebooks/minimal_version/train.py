@@ -199,7 +199,8 @@ class Train:
                 vae.cpu()
 
             # Save it to the special name
-            model_name = os.path.join(self.run.model, f"vae_fold_{k}.model")
+            # model_name = os.path.join(self.run.model, f"vae_fold_{k}.model")
+            model_name = self.run.weights
             torch.save(vae.state_dict(), model_name)
             print(f" Training VAE model store into {model_name}")
 

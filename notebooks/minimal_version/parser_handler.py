@@ -56,7 +56,8 @@ class RunSetup:
             "encoder-decoder": "dense",
             "K": 1,
             "run_capacity_test": False,
-            "weights": os.path.join(self.model, "vae_fold_0.model")
+            "model_name": "vae_fold_0.model",
+            "weights": os.path.join(self.model, self.model_name),
         }
         if attr_name in fallback_values:
             return fallback_values[attr_name]

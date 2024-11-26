@@ -89,6 +89,7 @@ class MSA:
     @staticmethod
     def number_to_binary(msa: np.ndarray) -> np.ndarray:
         """ Transform number array to one-hot encoding """
+        msa = msa.astype(np.int)
         K = len(MSA.aa) + 1
         D = np.identity(K)
         num_seq = msa.shape[0]

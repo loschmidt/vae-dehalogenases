@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import torch
 
+from notebooks.minimal_version.benchmark import Benchmarker
 from notebooks.minimal_version.latent_space import LatentSpace
 from notebooks.minimal_version.msa import MSA
 from notebooks.minimal_version.parser_handler import RunSetup
@@ -86,10 +87,11 @@ class Profiler:
     Support the creation of fasta format files and so on.
     """
 
-    def __init__(self, run: RunSetup):
+    def __init__(self, run: RunSetup, resampled_probability_samples = 500):
         self.pickles = run.pickles
         self.results = run.results
         self.latent = LatentSpace(run)
+        self.benchmarker = Benchmarker(run, resampled_probability_samples)
         self.run = run
         try:
             self.queries_excluded = load_from_pkl(os.path.join(run.pickles, "queries_excluded_pos_and_aa.pkl"))
@@ -164,6 +166,8 @@ class Profiler:
         :return:
         """
         logs = self.log_ratio(ancestor_dict, self.evo_query)
+        _, sigmas = self.latent.encode(ancestor_dict)
+        resample_probabilities = self.benchmarker.resample_probability(ancestor_dict)
         names = list(ancestor_dict.keys())
         sequences = list(ancestor_dict.values())
         raw_vae_msa_path = os.path.join(self.run.results, f"raw_msa_{file_name}")
@@ -199,6 +203,9 @@ class Profiler:
             'Ancestor': names,
             'Sequences': no_gap_sequences,
             'log(x_mut)/log(evo_query)': np.round(logs, decimals=3),
+            'Resampling probability': np.round(resample_probabilities, decimals=3),
+            'Sigmas1': sigmas.numpy()[:, 0],
+            'Sigmas2': sigmas.numpy()[:, 1],
             'Latent Coordinates': [f"{coord[0]}, {coord[1]}" for coord in np.round(coords, decimals=3)],
             'Spatial latent closest ID': spatial_closest,
             'Sequence closest ID': closest_sequences,

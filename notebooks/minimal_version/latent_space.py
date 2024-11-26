@@ -45,6 +45,13 @@ class LatentSpace:
             vae.cuda()
         return vae, conditional
 
+    def load_custom_model(self, model_name: str):
+        """
+        Load different model and prepare it for latent space embedding
+        """
+        self.model_name = model_name
+        self.vae, self.conditional = self.load_model()
+
     def prepare_latent_embeddings(self):
         """
         Embed all sequences from preprocessed MSA into the latent space
@@ -88,7 +95,7 @@ class LatentSpace:
 
     def encode(self, sequences: Union[torch.Tensor, List[str], np.ndarray, str, Dict[str, str]],
                c: torch.Tensor = None, is_binary=False) \
-            -> Tuple[np.ndarray, np.ndarray]:
+            -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Encode sequences in sequence/number/binary representation into the latent space
         :param sequences: sequences to be encoded
@@ -97,7 +104,7 @@ class LatentSpace:
         :return: mu, sigma by the encoder of VAE
         """
         if sequences is None or (isinstance(sequences, List) and len(sequences) == 0):
-            return np.empty((0,), dtype=np.float32), np.empty((0,), dtype=np.float32)
+            return torch.empty((0,), dtype=torch.float32), torch.empty((0,), dtype=torch.float32)
 
         if not is_binary:
             if isinstance(sequences, str):

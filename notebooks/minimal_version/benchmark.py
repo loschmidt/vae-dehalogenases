@@ -6,6 +6,7 @@ import os
 import pickle
 import random
 import warnings
+from typing import Union, List, Dict
 
 import numpy as np
 import pandas as pd
@@ -46,11 +47,11 @@ class Benchmarker:
         # Get training set
         binary_msa = load_from_pkl(os.path.join(run.pickles, "seq_msa_binary.pkl"))
         training_ids = np.concatenate(np.array(load_from_pkl(os.path.join(run.pickles, "idx_subsets.pkl")), dtype=object).flatten())
-        # print("Overlap", [a for a in positive_control_ids if a in training_ids])
+
         training_ids = training_ids[:test_size]  # same amount of samples
         training_ids.sort()
         self.train_data = binary_msa[training_ids]
-        # print("Training first ", training_ids[:5])
+
 
 
         # Get negative set
@@ -76,12 +77,41 @@ class Benchmarker:
         # Ignore deprecated errors
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
 
+    def resample_probability(self, sequences: Union[torch.Tensor, List[str], np.ndarray, str, Dict[str, str]],
+                             is_binary: bool = False, c: torch.Tensor = None):
+        """
+        Access benchmark sample function and enable whatever level of data to be passed resample probability
+        """
+        if not is_binary:
+            if isinstance(sequences, str):
+                sequences = [sequences]
+            if isinstance(sequences, List) and isinstance(sequences[0], str):
+                tmp_dict = {f'seq_{i}': seq for i, seq in enumerate(sequences)}
+                sequences = MSA.aa_to_number(tmp_dict)
+            if isinstance(sequences, Dict):
+                sequences = MSA.aa_to_number(sequences)
+            if isinstance(sequences, np.ndarray):
+                sequences = MSA.number_to_binary(sequences.astype(np.int))
+        if not isinstance(sequences, torch.Tensor):
+            sequences = MSA.binaries_to_tensor(sequences)
+        else:
+            sequences = MSA.binaries_to_tensor(sequences)
+
+        if c:
+            if c.ndim == 1:
+                c = c.unsqueeze(0)
+            if c.shape[0] != sequences.shape[0]:
+                c = c.repeat(sequences.shape[0], 1)
+        return self._sample(sequences, c)
+
+
     def _sample(self, data, c_labels):
         """
         Sample for each q(Z|X) for 10 000 times and make average
             1/N * SUM(p(X,Zi)/q(Zi|X))
         """
-        # print("sample", data.shape)
+        print("###########################################################################")
+        print(f"     Calculating the resampling strategies out of {self.samples} samples")
         probabilities = []
         with torch.no_grad():
             for i, d in enumerate(data):
